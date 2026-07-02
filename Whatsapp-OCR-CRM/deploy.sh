@@ -28,7 +28,8 @@ NODE_MAJOR="${NODE_MAJOR:-20}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_ROOT="${APP_ROOT:-$SCRIPT_DIR}"
-ENV_FILE=".env"
+ENV_FILE="$APP_ROOT/.env"
+BACKEND_ENV_FILE="$APP_ROOT/backend/.env"
 SECRETS_FILE="$APP_ROOT/.deploy-secrets"
 LOG_DIR="$APP_ROOT/logs"
 HTTPD_CONF="/etc/httpd/conf.d/mahabir-crm.conf"
@@ -304,8 +305,56 @@ read_env_val() {
   fi
 }
 
-write_env() {
-  log "Writing $ENV_FILE…"
+paths_same() {
+  local a="$1" b="$2"
+  [[ "$a" == "$b" ]] && return 0
+  if command -v realpath >/dev/null 2>&1; then
+    local ra rb
+    ra="$(realpath -m "$a" 2>/dev/null || true)"
+    rb="$(realpath -m "$b" 2>/dev/null || true)"
+    [[ -n "$ra" && -n "$rb" && "$ra" == "$rb" ]]
+  else
+    [[ "$(readlink -f "$a" 2>/dev/null || echo "$a")" == "$(readlink -f "$b" 2>/dev/null || echo "$b")" ]]
+  fi
+}
+
+sync_env_database_url() {
+  load_db_secrets
+  local database_url="postgresql://${DB_USER}:${DB_PASS}@127.0.0.1:5432/${DB_NAME}"
+  local tmp
+  tmp="$(mktemp)"
+  if [[ -f "$ENV_FILE" ]] && grep -q "^DATABASE_URL=" "$ENV_FILE"; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      if [[ "$line" == DATABASE_URL=* ]]; then
+        printf 'DATABASE_URL=%s\n' "$database_url"
+      else
+        printf '%s\n' "$line"
+      fi
+    done < "$ENV_FILE" > "$tmp"
+    mv "$tmp" "$ENV_FILE"
+  else
+    printf 'DATABASE_URL=%s\n' "$database_url" >> "$ENV_FILE"
+  fi
+}
+
+ensure_backend_env() {
+  if paths_same "$ENV_FILE" "$BACKEND_ENV_FILE"; then
+    log "Backend uses root .env (same file or symlink)"
+    return
+  fi
+  if [[ -L "$BACKEND_ENV_FILE" ]]; then
+    local target
+    target="$(readlink "$BACKEND_ENV_FILE")"
+    if paths_same "$ENV_FILE" "$BACKEND_ENV_FILE" || paths_same "$ENV_FILE" "$APP_ROOT/backend/$target"; then
+      return
+    fi
+  fi
+  cp "$ENV_FILE" "$BACKEND_ENV_FILE"
+  chmod 640 "$BACKEND_ENV_FILE"
+  chown "$APP_USER:$APP_GROUP" "$BACKEND_ENV_FILE" 2>/dev/null || true
+}
+
+create_env_from_template() {
   load_db_secrets
 
   local jwt_secret jwt_refresh db_pass
@@ -324,7 +373,6 @@ write_env() {
   local redis_url="redis://127.0.0.1:6379"
   local frontend_url="https://${DOMAIN}"
 
-  # Preserve existing third-party keys if .env already has them
   local msg91_key msg91_secret msg91_number aws_key aws_secret aws_bucket aws_region gemini_key
   msg91_key="$(read_env_val MSG91_AUTH_KEY "CHANGE_ME_MSG91_AUTH_KEY")"
   msg91_secret="$(read_env_val MSG91_WEBHOOK_SECRET "CHANGE_ME_MSG91_WEBHOOK_SECRET")"
@@ -366,13 +414,23 @@ NEXT_PUBLIC_SOCKET_URL=${frontend_url}
 PUPPETEER_CACHE_DIR=${APP_ROOT}/.cache/puppeteer
 EOF
 
-  cp "$ENV_FILE" "$APP_ROOT/backend/.env"
-  chmod 640 "$ENV_FILE" "$APP_ROOT/backend/.env"
-  chown "$APP_USER:$APP_GROUP" "$ENV_FILE" "$APP_ROOT/backend/.env" 2>/dev/null || true
+  chmod 640 "$ENV_FILE"
+  chown "$APP_USER:$APP_GROUP" "$ENV_FILE" 2>/dev/null || true
 
   if grep -q "CHANGE_ME" "$ENV_FILE"; then
     warn "Edit $ENV_FILE and set MSG91 / AWS / GEMINI keys before production use."
   fi
+}
+
+write_env() {
+  if [[ -f "$ENV_FILE" ]]; then
+    log "Preserving existing $ENV_FILE — syncing DATABASE_URL only"
+    sync_env_database_url
+  else
+    log "Creating $ENV_FILE…"
+    create_env_from_template
+  fi
+  ensure_backend_env
 }
 
 git_pull() {
