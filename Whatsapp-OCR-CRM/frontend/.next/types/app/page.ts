@@ -1,4 +1,4 @@
-// File: /Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/frontend/app/page.tsx
+// File: /Users/aryanlohia/Desktop/whatsapp-ocr-crm-mahabir-electricals/Whatsapp-OCR-CRM/frontend/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

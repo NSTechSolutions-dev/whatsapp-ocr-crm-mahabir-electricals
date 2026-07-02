@@ -1,4 +1,15 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/(dashboard)/automation/[id]/page": "app/(dashboard)/automation/[id]/page.js",
+  "/(dashboard)/automation/page": "app/(dashboard)/automation/page.js",
+  "/(dashboard)/crm/page": "app/(dashboard)/crm/page.js",
+  "/(dashboard)/crm/[customerId]/page": "app/(dashboard)/crm/[customerId]/page.js",
+  "/(dashboard)/enquiries/[id]/page": "app/(dashboard)/enquiries/[id]/page.js",
+  "/(dashboard)/inbox/page": "app/(dashboard)/inbox/page.js",
+  "/(dashboard)/inbox/[conversationId]/page": "app/(dashboard)/inbox/[conversationId]/page.js",
+  "/(dashboard)/inventory/page": "app/(dashboard)/inventory/page.js",
+  "/(dashboard)/quotations/[id]/page": "app/(dashboard)/quotations/[id]/page.js",
+  "/(dashboard)/settings/page": "app/(dashboard)/settings/page.js"
 }
