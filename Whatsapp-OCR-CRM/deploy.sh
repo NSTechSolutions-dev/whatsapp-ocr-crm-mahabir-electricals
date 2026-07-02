@@ -53,6 +53,44 @@ log()  { printf '\033[1;34m[deploy]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[deploy]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[deploy]\033[0m %s\n' "$*" >&2; exit 1; }
 
+# Run commands as the deploy user with a writable HOME/npm cache under APP_ROOT.
+# Avoids EACCES when the user's passwd home differs from the checkout path.
+run_as_app_user() {
+  mkdir -p "$APP_ROOT/.npm" "$APP_ROOT/.tmp" "$APP_ROOT/.cache"
+  chown -R "$APP_USER:$APP_GROUP" "$APP_ROOT/.npm" "$APP_ROOT/.tmp" "$APP_ROOT/.cache" 2>/dev/null \
+    || chown -R "$APP_USER:$APP_USER" "$APP_ROOT/.npm" "$APP_ROOT/.tmp" "$APP_ROOT/.cache"
+  sudo -u "$APP_USER" env \
+    HOME="$APP_ROOT" \
+    NPM_CONFIG_CACHE="$APP_ROOT/.npm" \
+    npm_config_cache="$APP_ROOT/.npm" \
+    TMPDIR="$APP_ROOT/.tmp" \
+    "$@"
+}
+
+ensure_app_ownership() {
+  local target="${1:-$APP_ROOT}"
+  chown -R "$APP_USER:$APP_GROUP" "$target" 2>/dev/null || chown -R "$APP_USER:$APP_USER" "$target"
+}
+
+npm_install_project() {
+  local project_dir="$1"
+  local label="$2"
+  log "Installing npm dependencies for $label…"
+  cd "$project_dir"
+  ensure_app_ownership "$project_dir"
+  # Remove corrupted/partial installs (common after failed deploys or root-owned node_modules).
+  rm -rf node_modules
+  if [[ -f package-lock.json ]]; then
+    if ! run_as_app_user npm ci; then
+      warn "npm ci failed for $label — removing lock artifacts and retrying"
+      rm -rf node_modules
+      run_as_app_user npm install
+    fi
+  else
+    run_as_app_user npm install
+  fi
+}
+
 require_root() {
   if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
     die "Run as root: sudo $0 $*"
@@ -166,12 +204,18 @@ install_pgvector() {
 setup_app_user() {
   if id "$APP_USER" &>/dev/null; then
     log "User $APP_USER exists"
+    local current_home
+    current_home="$(getent passwd "$APP_USER" | cut -d: -f6)"
+    if [[ -n "$current_home" && "$current_home" != "$APP_ROOT" ]]; then
+      warn "Updating $APP_USER home: $current_home → $APP_ROOT"
+      usermod -d "$APP_ROOT" -m "$APP_USER" 2>/dev/null || usermod -d "$APP_ROOT" "$APP_USER" 2>/dev/null || true
+    fi
   else
     log "Creating system user $APP_USER…"
     useradd --system --home-dir "$APP_ROOT" --shell /sbin/nologin "$APP_USER"
   fi
-  mkdir -p "$LOG_DIR" "$APP_ROOT"
-  chown -R "$APP_USER:$APP_GROUP" "$APP_ROOT" 2>/dev/null || chown -R "$APP_USER:$APP_USER" "$APP_ROOT"
+  mkdir -p "$LOG_DIR" "$APP_ROOT" "$APP_ROOT/.npm" "$APP_ROOT/.tmp" "$APP_ROOT/.cache"
+  ensure_app_ownership "$APP_ROOT"
 }
 
 setup_postgres() {
@@ -314,7 +358,7 @@ EOF
 git_pull() {
   if [[ -d "$APP_ROOT/.git" ]]; then
     log "Pulling latest code…"
-    sudo -u "$APP_USER" git -C "$APP_ROOT" pull --ff-only || warn "git pull failed — continuing with current tree"
+    run_as_app_user git -C "$APP_ROOT" pull --ff-only || warn "git pull failed — continuing with current tree"
   else
     warn "No .git directory — skipping git pull"
   fi
@@ -322,12 +366,12 @@ git_pull() {
 
 build_backend() {
   log "Building backend…"
+  npm_install_project "$APP_ROOT/backend" "backend"
   cd "$APP_ROOT/backend"
-  sudo -u "$APP_USER" npm ci 2>/dev/null || sudo -u "$APP_USER" npm install
-  sudo -u "$APP_USER" npx prisma generate
-  sudo -u "$APP_USER" npm run build
+  run_as_app_user npx prisma generate
+  run_as_app_user npm run build
   # Puppeteer Chromium for quotation PDFs (ARM)
-  sudo -u "$APP_USER" env PUPPETEER_CACHE_DIR="$APP_ROOT/.cache/puppeteer" \
+  run_as_app_user env PUPPETEER_CACHE_DIR="$APP_ROOT/.cache/puppeteer" \
     npx puppeteer browsers install chrome 2>/dev/null || \
     warn "Puppeteer browser install failed — quotation PDF generation may not work until fixed"
 }
@@ -336,18 +380,18 @@ sync_database() {
   log "Syncing database schema…"
   cd "$APP_ROOT/backend"
   if [[ "$UPDATE_ONLY" -eq 0 ]]; then
-    sudo -u "$APP_USER" npx prisma db push --accept-data-loss
-    sudo -u "$APP_USER" npx prisma db seed || warn "Seed skipped or failed (may already be seeded)"
+    run_as_app_user npx prisma db push --accept-data-loss
+    run_as_app_user npx prisma db seed || warn "Seed skipped or failed (may already be seeded)"
   else
-    sudo -u "$APP_USER" npx prisma db push
+    run_as_app_user npx prisma db push
   fi
 }
 
 build_frontend() {
   log "Building frontend…"
+  npm_install_project "$APP_ROOT/frontend" "frontend"
   cd "$APP_ROOT/frontend"
-  sudo -u "$APP_USER" npm ci 2>/dev/null || sudo -u "$APP_USER" npm install
-  sudo -u "$APP_USER" env \
+  run_as_app_user env \
     NODE_ENV=production \
     NEXT_PUBLIC_SOCKET_URL="https://${DOMAIN}" \
     npm run build
@@ -361,15 +405,15 @@ setup_pm2() {
   export APP_ROOT DEPLOY_DOMAIN="$DOMAIN"
   cd "$APP_ROOT"
 
-  if sudo -u "$APP_USER" pm2 describe mahabir-crm-backend &>/dev/null; then
-    sudo -u "$APP_USER" env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
+  if run_as_app_user pm2 describe mahabir-crm-backend &>/dev/null; then
+    run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
       pm2 reload "$ECOSYSTEM" --update-env
   else
-    sudo -u "$APP_USER" env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
+    run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
       pm2 start "$ECOSYSTEM"
   fi
 
-  sudo -u "$APP_USER" pm2 save
+  run_as_app_user pm2 save
   if [[ "$UPDATE_ONLY" -eq 0 ]]; then
     env PATH="$PATH:$(npm root -g)/../bin" pm2 startup systemd -u "$APP_USER" --hp "$APP_ROOT" 2>/dev/null | \
       grep -E '^sudo' | bash || warn "Run 'pm2 startup' manually if PM2 does not survive reboot"
