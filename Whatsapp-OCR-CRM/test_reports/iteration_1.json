@@ -1,0 +1,49 @@
+{
+  "summary": "End-to-end backend + frontend testing of WhatsApp Enquiry CRM (6-phase MVP). Backend: 21/22 pytest tests pass; one CRITICAL failure — OCR pipeline fails because Gemini model name 'gemini-2.5-flash-lite' is invalid for the Emergent LLM router (litellm returns 400 'Invalid model name'). Frontend: login, simulate-inbound, conversation view, navigation, settings/users-table work. CRM customer-detail navigation appears broken (clicking row doesn't push to /crm/:id). Inventory rate-cell testids and Automation rule-card testids could not be found via documented selectors.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/ocr/process + /api/ocr/{job_id}", "issue": "OCR pipeline silently returns status='done' with rows=[] because Gemini call fails with: litellm.BadRequestError: 'Invalid model name passed in model=gemini/gemini-2.5-flash-lite'. The model name in /app/backend/services/gemini.py line 49 (`.with_model('gemini', 'gemini-2.5-flash-lite')`) is not supported by the Emergent LLM router. Use a supported Gemini model name such as 'gemini-2.0-flash' or 'gemini-2.5-flash' (without -lite suffix). Also, the service should surface the Gemini error to the job (status='failed' + error message) instead of returning status='done' with empty rows.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "/api/quotations/{id}", "issue": "Response uses 'gstAmount' (not 'gst'); matches spec wording in test report but worth documenting for frontend consumers."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CRM customer list row click", "issue": "Clicking a customer row on /crm does not navigate to /crm/:customerId. URL remained /crm after click on 'Sunil Office Mart'. No customer-stats / customer-timeline / customer-top-products testids found.", "selector": "tbody tr / [data-testid^='customer-row-']", "priority": "HIGH"},
+      {"component": "Login page", "issue": "React warning: 'Cannot update a component (BrowserRouter) while rendering a different component (Login)'. Likely a setState call during render in Login.jsx — should be wrapped in useEffect.", "selector": "Login.jsx", "priority": "LOW"},
+      {"component": "DialogContent", "issue": "Accessibility warning: 'Missing Description or aria-describedby for DialogContent' on simulate-inbound modal.", "selector": "DialogContent", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "OCR -> enquiry table", "issue": "OCR returns 0 rows for any uploaded image because Gemini extraction fails (see backend critical). End-to-end OCR -> create-enquiry-button flow on /inbox/:conversationId cannot be exercised until Gemini model is fixed.", "affected_selectors": ["ocr-progress", "ocr-rows", "create-enquiry-button"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Update /app/backend/services/gemini.py line 49 model name from 'gemini-2.5-flash-lite' to a supported model (e.g. 'gemini-2.0-flash' or 'gemini-2.5-flash'). Also update docstring at line 3.",
+    "Make OCR job mark status='failed' (not 'done') when Gemini call raises an exception so frontend surfaces the error.",
+    "Fix CRM customer row click navigation to /crm/:customerId; add data-testid='customer-row-{id}' on rows and ensure CustomerProfile page is mounted at that route.",
+    "Verify data-testid='rate-cell-{id}' on Inventory rows and data-testid='rule-card-{id}' on Automation cards (test selectors per agent_to_agent_context_note did not match DOM; rule card text was visible but selector missed).",
+    "Address Login.jsx setState-in-render React warning.",
+    "Add aria-describedby/Description to DialogContent components."
+  ],
+  "critical_code_review_comments": [
+    "services/gemini.py uses an invalid Gemini model name — most critical defect; entire OCR/extraction pipeline (the product's USP) is non-functional.",
+    "OCR worker swallows Gemini failures (sets error=None, status=done, rows=[]). Should propagate error and set status='failed' for observability.",
+    "Frontend selectors documented in agent_to_agent_context_note (customer-row, rate-cell-{id}, rule-card-{id}) appear to be absent on rendered DOM — recommend an audit pass to ensure all interactive elements expose the documented data-testid attributes for testability."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "95% (21/22 pytest tests)", "frontend": "~70% (auth, inbox, simulate-inbound, navigation, settings ok; CRM detail nav and OCR pipeline broken)"},
+  "test_credentials": "admin@example.com / Admin@1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created via tests: conversation (+919900112233), inventory item TEST_Notebook A5, automation rule TEST_Inactivity follow-up, staff user test_staff_<ts>@example.com (password Staff@1234). Frontend test also simulated +919900113344 'Sunil Office Mart'.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After main agent fixes Gemini model name in /app/backend/services/gemini.py, retest OCR end-to-end: POST /api/ocr/process with a PNG + conversationId, poll /api/ocr/{jobId} until status='done', expect non-empty rows. Then exercise full UI flow: drop image on conversation page -> ocr-progress shows 4 steps -> ocr-rows render -> create-enquiry-button -> /enquiries/:id editable table -> finalize-enquiry-button -> /quotations/:id PNG visible -> send-quotation-button. Also retest CRM detail navigation. backend_test.py already covers all REST flows.",
+  "rca_of_the_issue": "RCA (OCR failure): backend/services/gemini.py:49 calls .with_model('gemini', 'gemini-2.5-flash-lite'); litellm routes this through the Emergent LLM provider which rejects the model with HTTP 400 'Invalid model name'. The exception is logged but the ocr worker still writes the job as status='done' with rows=[] (services/ocr_service or the OCR route should catch the ChatError and set status='failed' + error message). Reproduction: POST /api/ocr/process with any PNG -> GET /api/ocr/{jobId} returns status='done' rows=[]; backend.err.log shows 'Invalid model name passed in model=gemini/gemini-2.5-flash-lite'. Mitigation: change to a valid model name like 'gemini-2.0-flash' (or whichever is currently supported by the Emergent universal LLM key) AND make the OCR worker propagate failure status."
+}

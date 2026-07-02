@@ -1,0 +1,11 @@
+import * as React from "react";
+export declare const Select: React.FC<any>;
+export declare const SelectGroup: React.FC<any>;
+export declare const SelectValue: React.FC<any>;
+export declare const SelectTrigger: React.ForwardRefExoticComponent<any>;
+export declare const SelectContent: React.ForwardRefExoticComponent<any>;
+export declare const SelectLabel: React.ForwardRefExoticComponent<any>;
+export declare const SelectItem: React.ForwardRefExoticComponent<any>;
+export declare const SelectSeparator: React.ForwardRefExoticComponent<any>;
+export declare const SelectScrollUpButton: React.ForwardRefExoticComponent<any>;
+export declare const SelectScrollDownButton: React.ForwardRefExoticComponent<any>;

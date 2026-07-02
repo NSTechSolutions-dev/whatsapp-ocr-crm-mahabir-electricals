@@ -1,0 +1,217 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          margin: 0;
+          padding: 40px;
+          color: #1b1b1b;
+          background-color: #ffffff;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 30px;
+        }
+        .logo-section {
+          font-size: 22px;
+          font-weight: bold;
+          color: #256330;
+        }
+        .logo {
+          width: 0;
+          height: 0;
+          border-left: 25px solid transparent;
+          border-right: 25px solid transparent;
+          border-bottom: 40px solid #2d7a3a;
+          margin-bottom: 10px;
+        }
+        .company-contact {
+          text-align: right;
+          color: #256330;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .title {
+          text-align: center;
+          font-size: 38px;
+          font-weight: bold;
+          color: #256330;
+          margin: 20px 0 40px 0;
+          letter-spacing: 2px;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          margin-bottom: 30px;
+          font-size: 14px;
+        }
+        .info-col p {
+          margin: 6px 0;
+        }
+        .info-label {
+          font-weight: bold;
+        }
+        .divider {
+          height: 4px;
+          background-color: #2d7a3a;
+          margin: 20px 0;
+        }
+        .table-container {
+          margin-top: 30px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th {
+          background-color: #2d7a3a;
+          color: #ffffff;
+          padding: 12px;
+          text-align: left;
+          font-size: 14px;
+        }
+        td {
+          padding: 12px;
+          border-bottom: 1px solid #e2e8f0;
+          font-size: 13px;
+        }
+        tr:nth-child(even) td {
+          background-color: #f8fafc;
+        }
+        .totals-section {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 30px;
+          font-size: 14px;
+        }
+        .totals-table {
+          width: 300px;
+        }
+        .totals-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+        }
+        .grand-total {
+          background-color: #2d7a3a;
+          color: #ffffff;
+          padding: 12px;
+          font-weight: bold;
+          font-size: 16px;
+          border-radius: 4px;
+          margin-top: 10px;
+        }
+        .terms {
+          margin-top: 50px;
+          font-size: 12px;
+          color: #4a5568;
+          line-height: 1.6;
+        }
+        .terms-title {
+          font-weight: bold;
+          color: #1b1b1b;
+          margin-bottom: 5px;
+        }
+        .signatures {
+          margin-top: 80px;
+          display: flex;
+          justify-content: space-around;
+        }
+        .sig-line {
+          border-top: 1px solid #1b1b1b;
+          width: 200px;
+          text-align: center;
+          padding-top: 8px;
+          font-size: 12px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="logo"></div>
+          <div class="logo-section">YOUR COMPANY NAME</div>
+        </div>
+        <div class="company-contact">
+          <div>Your Company Address</div>
+          <div>Phone: +91XXXXXXXXXX</div>
+          <div>GSTIN: YOUR_GSTIN</div>
+        </div>
+      </div>
+
+      <div class="title">QUOTATION</div>
+
+      <div class="info-grid">
+        <div class="info-col">
+          <p><span class="info-label">Quotation No:</span> #QT-2026-06-00007</p>
+          <p><span class="info-label">Date:</span> 6/6/2026</p>
+          <p><span class="info-label">Valid Until:</span> 21/6/2026</p>
+          <p><span class="info-label">Customer ID:</span> cmq22dmei0000e9ubxb1rcas0</p>
+        </div>
+        <div class="info-col" style="text-align: right;">
+          <p style="font-weight: bold; font-size: 16px;">Customer</p>
+          <p></p>
+          <p>+919900112233</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th style="text-align: center;">Quantity</th>
+              <th style="text-align: right;">Rate</th>
+              <th style="text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>A4 paper</td>
+                <td style="text-align: center;">4 Ream</td>
+                <td style="text-align: right;">₹250.00</td>
+                <td style="text-align: right;">₹1000.00</td>
+              </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals-section">
+        <div class="totals-table">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span>₹1000.00</span>
+          </div>
+          <div class="totals-row">
+            <span>GST (18%)</span>
+            <span>₹180.00</span>
+          </div>
+          <div class="totals-row grand-total">
+            <span>Total</span>
+            <span>₹1180.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="terms">
+        <div class="terms-title">TERMS & CONDITIONS</div>
+        <div>Above information is not an invoice and only an estimate of goods/services. Payment will be due prior to provision or delivery of goods/services. GSTIN: YOUR_GSTIN.</div>
+      </div>
+
+      <div class="signatures">
+        <div class="sig-line">Signature over printed name</div>
+        <div class="sig-line">Date signed</div>
+      </div>
+    </body>
+    </html>
+  

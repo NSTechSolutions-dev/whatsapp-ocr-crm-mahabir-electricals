@@ -1,0 +1,11 @@
+import * as React from "react";
+export declare const Dialog: React.FC<any>;
+export declare const DialogPortal: React.FC<any>;
+export declare const DialogOverlay: React.ForwardRefExoticComponent<any>;
+export declare const DialogTrigger: React.ForwardRefExoticComponent<any>;
+export declare const DialogClose: React.ForwardRefExoticComponent<any>;
+export declare const DialogContent: React.ForwardRefExoticComponent<any>;
+export declare const DialogHeader: React.FC<any>;
+export declare const DialogFooter: React.FC<any>;
+export declare const DialogTitle: React.ForwardRefExoticComponent<any>;
+export declare const DialogDescription: React.ForwardRefExoticComponent<any>;

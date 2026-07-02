@@ -1,0 +1,61 @@
+{
+  "name": "whatsapp-crm-backend",
+  "version": "1.0.0",
+  "description": "Mahabir Electricals CRM Express Backend",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "reseed": "ts-node scripts/reseed-and-embed.ts",
+    "test:embeddings": "ts-node scripts/test-embeddings.ts",
+    "clean:aliases": "ts-node scripts/clean-inventory-aliases.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.500.0",
+    "@aws-sdk/s3-request-presigner": "^3.500.0",
+    "@prisma/client": "^5.10.0",
+    "axios": "^1.17.0",
+    "bcrypt": "^5.1.1",
+    "bullmq": "^5.1.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
+    "puppeteer": "^22.3.0",
+    "redis": "^4.6.13",
+    "socket.io": "^4.7.4",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/csurf": "^1.11.2",
+    "@types/express": "^4.17.21",
+    "@types/ioredis": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.11.24",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.2",
+    "nodemon": "^3.1.0",
+    "prisma": "^5.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

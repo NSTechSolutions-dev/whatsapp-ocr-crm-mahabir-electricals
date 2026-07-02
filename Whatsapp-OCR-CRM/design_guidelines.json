@@ -1,0 +1,103 @@
+{
+  "theme": "Light",
+  "archetype": "Industrial & Professional blended with Swiss Utility",
+  "emotional_tone": "Confident, business-grade, reliable — Mahabir Electricals maroon and white identity.",
+  "color_palette": {
+    "background": "#FFFBFB",
+    "surface": "#FFFFFF",
+    "primary": "#7F1D1D",
+    "primary_hover": "#991B1B",
+    "text_main": "#1C1917",
+    "text_muted": "#57534E",
+    "border": "#E7E5E4",
+    "chat_bubble_incoming": "#F5F5F4",
+    "chat_bubble_outgoing": "#FEE2E2",
+    "ocr_warning_bg": "#FEF3C7",
+    "ocr_warning_text": "#B45309"
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "IBM Plex Sans",
+    "rules": {
+      "h1": "text-4xl font-bold tracking-tight text-[#1C1917]",
+      "h2": "text-2xl font-semibold tracking-tight text-[#1C1917]",
+      "h3": "text-xl font-medium text-[#1C1917]",
+      "table_header": "text-xs font-semibold uppercase tracking-[0.1em] text-[#57534E]",
+      "body": "text-sm text-[#1C1917] leading-relaxed",
+      "numbers": "tabular-nums"
+    }
+  },
+  "layout_spacing": {
+    "philosophy": "Optical clarity over geometry. Dense for data, generous for layout margins.",
+    "page_padding": "p-6 md:p-8 lg:p-12",
+    "container_radius": "rounded-lg",
+    "card_padding": "p-6",
+    "table_cell_padding": "px-4 py-3",
+    "shadows": {
+      "card": "shadow-[0_2px_10px_-3px_rgba(28,25,23,0.05)]",
+      "floating": "shadow-[0_8px_30px_rgba(28,25,23,0.12)]"
+    }
+  },
+  "component_strategies": {
+    "tables": {
+      "style": "Flat grid, horizontal borders only (border-b border-[#E7E5E4]), sticky header. High density.",
+      "inline_editing": "Hover state reveals subtle 1px border around editable cell. Focus state uses ring-2 ring-[#7F1D1D].",
+      "ocr_highlight": "Low confidence fields get bg-[#FEF3C7] and border-l-2 border-[#D97706]."
+    },
+    "chat_inbox": {
+      "layout": "Left rail (300px wide) with scrollable conversation list. Right pane for active thread.",
+      "bubbles": "Outgoing (System/Quote): Soft Rose (#FEE2E2) with maroon text. Incoming (Customer): Stone 100 (#F5F5F4). No tails, soft rounded-lg corners.",
+      "media": "Images in chat have rounded-md, max-h-[300px], object-cover."
+    },
+    "buttons": {
+      "primary": "bg-[#7F1D1D] text-white hover:bg-[#991B1B] rounded-md px-4 py-2 text-sm font-medium transition-colors",
+      "secondary": "bg-white border border-[#E7E5E4] text-[#1C1917] hover:bg-[#F5F5F4] rounded-md px-4 py-2 text-sm font-medium transition-colors"
+    },
+    "cards": {
+      "style": "bg-white border border-[#E7E5E4] rounded-lg shadow-sm"
+    },
+    "forms": {
+      "inputs": "bg-white border border-[#E7E5E4] rounded-md focus:ring-2 focus:ring-[#7F1D1D] focus:border-transparent text-sm"
+    }
+  },
+  "key_screens_and_interactions": {
+    "login": {
+      "layout": "Split screen. Left: Form. Right: Bleed image of electrical supplies with dark overlay."
+    },
+    "inbox_ocr_view": {
+      "layout": "3-column bento. Left: Chat rail. Middle: Chat thread. Right: OCR Pipeline & Smart Editor Sidebar (collapsible).",
+      "ocr_progress": "4-step vertical stepper (Uploading -> Extracting -> Matching -> Ready)."
+    },
+    "smart_enquiry_editor": {
+      "interaction": "Editable data table. 'New Product' badges in #FEE2E2. Autocomplete dropdowns for matching items. Real-time GST calculation row at bottom."
+    },
+    "quotation_preview": {
+      "layout": "Centered modal or full-page. Preview of the image to be sent. Large 'Send via WhatsApp' CTA."
+    },
+    "crm_customer_list": {
+      "layout": "Data-dense table, sticky header. Clicking a row opens Customer Profile Timeline (interleaved chat history and order history)."
+    },
+    "inventory_management": {
+      "layout": "Table with inline rate editing. Clicking rate history opens a modal with a timeline/chart."
+    },
+    "automation_rules": {
+      "layout": "Grid of rule cards (Condition -> Action). Multi-step builder modal with logical branching."
+    }
+  },
+  "media_urls": {
+    "login_hero_bg": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    "product_placeholder_1": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "product_placeholder_2": "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  },
+  "testing_guidelines": {
+    "data_testid_rules": "All interactive elements (buttons, inputs, links, table rows) MUST have role-based data-testid attributes (e.g., data-testid='login-submit-button', data-testid='ocr-sidebar-toggle')."
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the Mahabir Electricals maroon (#7F1D1D) and white color palette.",
+    "Use Outfit for all headings and IBM Plex Sans for body text.",
+    "When building tables, use pure Tailwind/HTML logic combined with Shadcn table components. Avoid standard borders, favor clean bottom-borders for rows.",
+    "For the Inbox, ensure the chat interface feels native and distinct from WhatsApp. Use the specified bubble colors and soft rounded corners.",
+    "Ensure the Smart Enquiry Editor utilizes the specified Amber warning styles for low-confidence OCR extractions.",
+    "Always add data-testid attributes to all interactive elements for robust testing."
+  ]
+}

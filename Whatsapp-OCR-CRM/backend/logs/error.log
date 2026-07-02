@@ -1,0 +1,981 @@
+2026-06-17 17:43:23:4323 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:23:4323 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:23:4323 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:30:4330 [31merror[39m: [31mError retrieving enquiry cmqi187yw000flhoypnlikam0: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.enquiry.findUnique()` invocation in[39m
+[31mC:\Users\rehan\Anti-g\Whatsapp-OCR-CRM-main\backend\src\api\controllers\enquiry.controller.ts:13:34[39m
+
+[31m  10 import { buildInventorySearchText } from "../../utils/product-normalize";[39m
+[31m  11 [39m
+[31m  12 async function enrichEnquiry(enquiryId: string) {[39m
+[31m→ 13   const e = await prisma.enquiry.findUnique([39m
+[31mThe table `public.InventoryUnitRate` does not exist in the current database.[39m
+2026-06-17 17:43:36:4336 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:36:4336 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:36:4336 [31merror[39m: [31mFailed to query embedding similarity: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mRaw query failed. Code: `42P01`. Message: `relation "ProductEmbedding" does not exist`[39m
+2026-06-17 17:43:38:4338 [31merror[39m: [31mError retrieving enquiry cmqi18hhd000olhoyliyiyigz: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.enquiry.findUnique()` invocation in[39m
+[31mC:\Users\rehan\Anti-g\Whatsapp-OCR-CRM-main\backend\src\api\controllers\enquiry.controller.ts:13:34[39m
+
+[31m  10 import { buildInventorySearchText } from "../../utils/product-normalize";[39m
+[31m  11 [39m
+[31m  12 async function enrichEnquiry(enquiryId: string) {[39m
+[31m→ 13   const e = await prisma.enquiry.findUnique([39m
+[31mThe table `public.InventoryUnitRate` does not exist in the current database.[39m
+2026-06-17 17:43:58:4358 [31merror[39m: [31mError listing inventory: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.inventory.findMany()` invocation in[39m
+[31mC:\Users\rehan\Anti-g\Whatsapp-OCR-CRM-main\backend\src\api\controllers\inventory.controller.ts:39:42[39m
+
+[31m  36 const q = (req.query.q as string || "").toLowerCase();[39m
+[31m  37 [39m
+[31m  38 try {[39m
+[31m→ 39   const items = await prisma.inventory.findMany([39m
+[31mThe table `public.InventoryUnitRate` does not exist in the current database.[39m
+<<<<<<< Updated upstream
+2026-06-18 17:16:02:162 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.$executeRawUnsafe()` invocation:[39m
+
+
+[31mRaw query failed. Code: `XX000`. Message: `ERROR: tuple concurrently updated`[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 17:25:05:255 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:44:41:4441 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-18 18:45:57:4557 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-18 18:54:18:5418 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-19 09:45:30:4530 [31merror[39m: [31mError during graceful shutdown: Error: Connection is closed.[39m
+2026-06-22 22:40:22:4022 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientValidationError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique({[39m
+[31m         where: {[39m
+[31m           phone: undefined,[39m
+[31m       ?   id?: String,[39m
+[31m       ?   AND?: CustomerWhereInput | CustomerWhereInput[],[39m
+[31m       ?   OR?: CustomerWhereInput[],[39m
+[31m       ?   NOT?: CustomerWhereInput | CustomerWhereInput[],[39m
+[31m       ?   name?: StringNullableFilter | String | Null,[39m
+[31m       ?   company?: StringNullableFilter | String | Null,[39m
+[31m       ?   stage?: StringFilter | String,[39m
+[31m       ?   createdAt?: DateTimeFilter | DateTime,[39m
+[31m       ?   updatedAt?: DateTimeFilter | DateTime,[39m
+[31m       ?   conversations?: ConversationListRelationFilter,[39m
+[31m       ?   enquiries?: EnquiryListRelationFilter,[39m
+[31m       ?   scheduledJobs?: ScheduledJobListRelationFilter[39m
+[31m         }[39m
+[31m       })[39m
+
+[31mArgument `where` of type CustomerWhereUniqueInput needs at least one of `id` or `phone` arguments. Available options are marked with ?.[39m
+2026-06-22 22:40:22:4022 [31merror[39m: [31mWorker failed automation job: PrismaClientValidationError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique({[39m
+[31m         where: {[39m
+[31m           phone: undefined,[39m
+[31m       ?   id?: String,[39m
+[31m       ?   AND?: CustomerWhereInput | CustomerWhereInput[],[39m
+[31m       ?   OR?: CustomerWhereInput[],[39m
+[31m       ?   NOT?: CustomerWhereInput | CustomerWhereInput[],[39m
+[31m       ?   name?: StringNullableFilter | String | Null,[39m
+[31m       ?   company?: StringNullableFilter | String | Null,[39m
+[31m       ?   stage?: StringFilter | String,[39m
+[31m       ?   createdAt?: DateTimeFilter | DateTime,[39m
+[31m       ?   updatedAt?: DateTimeFilter | DateTime,[39m
+[31m       ?   conversations?: ConversationListRelationFilter,[39m
+[31m       ?   enquiries?: EnquiryListRelationFilter,[39m
+[31m       ?   scheduledJobs?: ScheduledJobListRelationFilter[39m
+[31m         }[39m
+[31m       })[39m
+
+[31mArgument `where` of type CustomerWhereUniqueInput needs at least one of `id` or `phone` arguments. Available options are marked with ?.[39m
+2026-06-22 22:45:27:4527 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:27:4527 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:27:4527 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:28:4528 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:28:4528 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:28:4528 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:28:4528 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:45:28:4528 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:50:57:5057 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:51:07:517 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:52:01:521 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:52:10:5210 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 22:56:49:5649 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:01:15:115 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:02:56:256 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:04:11:411 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:04:14:414 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:04:14:414 [31merror[39m: [31mFailed to classify message: AxiosError: Request failed with status code 429[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:07:07:77 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:11:11:1111 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:13:1113 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:27:1127 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:29:1129 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:32:1132 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:34:1134 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:37:1137 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:40:1140 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:42:1142 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:45:1145 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:47:1147 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:50:1150 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:11:53:1153 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:21:46:2146 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:26:37:2637 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:26:51:2651 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:27:03:273 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:31:57:3157 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:32:01:321 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:32:01:321 [31merror[39m: [31mFailed to classify message: AxiosError: Request failed with status code 429[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:30:3230 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:35:3235 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:43:3243 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:32:45:3245 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:32:45:3245 [31merror[39m: [31mFailed to classify message: AxiosError: Request failed with status code 429[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:32:52:3252 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:40:25:4025 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:40:34:4034 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:40:37:4037 [31merror[39m: [31mDirect Gemini API query failed: Request failed with status code 429[39m
+2026-06-22 23:40:37:4037 [31merror[39m: [31mFailed to classify message: AxiosError: Request failed with status code 429[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:40:41:4041 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-22 23:46:31:4631 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 00:00:14:014 [31merror[39m: [31m[staff_upload] ocrWorker failed job 0d5a7571-3cdb-4683-a4e6-618c0dd23d29: GeminiApiError: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 45.659315199s.[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 00:01:31:131 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:03:07:37 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:09:34:934 [31merror[39m: [31m[webhook] Pipeline failed for job cmqq7s6120003y8onwlgnk5af: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 25.531288024s.[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:09:38:938 [31merror[39m: [31m[webhook] ocrWorker failed job cmqq7rsk30001y8on62897f2s: GeminiApiError: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 21.033591474s.[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:27:13:2713 [31merror[39m: [31m[staff_upload] ocrWorker failed job 8f360a4f-d488-49d4-b7e0-c1d0c0e59ef4: GeminiApiError: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 46.064051078s.[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:27:51:2751 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:31:36:3136 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:32:24:3224 [31merror[39m: [31m[staff_upload] ocrWorker failed job b82901e0-d6e4-48e8-8807-8ac82b4a65dc: GeminiApiError: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 35.617824632s.[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:32:46:3246 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:33:23:3323 [31merror[39m: [31m[staff_upload] ocrWorker failed job 009adc6e-4287-4b4d-b1e0-79adfef21af9: GeminiApiError: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash[39m
+[31mPlease retry in 36.086498103s.[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:39:55:3955 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:40:53:4053 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:41:50:4150 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:42:17:4217 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:43:29:4329 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 11:44:20:4420 [31merror[39m: [31m[staff_upload] Pipeline failed for job 2fde7c3b-056f-4543-b15d-9906b1151937: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite[39m
+[31mPlease retry in 39.544866815s.[39m
+2026-06-23 11:44:57:4457 [31merror[39m: [31m[staff_upload] Pipeline failed for job 2fde7c3b-056f-4543-b15d-9906b1151937: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. [39m
+[31m* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite[39m
+[31mPlease retry in 2.407900094s.[39m
+2026-06-23 11:51:44:5144 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:44:5144 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:45:5145 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:45:5145 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:45:5145 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:45:5145 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:46:5146 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:46:5146 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:47:5147 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:47:5147 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:48:5148 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:48:5148 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:49:5149 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:50:5150 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:50:5150 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:51:5151 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:52:5152 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:53:5153 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:54:5154 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:55:5155 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:56:5156 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:57:5157 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:58:5158 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:51:59:5159 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:01:521 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:02:522 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:03:523 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:05:525 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:06:526 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:08:528 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:09:529 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:11:5211 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:12:5212 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:14:5214 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:16:5216 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:18:5218 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:20:5220 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 11:52:21:5221 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mExact inventory match failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mInventory search failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mExact inventory match failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mInventory search failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mExact inventory match failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 12:02:45:245 [31merror[39m: [31mInventory search failed for "blue ball pen": PrismaClientInitializationError: [39m
+[31mInvalid `prisma.$queryRaw()` invocation:[39m
+
+
+[31mCan't reach database server at `localhost:5434`[39m
+
+[31mPlease make sure your database server is running at `localhost:5434`.[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 14:20:31:2031 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:21:51:2151 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:22:25:2225 [31merror[39m: [31m[staff_upload] ocrWorker failed job 63852c96-8d62-4208-8d1c-8075caf99702: GeminiApiError: getaddrinfo ENOTFOUND generativelanguage.googleapis.com[39m
+2026-06-23 16:22:59:2259 [31merror[39m: [31m[staff_upload] ocrWorker failed job 63852c96-8d62-4208-8d1c-8075caf99702: GeminiApiError: getaddrinfo ENOTFOUND generativelanguage.googleapis.com[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:25:12:2512 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:25:20:2520 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:27:11:2711 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:27:42:2742 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mMock S3 getBuffer failed: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+2026-06-23 16:29:30:2930 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: Error: File not found locally: /Users/aryanlohia/Desktop/untitled folder/Whatsapp-OCR-CRM/backend/uploads/files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png[39m
+=======
+2026-06-25 11:54:49:5449 [31merror[39m: [31mS3 upload failed for key uploads/whatsapp/2026-06-25/733db56f-cfe9-430f-92e2-96d69324590b.jpg: InvalidAccessKeyId: The AWS Access Key Id you provided does not exist in our records.[39m
+2026-06-25 11:54:49:5449 [31merror[39m: [31mWebhook simulation failed: InvalidAccessKeyId: The AWS Access Key Id you provided does not exist in our records.[39m
+2026-06-25 11:54:51:5451 [31merror[39m: [31mS3 upload failed for key uploads/whatsapp/2026-06-25/703fa98a-fcde-4ddb-bc22-5152e62f48e2.jpg: InvalidAccessKeyId: The AWS Access Key Id you provided does not exist in our records.[39m
+2026-06-25 11:54:51:5451 [31merror[39m: [31mWebhook simulation failed: InvalidAccessKeyId: The AWS Access Key Id you provided does not exist in our records.[39m
+2026-06-25 14:57:14:5714 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 14:57:14:5714 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 14:57:15:5715 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:19:5719 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:20:5720 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:20:5720 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:20:5720 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:20:5720 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:20:5720 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:21:5721 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:21:5721 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:21:5721 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:21:5721 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:22:5722 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 14:57:22:5722 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:23:023 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:24:024 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:25:025 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:25:025 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:25:025 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:25:025 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:26:026 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:26:026 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:26:026 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:26:026 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:27:027 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:27:027 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:27:027 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:27:027 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:28:028 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:28:028 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:29:029 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:29:029 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:29:029 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:29:029 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:30:030 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:00:30:030 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:18:418 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 15:04:18:418 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 15:04:18:418 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 15:04:18:418 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 15:04:19:419 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 15:04:19:419 [31merror[39m: [31mRedis connection error: Error: write ECONNABORTED[39m
+2026-06-25 15:04:22:422 [31merror[39m: [31mRedis connection error: Error: read ECONNRESET[39m
+2026-06-25 15:04:23:423 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:23:423 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:23:423 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:23:423 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:23:423 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:24:424 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:24:424 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:24:424 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:24:424 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:24:424 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:25:425 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:25:425 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:25:425 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:26:426 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:26:426 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:26:426 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:27:427 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:27:427 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:27:427 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:28:428 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:28:428 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:29:429 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:29:429 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:30:430 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:30:430 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:31:431 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:31:431 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:32:432 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:32:432 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:33:433 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:33:433 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:34:434 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:34:434 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:35:435 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:35:435 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:36:436 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:36:436 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:37:437 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:38:438 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:39:439 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:39:439 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:40:440 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:40:440 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:41:441 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:42:442 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:43:443 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:43:443 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:44:444 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:45:445 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:46:446 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:46:446 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:47:447 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:48:448 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:49:449 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:50:450 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:51:451 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:51:451 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:52:452 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:53:453 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:54:454 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:55:455 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:56:456 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:57:457 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:58:458 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:04:59:459 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:00:50 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:01:51 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:02:52 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:03:53 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:04:54 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:05:55 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-25 15:05:06:56 [31merror[39m: [31mRedis connection error: AggregateError[39m
+2026-06-29 17:16:47:1647 [31merror[39m: [31mPuppeteer rendering failed, falling back to mock HTML file: Error: Could not find Chrome (ver. 127.0.6533.88). This can occur if either[39m
+[31m 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or[39m
+[31m 2. your cache path is incorrectly configured (which is: C:\Users\rehan\.cache\puppeteer).[39m
+[31mFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.[39m
+2026-06-29 17:24:20:2420 [31merror[39m: [31mPuppeteer rendering failed, falling back to mock HTML file: Error: Could not find Chrome (ver. 127.0.6533.88). This can occur if either[39m
+[31m 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or[39m
+[31m 2. your cache path is incorrectly configured (which is: C:\Users\rehan\.cache\puppeteer).[39m
+[31mFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.[39m
+2026-06-29 17:25:13:2513 [31merror[39m: [31mPuppeteer rendering failed, falling back to mock HTML file: Error: Could not find Chrome (ver. 127.0.6533.88). This can occur if either[39m
+[31m 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or[39m
+[31m 2. your cache path is incorrectly configured (which is: C:\Users\rehan\.cache\puppeteer).[39m
+[31mFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.[39m
+2026-06-29 17:35:35:3535 [31merror[39m: [31mPuppeteer rendering failed, falling back to mock HTML file: Error: Could not find Chrome (ver. 127.0.6533.88). This can occur if either[39m
+[31m 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or[39m
+[31m 2. your cache path is incorrectly configured (which is: C:\Users\rehan\.cache\puppeteer).[39m
+[31mFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.[39m
+2026-06-29 17:39:22:3922 [31merror[39m: [31mS3 getBuffer failed for key uploads/whatsapp/2026-06-29/ad28e53f-9283-44ce-af09-99acb78c5e1c.png: NoSuchKey: The specified key does not exist.[39m
+2026-06-29 17:39:22:3922 [31merror[39m: [31mFailed to serve file uploads/whatsapp/2026-06-29/ad28e53f-9283-44ce-af09-99acb78c5e1c.png: NoSuchKey: The specified key does not exist.[39m
+2026-06-29 17:40:22:4022 [31merror[39m: [31mPuppeteer rendering failed, falling back to mock HTML file: Error: Could not find Chrome (ver. 127.0.6533.88). This can occur if either[39m
+[31m 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or[39m
+[31m 2. your cache path is incorrectly configured (which is: C:\Users\rehan\.cache\puppeteer).[39m
+[31mFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.[39m
+>>>>>>> Stashed changes
+2026-07-01 02:19:50:1950 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mFailed to stage template message for undefined: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:19:50:1950 [31merror[39m: [31mWorker failed automation job: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.customer.findUnique()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/whatsapp.service.ts:76:42[39m
+
+[31m  73 try {[39m
+[31m  74   let resolvedConversationId = conversationId;[39m
+[31m  75 [39m
+[31m→ 76   let customer = await prisma.customer.findUnique([39m
+[31mPANIC: called `Option::unwrap()` on a `None` value[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mS3 getBuffer failed for key quotations/2026/06/cmqc241ve0003utjzje81v3fe.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mFailed to serve file quotations/2026/06/cmqc241ve0003utjzje81v3fe.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mS3 getBuffer failed for key uploads/whatsapp/2026-06-23/cd8834ea-b5e5-4497-989f-2e6f1e355dfc.jpg: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mFailed to serve file uploads/whatsapp/2026-06-23/cd8834ea-b5e5-4497-989f-2e6f1e355dfc.jpg: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:27:39:2739 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mS3 getBuffer failed for key quotations/2026/06/cmqc241ve0003utjzje81v3fe.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mFailed to serve file quotations/2026/06/cmqc241ve0003utjzje81v3fe.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5aaz50003z4z3vtc3q9ia.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mS3 getBuffer failed for key uploads/whatsapp/2026-06-23/cd8834ea-b5e5-4497-989f-2e6f1e355dfc.jpg: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mFailed to serve file uploads/whatsapp/2026-06-23/cd8834ea-b5e5-4497-989f-2e6f1e355dfc.jpg: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqc0wsq10006pbi9tt3ovlzr.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mS3 getBuffer failed for key files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 02:33:47:3347 [31merror[39m: [31mFailed to serve file files/quotations/2026/06/cmqe5971v0003lzshnupq7ud2.png: NoSuchKey: The specified key does not exist.[39m
+2026-07-01 03:10:12:1012 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.upsert()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:12:33[39m
+
+[31m   9 [39m
+[31m  10 export async function ensureAutomationRules() {[39m
+[31m  11   for (const def of DEFAULT_AUTOMATION_RULES) {[39m
+[31m→ 12     await prisma.automationRule.upsert([39m
+[31mThe column `AutomationRule.lastExecutedAt` does not exist in the current database.[39m
+2026-07-01 03:10:40:1040 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.upsert()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:12:33[39m
+
+[31m   9 [39m
+[31m  10 export async function ensureAutomationRules() {[39m
+[31m  11   for (const def of DEFAULT_AUTOMATION_RULES) {[39m
+[31m→ 12     await prisma.automationRule.upsert([39m
+[31mThe column `AutomationRule.lastExecutedAt` does not exist in the current database.[39m
+2026-07-01 03:14:25:1425 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.upsert()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:12:33[39m
+
+[31m   9 [39m
+[31m  10 export async function ensureAutomationRules() {[39m
+[31m  11   for (const def of DEFAULT_AUTOMATION_RULES) {[39m
+[31m→ 12     await prisma.automationRule.upsert([39m
+[31mThe column `AutomationRule.lastExecutedAt` does not exist in the current database.[39m
+2026-07-01 03:14:41:1441 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.upsert()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:12:33[39m
+
+[31m   9 [39m
+[31m  10 export async function ensureAutomationRules() {[39m
+[31m  11   for (const def of DEFAULT_AUTOMATION_RULES) {[39m
+[31m→ 12     await prisma.automationRule.upsert([39m
+[31mUnique constraint failed on the fields: (`triggerType`)[39m
+2026-07-01 03:31:17:3117 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:31:17:3117 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:31:38:3138 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:31:38:3138 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:31:41:3141 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:31:41:3141 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:32:06:326 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 03:32:06:326 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 14:30:34:3034 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m
+2026-07-01 14:30:34:3034 [31merror[39m: [31mFailed to start server: PrismaClientKnownRequestError: [39m
+[31mInvalid `prisma.automationRule.deleteMany()` invocation in[39m
+[31m/Users/aryanlohia/Desktop/Whatsapp-OCR-CRM/backend/src/services/automation-rules.bootstrap.ts:30:52[39m
+
+[31m  27 }[39m
+[31m  28 [39m
+[31m  29 async function migrateLegacyRules() {[39m
+[31m→ 30   const removedStage = await prisma.automationRule.deleteMany([39m
+[31mForeign key constraint violated: `ScheduledJob_ruleId_fkey (index)`[39m

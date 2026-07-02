@@ -1,0 +1,4857 @@
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-17T12:13:23.074Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 42510 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 36.078173725s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"36s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:23.986Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+ream a4 paper
+blue pen
+pin box
+
+Output:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 35.807737919s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:24.221Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+ream a4 paper
+blue pen
+pin box
+
+Return JSON array only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 35.577533601s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:24.478Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match.
+
+Rules:
+- Prefer exact or closest product matches
+- Handle spelling and OCR mistakes
+- Return ONLY a JSON object with the chosen inventory id
+- No markdown, no explanation
+
+Format: {"id":"<inventory-id>"}
+USER PROMPT:
+Customer text:
+ream a4 paper
+
+Candidates:
+1 A4 Copier Paper (Ream) [id:cmqi172mq0001c86b6f9itfk7]
+2 Legal Size Paper (Ream) [id:cmqi172n10004c86bqcj5futf]
+3 File Folder A4 (Pcs) [id:cmqi172nz000mc86bo3ynz4tj]
+
+Return JSON object only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 35.322426328s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:24.746Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match.
+
+Rules:
+- Prefer exact or closest product matches
+- Handle spelling and OCR mistakes
+- Return ONLY a JSON object with the chosen inventory id
+- No markdown, no explanation
+
+Format: {"id":"<inventory-id>"}
+USER PROMPT:
+Customer text:
+pin box
+
+Candidates:
+1 Stapler Pins No. 10 (Box) [id:cmqi172nu000jc86bxxuq4uiw]
+2 File Folder A4 (Pcs) [id:cmqi172nz000mc86bo3ynz4tj]
+
+Return JSON object only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 35.05421278s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:24.996Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 34.829835428s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"34s"}]}}
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-17T12:13:35.991Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 42510 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 23.466160729s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"23s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:36.597Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+ream a4 paper
+blue pen
+pin box
+
+Output:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 23.183358142s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"23s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:36.849Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+ream a4 paper
+blue pen
+pin box
+
+Return JSON array only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 22.941230109s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"22s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:13:37.122Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 22.514430875s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"22s"}]}}
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-17T12:15:22.235Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 42510 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 37.050580136s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"37s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:15:23.036Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+ream a4 paper
+blue pen
+pin box
+
+Output:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 36.760823823s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"36s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:15:23.271Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+ream a4 paper
+blue pen
+pin box
+
+Return JSON array only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 36.38080153s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"36s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-17T12:15:23.691Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 36.108591621s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"36s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:23.245Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "A4 Copier Paper"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:23.247Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Legal Size Paper"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:23.286Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Blue Ball Pen"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:23.294Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Black Ball Pen"
+Aliases:
+----------------------------------------
+RAW RESPONSE:
+["a4 paper", "a4 sheet", "copier paper", "xerox paper", "a4 size paper"]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:25.054Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Whiteboard Marker"
+Aliases:
+----------------------------------------
+RAW RESPONSE:
+["blue pen", "ball pen blue", "blue ballpen", "pen blue"]
+============================================================
+RAW RESPONSE:
+["legal paper", "foolscap paper", "F/S paper", "legal size sheet", "legal document paper"]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:26.435Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Stapler No. 10"
+Aliases:
+----------------------------------------
+RAW RESPONSE:
+["black pen", "ball pen black", "kala pen", "black bp"]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:26.776Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Stapler Pins No. 10"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:26.846Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "File Folder A4"
+Aliases:
+----------------------------------------
+RAW RESPONSE:
+["marker", "board marker", "whiteboard pen", "marker pen"]
+============================================================
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 32.982290107s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"32s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:27.205Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Sticky Notes 3x3"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:27.334Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Notebook 200 Pages"
+Aliases:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 32.518236454s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"32s"}]}}
+============================================================
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 32.367650263s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"32s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:27.816Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Highlighter Yellow"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:27.881Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Glue Stick"
+Aliases:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 31.895106722s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"31s"}]}}
+============================================================
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 31.803698027s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"31s"}]}}
+============================================================
+RAW RESPONSE:
+["stapler #10", "small stapler", "mini stapler", "stapler 10", "no 10 stapler"]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:28.370Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Tata Salt 1kg"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:28.482Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Fortune Mustard Oil 5L"
+Aliases:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:15:28.483Z ===
+SYSTEM PROMPT:
+You are an inventory assistant.
+Given a product name, generate a list of 3-5 alternative aliases, abbreviations, common misspellings, or shorter/longer names that Indian retail or wholesale customers might write on order sheets or in WhatsApp chats.
+Example:
+Product: "A4 Copier Paper"
+Aliases: ["a4 paper", "a4 sheet", "copier paper", "xerox paper"]
+
+Product: "Stapler Pins No. 10"
+Aliases: ["stapler pins", "pins #10", "10 number pin", "stapler pin box"]
+
+Output ONLY a valid JSON string array of aliases. No explanation, no markdown.
+USER PROMPT:
+Product: "Surf Excel Easy Wash"
+Aliases:
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 31.356533398s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"31s"}]}}
+============================================================
+RAW RESPONSE:
+["file folder", "A4 folder", "document folder", "file cover", "folder A4"]
+============================================================
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 31.255222646s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-2.5-flash","location":"global"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"31s"}]}}
+============================================================
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash\nPlease retry in 31.257104309s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"5"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"31s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:21:00.564Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+havell wire 2 5mm 2 bandal alag alag colear
+havell 1 5 mm 2 bandal
+alag alag coler
+0 75 mm 1 bandal
+pvc pipe 10 pe 20 mm
+pvc t 24 pe
+
+Output:
+----------------------------------------
+RAW RESPONSE:
+Havell wire 2.5 mm 2 bundle separate colour
+Havell wire 1.5 mm 2 bundle separate colour
+Havell wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:21:08.073Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+Havell wire 2.5 mm 2 bundle separate colour
+Havell wire 1.5 mm 2 bundle separate colour
+Havell wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+[
+  {
+    "name": "havell wire 2.5 mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havell wire 1.5 mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havell wire 0.75 mm",
+    "qty": 1,
+    "unit": "bundle",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20 mm",
+    "qty": 10,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "pvc t",
+    "qty": 24,
+    "unit": "pcs",
+    "attributes": null
+  }
+]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:21:11.937Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+( 1)Havells wire 2.5mm   2 bandal Alag Alag colear
+
+(2) Havells 1.5 mm 2 bandal
+      Alag alag coler
+
+(3) 1 mm 1 bandal
+
+(4) 0.75 mm 1 bandal
+
+(5) Pvc pipe 10 pes 20 mm
+(6)Pvc.  T.  24 pes 
+
+(7) Black tape 02 pes
+
+Location 
+chotta faphri Radha Krishna Mandir 
+Mob no 7291954087
+
+9547610499
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"isQuotationRequest": true, "confidence": 0.98}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:27:00.325Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+havell wire 2 5mm 2 bandal alag alag colear
+havell 1 5 mm 2 bandal
+alag alag coler
+1 mm 1 bandal
+0 75 mm 1 bandal
+pvc pipe 10 pe 20 mm
+pvc t 24 pe
+black tape 02 pe
+
+Output:
+----------------------------------------
+RAW RESPONSE:
+Havell wire 2.5 mm 2 bundle separate colour
+Havell wire 1.5 mm 2 bundle separate colour
+Havell wire 1 mm 1 bundle
+Havell wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+Black tape 2 pcs
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:27:05.543Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+Havell wire 2.5 mm 2 bundle separate colour
+Havell wire 1.5 mm 2 bundle separate colour
+Havell wire 1 mm 1 bundle
+Havell wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+Black tape 2 pcs
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+[
+  {
+    "name": "havell wire 2.5 mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havell wire 1.5 mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havell wire 1 mm",
+    "qty": 1,
+    "unit": "bundle",
+    "attributes": null
+  },
+  {
+    "name": "havell wire 0.75 mm",
+    "qty": 1,
+    "unit": "bundle",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20 mm",
+    "qty": 10,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "pvc t",
+    "qty": 24,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "black tape",
+    "qty": 2,
+    "unit": "pcs",
+    "attributes": null
+  }
+]
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:27:14.585Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+( 1)Havells wire 2.5mm   2 bandal Alag Alag colear
+
+(2) Havells 1.5 mm 2 bandal
+      Alag alag coler
+
+(3) 1 mm 1 bandal
+
+(4) 0.75 mm 1 bandal
+
+(5) Pvc pipe 10 pes 20 mm
+(6)Pvc.  T.  24 pes 
+
+(7) Black tape 02 pes
+
+Location 
+chotta faphri Radha Krishna Mandir 
+Mob no 7291954087
+
+9547610499
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"isQuotationRequest": true, "confidence": 0.98}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:31:15.742Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+Havells wire 2.5mm   2 bandal Alag Alag colear
+Havells 1.5 mm 2 bandal
+Alag alag coler
+havells 1 mm 1 bandal
+havells 0.75 mm 1 bandal
+Pvc pipe 10 pes 20 mm
+Pvc.  T.  24 pes
+Black tape 02 pes
+
+Output:
+----------------------------------------
+RAW RESPONSE:
+Havells wire 2.5mm 2 bundle separate colour
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 1 mm 1 bundle
+Havells wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+Black tape 2 pcs
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:31:20.654Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+Havells wire 2.5mm 2 bundle separate colour
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 1 mm 1 bundle
+Havells wire 0.75 mm 1 bundle
+PVC pipe 10 pcs 20 mm
+PVC T 24 pcs
+Black tape 2 pcs
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+[
+  {
+    "name": "havells wire 2.5mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havells wire 1.5 mm",
+    "qty": 2,
+    "unit": "bundle",
+    "attributes": "separate colour"
+  },
+  {
+    "name": "havells wire 1 mm",
+    "qty": 1,
+    "unit": "bundle",
+    "attributes": null
+  },
+  {
+    "name": "havells wire 0.75 mm",
+    "qty": 1,
+    "unit": "bundle",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20 mm",
+    "qty": 10,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "pvc t",
+    "qty": 24,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "black tape",
+    "qty": 2,
+    "unit": "pcs",
+    "attributes": null
+  }
+]
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-22T17:33:00.650Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+RAW RESPONSE:
+Gold medal
+wire (H)
+98000
+74536
+COMBINE BOX :- 5 NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gang box - 1way. 1 25/-
+Gang box 3way - 1 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom holder - 3 30/-
+Angle- holder 3 30/-
+Bit - 3S NO 42/-
+KISSK Pin - 8 20 put 20/-
+MCB Gang box - 2A 2NO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc Box - 8X6 = 1 70/-
+Black Tap - 6M 10/-
+PVC -
+PVC Gutka - 1 put 40/-
+(Havell) 2.5 - 2 coil 4602/-
+1.5 Coil - 2 2900/-
+.75 Sqr M.M - 1 coil 1456/-
+800/-
+120/-
+25/-
+25/-
+1160/-
+169/-
+84/-
+90/-
+90/-
+1470/-
+160/-
+100/-
+290/-
+580/-
+70/-
+60/-
+-
+40/-
+9204/-
+5800/-
+1456/-
+20/6/26
+₹ 22,008/-
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:33:08.930Z ===
+SYSTEM PROMPT:
+
+You are correcting and cleaning up raw OCR text from handwritten Indian wholesale order slips and WhatsApp enquiry messages.
+The input text may contain handwritten transcription errors, Hinglish (Hindi-English words written in English script), shorthand, abbreviations, missing punctuation, and product details spread over multiple lines.
+
+Rules:
+1. Reconstruct the customer's intended order line-by-line. Merge description/continuation lines belonging to the same product (e.g., if a line contains only descriptors like "alag alag coler" or "blue ink", append it to the product line above).
+2. Fix common spelling errors, shorthand, and Hinglish translations typical of Indian markets:
+   - "bandal" or "bndl" -> "bundle"
+   - "colear" or "coler" -> "colour"
+   - "pes", "pe", or "pcs" -> "pcs"
+   - "pkt" or "packet" -> "packet"
+   - "box" or "boxes" -> "box"
+   - "rm" or "ream" -> "ream"
+3. Preserve technical specifications and dimensions exactly inside the product name (e.g., "2.5 mm", "1.5 mm", "0.75 mm", "20 mm", "A4", "A5").
+4. Honor repeat/ditto marks (e.g., " // // " or " do " or " " " means repeat the product name from the line above).
+5. Clean out all non-product details: Remove addresses, location names, phone/mobile numbers (e.g., "mob no", "phone", "location"), GST numbers, invoice numbers, dates, signatures, shop headers, and totals.
+6. Preserve exactly one product line per output line.
+
+Example:
+Input:
+(1) Havells 1 5 mm 2 bandal
+    alag alag coler
+(2) " " " 2.5 mm 1 bandal
+Location: Delhi
+Mob: 9876543210
+
+Output:
+Havells wire 1.5 mm 2 bundle separate colour
+Havells wire 2.5 mm 1 bundle
+
+Return plain cleaned text only. No JSON, no explanations, no markdown code fences.
+
+USER PROMPT:
+Input:
+
+Gold medal
+wire (H)
+COMBINE BOX :- 5 NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gang box - 1way. 1 25/-
+Gang box 3way - 1 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+PIN Socket - 6A - 3 28/-
+Bottom holder - 3 30/-
+Angle- holder 3 30/-
+Bit - 3S NO 42/-
+KISSK Pin - 8 20 put 20/-
+MCB Gang box - 2A 2NO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc Box - 8X6 = 1 70/-
+Black Tap - 6M 10/-
+PVC -
+PVC Gutka - 1 put 40/-
+(Havell) 2.5 - 2 coil 4602/-
+5 Coil - 2 2900/-
+.75 Sqr M.M - 1 coil 1456/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-
+/-6/26
+₹ 22,008/-
+
+Output:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:33:41.155Z ===
+SYSTEM PROMPT:
+
+Convert the cleaned Indian market product order text into a JSON array of structured items.
+
+For each product item, return:
+[
+  {
+    "name": "product name including size/dimensions in lowercase",
+    "qty": 0,
+    "unit": "bundle, pcs, box, kg, packet, metre, litre, roll, ream etc. (null if unknown)",
+    "attributes": "extra description/features like colour, brand notes, or separate colour"
+  }
+]
+
+Rules:
+- Keep size and specifications (e.g. 'A4', '2.5 mm') inside the product name.
+- Quantity must be numeric. If quantity is missing or non-numeric (e.g. 'two'), parse it as a number (default 1).
+- Standardize units to singular forms (e.g. 'pcs', 'bundle', 'box', 'ream').
+- Place attributes like colors, Hinglish descriptors (e.g. 'alag alag' translated to 'separate/different'), or style notes in "attributes".
+- Output valid JSON only. No explanations, no markdown fences.
+
+USER PROMPT:
+Cleaned order:
+
+Gold medal wire (H)
+COMBINE BOX 5 NO
+GANG BOX 4way 4 NO
+Gang box 1way 1
+Gang box 3way 1
+Warm light 2 6watt 4
+AFTAK Switch 6A 13
+PIN Socket 6A 3
+Bottom holder 3
+Angle holder 3
+Bit 3S NO
+KISSK Pin 8 20 put
+MCB Gang box 2A 2 NO
+MCB 32AMP 2
+Sub metre 1
+Pvc Box 8X6 1
+Black Tap 6 Meter
+PVC Gutka 1 put
+Havell wire 2.5 mm 2 coil
+Havell wire 5 mm 2 coil
+Havell wire 0.75 Sq mm 1 coil
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "gold medal wire (h)",
+    "qty": 1,
+    "unit": null,
+    "attributes": null
+  },
+  {
+    "name": "combine box",
+    "qty": 5,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "gang box 4way",
+    "qty": 4,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "gang box 1way",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "gang box 3way",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "warm light 2 6watt",
+    "qty": 4,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "aftak switch 6a",
+    "qty": 13,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "pin socket 6a",
+    "qty": 3,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "bottom holder",
+    "qty": 3,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "angle holder",
+    "qty": 3,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "bit 3s",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "kissk pin 8",
+    "qty": 20,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "mcb gang box 2a",
+    "qty": 2,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "mcb 32amp",
+    "qty": 2,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "sub metre",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "pvc box 8x6",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "black tap",
+    "qty": 6,
+    "unit": "metre",
+    "attributes": null
+  },
+  {
+    "name": "pvc gutka",
+    "qty": 1,
+    "unit": "pcs",
+    "attributes": null
+  },
+  {
+    "name": "havell wire 2.5 mm",
+    "qty": 2,
+    "unit": "coil",
+    "attributes": null
+  },
+  {
+    "name": "havell wire 5 mm",
+    "qty": 2,
+    "unit": "coil",
+    "attributes": null
+  },
+  {
+    "name": "havell wire 0.75 sq mm",
+    "qty": 1,
+    "unit": "coil",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:34:00.930Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+havell wire 2.5 mm
+
+Candidates:
+1 havell wire 2.5 mm (bundle) [id:cmqphuwf30000kddavk3tw7f7]
+2 havell wire 1.5 mm (bundle) [id:cmqphuwfd0001kdda88ywuqxa]
+3 havell wire 1 mm (bundle) [id:cmqphuwfg0002kddarrgnfx83]
+4 havell wire 0.75 mm (bundle) [id:cmqphuwfi0003kddamkeo54gg]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqphuwf30000kddavk3tw7f7"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:34:02.428Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+havell wire 5 mm
+
+Candidates:
+1 havell wire 1.5 mm (bundle) [id:cmqphuwfd0001kdda88ywuqxa]
+2 havell wire 2.5 mm (bundle) [id:cmqphuwf30000kddavk3tw7f7]
+3 havell wire 1 mm (bundle) [id:cmqphuwfg0002kddarrgnfx83]
+4 havell wire 0.75 mm (bundle) [id:cmqphuwfi0003kddamkeo54gg]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:34:08.967Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+havell wire 0.75 sq mm
+
+Candidates:
+1 havell wire 0.75 mm (bundle) [id:cmqphuwfi0003kddamkeo54gg]
+2 havell wire 1.5 mm (bundle) [id:cmqphuwfd0001kdda88ywuqxa]
+3 havell wire 2.5 mm (bundle) [id:cmqphuwf30000kddavk3tw7f7]
+4 havell wire 1 mm (bundle) [id:cmqphuwfg0002kddarrgnfx83]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:34:12.027Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Gold medal
+wire (H)
+98000
+74536
+COMBINE BOX :- 5 NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gang box - 1way. 1 25/-
+Gang box 3way - 1 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom holder - 3 30/-
+Angle- holder 3 30/-
+Bit - 3S NO 42/-
+KISSK Pin - 8 20 put 20/-
+MCB Gang box - 2A 2NO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc Box - 8X6 = 1 70/-
+Black Tap - 6M 10/-
+PVC -
+PVC Gutka - 1 put 40/-
+(Havell) 2.5 - 2 coil 4602/-
+1.5 Coil - 2 2900/-
+.75 Sqr M.M - 1 coil 1456/-
+800/-
+120/-
+25/-
+25/-
+1160/-
+169/-
+84/-
+90/-
+90/-
+1470/-
+160/-
+100/-
+290/-
+580/-
+70/-
+60/-
+-
+40/-
+9204/-
+5800/-
+1456/-
+20/6/26
+₹ 22,008/-
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:07.900Z ===
+SYSTEM PROMPT:
+
+You are correcting raw OCR text from Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. DELETE them entirely.
+
+Rules:
+1. Output ONE product per line in format: Product Name | qty | unit | rate
+   Example input: "COMBINE BOX :- 5 NO 160/-"
+   Example output: "combine box 5 pcs 160"
+
+2. Parse Indian electrical shorthand:
+   - "NO" / "NOS" -> pcs
+   - "put" -> packet
+   - "coil" -> coil (for wire)
+   - "6M" on tape -> 6 metre
+   - "4way", "3way", "1way" -> keep in product name (gang box 4way)
+   - "6A", "32AMP", "2.5", "1.5", ".75 Sqr M.M" -> keep specs in name
+   - "AFTAK" -> anchor switch (aftak switch)
+   - "Gutka" -> pvc conduit/gutka
+   - "Tap" / "Tape" -> tape
+   - Strip "/-" price suffix into the rate field at end of line
+
+3. Merge split headers: "Gold medal" + "wire (H)" -> "gold medal wire (h)"
+
+4. Wire lines: "(Havell) 2.5 - 2 coil 4602/-" -> "havells wire 2.5 mm 2 coil 4602"
+   "1.5 Coil - 2 2900/-" -> "havells wire 1.5 mm 2 coil 2900"
+   ".75 Sqr M.M - 1 coil 1456/-" -> "havells wire 0.75 sq mm 1 coil 1456"
+
+5. REMOVE completely: grand totals (₹ 22,008/-), dates (20/6/26), standalone amount columns, shop headers with only numbers (98000, 74536), empty lines, lone "PVC -"
+
+6. Each output line must contain a product name AND quantity. Do not shift lines — each product keeps its own text.
+
+Return plain text only. One product per line. No JSON. No markdown.
+
+USER PROMPT:
+Input:
+
+Gold medal wire (H)
+COMBINE BOX 5 NO
+GANG BOX - 4way. 4NO
+Gang box - 1way. 1
+Gang box 3way - 1
+Warm light - 4 2 6watt
+AFTAK Switch - 6A 13
+PIN Socket - 6A - 3
+Bottom holder - 3
+Angle- holder 3
+Bit - 3S NO
+KISSK Pin - 8 20 put
+MCB Gang box - 2A 2NO
+MCB - 32AMP 2
+Sub metre - 1
+Pvc Box - 8X6 1
+Black Tap - 6M
+PVC Gutka - 1 put
+(Havell) 2.5 - 2 coil
+5 Coil - 2
+.75 Sqr M.M - 1 coil
+coil .sqr M.m - 1 Coil6/26
+
+Output:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:11.212Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+combine box
+
+Candidates:
+1 combine box (pcs) [id:cmqpi0k1p0017vp71sxgruw11]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:13.765Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+gang box - . 1
+
+Candidates:
+1 gang box 3way (pcs) [id:cmqpi0k26001avp71a6rcx5b1]
+2 gang box 1way (pcs) [id:cmqpi0k1z0019vp71gy9rqnzp]
+3 gang box 4way (pcs) [id:cmqpi0k1v0018vp71r1xqva1e]
+4 mcb gang box 2a (pcs) [id:cmqpi0k3c001ivp71yszdaatm]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k26001avp71a6rcx5b1"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:24.469Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+warm light - 2 6watt
+
+Candidates:
+1 warm light 2 6watt (pcs) [id:cmqpi0k2c001bvp71kd6eszhz]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:27.083Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+aftak switch - 6a
+
+Candidates:
+1 aftak switch 6a (pcs) [id:cmqpi0k2h001cvp71sfq8kl0d]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:29.691Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pin socket - 6a -
+
+Candidates:
+1 pin socket 6a (pcs) [id:cmqpi0k2n001dvp71dg8iin7a]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:32.339Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+bottom holder -
+
+Candidates:
+1 bottom holder (pcs) [id:cmqpi0k2t001evp715t43x0m2]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:34.952Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+bit - 3s no
+
+Candidates:
+1 bit 3s (pcs) [id:cmqpi0k32001gvp71z0bat2oa]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:37.551Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+kissk pin - 20 put
+
+Candidates:
+1 kissk pin 8 (pcs) [id:cmqpi0k37001hvp71f7foybm6]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:40.178Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+mcb gang box - 2a
+
+Candidates:
+1 mcb gang box 2a (pcs) [id:cmqpi0k3c001ivp71yszdaatm]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:42.798Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+mcb - 2
+
+Candidates:
+1 mcb 32amp (pcs) [id:cmqpi0k3g001jvp71146sdkiw]
+2 mcb gang box 2a (pcs) [id:cmqpi0k3c001ivp71yszdaatm]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:45.417Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+sub metre -
+
+Candidates:
+1 sub metre (pcs) [id:cmqpi0k3l001kvp715jm25io8]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:47.961Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc box - 8x6
+
+Candidates:
+1 pvc box 8x6 (pcs) [id:cmqpi0k3s001lvp71w8rgnmts]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T17:41:50.587Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc gutka -
+
+Candidates:
+1 pvc gutka (pcs) [id:cmqpi0k40001nvp71e95zptam]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-22T18:01:53.312Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 5.627186168s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"5s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:01:54.423Z ===
+SYSTEM PROMPT:
+
+You are correcting raw OCR text from Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. DELETE them entirely.
+
+Rules:
+1. Output ONE product per line in format: Product Name | qty | unit | rate
+   Example input: "COMBINE BOX :- 5 NO 160/-"
+   Example output: "combine box 5 pcs 160"
+
+2. Parse Indian electrical shorthand:
+   - "NO" / "NOS" -> pcs
+   - "put" -> packet
+   - "coil" -> coil (for wire)
+   - "6M" on tape -> 6 metre
+   - "4way", "3way", "1way" -> keep in product name (gang box 4way)
+   - "6A", "32AMP", "2.5", "1.5", ".75 Sqr M.M" -> keep specs in name
+   - "AFTAK" -> anchor switch (aftak switch)
+   - "Gutka" -> pvc conduit/gutka
+   - "Tap" / "Tape" -> tape
+   - Strip "/-" price suffix into the rate field at end of line
+
+3. Merge split headers: "Gold medal" + "wire (H)" -> "gold medal wire (h)"
+
+4. Wire lines: "(Havell) 2.5 - 2 coil 4602/-" -> "havells wire 2.5 mm 2 coil 4602"
+   "1.5 Coil - 2 2900/-" -> "havells wire 1.5 mm 2 coil 2900"
+   ".75 Sqr M.M - 1 coil 1456/-" -> "havells wire 0.75 sq mm 1 coil 1456"
+
+5. REMOVE completely: grand totals (₹ 22,008/-), dates (20/6/26), standalone amount columns, shop headers with only numbers (98000, 74536), empty lines, lone "PVC -"
+
+6. Each output line must contain a product name AND quantity. Do not shift lines — each product keeps its own text.
+
+Return plain text only. One product per line. No JSON. No markdown.
+
+USER PROMPT:
+Input:
+
+Need 5 ream A4 paper
+10 blue pen
+1 pin box
+
+Output:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:01:58.636Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-22T18:02:40.426Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 19.072879649s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"19s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:02:40.964Z ===
+SYSTEM PROMPT:
+
+You are correcting raw OCR text from Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. DELETE them entirely.
+
+Rules:
+1. Output ONE product per line in format: Product Name | qty | unit | rate
+   Example input: "COMBINE BOX :- 5 NO 160/-"
+   Example output: "combine box 5 pcs 160"
+
+2. Parse Indian electrical shorthand:
+   - "NO" / "NOS" -> pcs
+   - "put" -> packet
+   - "coil" -> coil (for wire)
+   - "6M" on tape -> 6 metre
+   - "4way", "3way", "1way" -> keep in product name (gang box 4way)
+   - "6A", "32AMP", "2.5", "1.5", ".75 Sqr M.M" -> keep specs in name
+   - "AFTAK" -> anchor switch (aftak switch)
+   - "Gutka" -> pvc conduit/gutka
+   - "Tap" / "Tape" -> tape
+   - Strip "/-" price suffix into the rate field at end of line
+
+3. Merge split headers: "Gold medal" + "wire (H)" -> "gold medal wire (h)"
+
+4. Wire lines: "(Havell) 2.5 - 2 coil 4602/-" -> "havells wire 2.5 mm 2 coil 4602"
+   "1.5 Coil - 2 2900/-" -> "havells wire 1.5 mm 2 coil 2900"
+   ".75 Sqr M.M - 1 coil 1456/-" -> "havells wire 0.75 sq mm 1 coil 1456"
+
+5. REMOVE completely: grand totals (₹ 22,008/-), dates (20/6/26), standalone amount columns, shop headers with only numbers (98000, 74536), empty lines, lone "PVC -"
+
+6. Each output line must contain a product name AND quantity. Do not shift lines — each product keeps its own text.
+
+Return plain text only. One product per line. No JSON. No markdown.
+
+USER PROMPT:
+Input:
+
+Need 5 ream A4 paper
+10 blue pen
+1 pin box
+
+Output:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:02:43.430Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-22T18:10:31.191Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+ERROR: Request failed with status code 429
+RESPONSE DATA: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 27.995367908s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"20"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"27s"}]}}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:10:32.061Z ===
+SYSTEM PROMPT:
+
+You are correcting raw OCR text from Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. DELETE them entirely.
+
+Rules:
+1. Output ONE product per line in format: Product Name | qty | unit | rate
+   Example input: "COMBINE BOX :- 5 NO 160/-"
+   Example output: "combine box 5 pcs 160"
+
+2. Parse Indian electrical shorthand:
+   - "NO" / "NOS" -> pcs
+   - "put" -> packet
+   - "coil" -> coil (for wire)
+   - "6M" on tape -> 6 metre
+   - "4way", "3way", "1way" -> keep in product name (gang box 4way)
+   - "6A", "32AMP", "2.5", "1.5", ".75 Sqr M.M" -> keep specs in name
+   - "AFTAK" -> anchor switch (aftak switch)
+   - "Gutka" -> pvc conduit/gutka
+   - "Tap" / "Tape" -> tape
+   - Strip "/-" price suffix into the rate field at end of line
+
+3. Merge split headers: "Gold medal" + "wire (H)" -> "gold medal wire (h)"
+
+4. Wire lines: "(Havell) 2.5 - 2 coil 4602/-" -> "havells wire 2.5 mm 2 coil 4602"
+   "1.5 Coil - 2 2900/-" -> "havells wire 1.5 mm 2 coil 2900"
+   ".75 Sqr M.M - 1 coil 1456/-" -> "havells wire 0.75 sq mm 1 coil 1456"
+
+5. REMOVE completely: grand totals (₹ 22,008/-), dates (20/6/26), standalone amount columns, shop headers with only numbers (98000, 74536), empty lines, lone "PVC -"
+
+6. Each output line must contain a product name AND quantity. Do not shift lines — each product keeps its own text.
+
+Return plain text only. One product per line. No JSON. No markdown.
+
+USER PROMPT:
+Input:
+
+Need 5 ream A4 paper
+10 blue pen
+1 pin box
+
+Output:
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-22T18:10:34.733Z ===
+SYSTEM PROMPT:
+You are a text classification assistant.
+Determine if the message is a product enquiry: an order list, quotation request, price inquiry, or handwritten slip with products/items, quantities, and/or rates.
+This includes stationery, textiles, clothing, fabric, tailoring materials, and any merchandise order — NOT general chat.
+Answer with a JSON object only. No markdown, no fences.
+Format: {"isQuotationRequest": true, "confidence": 0.95}
+USER PROMPT:
+Message:
+
+Need
+5 ream A4 paper
+10 blue pen
+1 pin box
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-22T18:29:40.775Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 45.659315199s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T05:38:45.508Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T05:39:02.943Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Need 5 ream A4 paper, 10 blue pens, 1 stapler
+
+Return JSON array only.
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 25.531288024s.
+============================================================
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 21.033591474s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T05:56:40.259Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 46.064051078s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:01:41.386Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 35.617824632s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:02:51.345Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 36.086498103s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:08:04.341Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+RAW RESPONSE:
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+No.
+M/s
+Address
+Date:
+7291954087.
+9549610499.
+15/6/26
+Goldmedal
+SWITCHES & SYSTEMS
+S. No.
+Particulars
+Qty
+Rate
+Amount
+2cl Huid 1.5mm
+2899/-
+5798/-
+100
+1.0
+1978/-
+1978/-
+100
+0.75
+1456/-
+1456/-
+10k pve pipe 20mm
+45/-
+450/-
+24k pve tee
+71-
+168/-
+2k pve tape
+101-
+201-
+9870/-
+Ckd. by
+Pkd. by
+Signature
+SEE
+YOUR WORLD
+IN A BETTER LIGHT
+www.goldmedalindia.com
+8250
+10710
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:08:45.537Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:08:56.186Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc pipe 20mm
+
+Candidates:
+1 pvc pipe 20 mm (pcs) [id:cmqphuwfm0004kddafqmlipzb]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:09:38.972Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:09:41.268Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc pipe 20mm
+
+Candidates:
+1 pvc pipe 20 mm (pcs) [id:cmqphuwfm0004kddafqmlipzb]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqphuwfm0004kddafqmlipzb"}
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:10:01.823Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+RAW RESPONSE:
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+No.
+M/s
+Address
+Date:
+7291954087.
+9549610499.
+15/6/26
+Goldmedal
+SWITCHES & SYSTEMS
+S. No.
+Particulars
+Qty
+Rate
+Amount
+2cl Huid 1.5mm
+2899/-
+5798/-
+100
+1.0
+1978/-
+1978/-
+100
+0.75
+1456/-
+1456/-
+10k pve pipe 20mm
+45/-
+450/-
+24k pve tee
+71-
+168/-
+2k pve tape
+101-
+201-
+9870/-
+Ckd. by
+Pkd. by
+Signature
+SEE
+YOUR WORLD
+IN A BETTER LIGHT
+www.goldmedalindia.com
+8250
+10710
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:10:07.152Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:11:06.066Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+RAW RESPONSE:
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+No.
+M/s
+Address
+Date:
+7291954087.
+9549610499.
+15/6/26
+Goldmedal
+SWITCHES & SYSTEMS
+S. No.
+Particulars
+Qty
+Rate
+Amount
+2cl Huid 1.5mm
+2899/-
+5798/-
+100
+1.0
+1978/-
+1978/-
+100
+0.75
+1456/-
+1456/-
+10k pve pipe 20mm
+45/-
+450/-
+24k pve tee
+71-
+168/-
+2k pve tape
+101-
+201-
+9870/-
+Ckd. by
+Pkd. by
+Signature
+SEE
+YOUR WORLD
+IN A BETTER LIGHT
+www.goldmedalindia.com
+8250
+10710
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:11:13.696Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:11:53.965Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+RAW RESPONSE:
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+No.
+M/s
+Address
+Date:
+7291954087.
+9549610499.
+15/6/26
+Goldmedal
+SWITCHES & SYSTEMS
+S. No.
+Particulars
+Qty
+Rate
+Amount
+2cl Huid 1.5mm
+2899/-
+5798/-
+100
+1.0
+1978/-
+1978/-
+100
+0.75
+1456/-
+1456/-
+10k pve pipe 20mm
+45/-
+450/-
+24k pve tee
+71-
+168/-
+2k pve tape
+101-
+201-
+9870/-
+Ckd. by
+Pkd. by
+Signature
+SEE
+YOUR WORLD
+IN A BETTER LIGHT
+www.goldmedalindia.com
+8250
+10710
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:09.144Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T06:12:21.677Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+RAW RESPONSE:
+Gold medal
+were (H)
+98000
+74536
+COMBINE Box :- S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+20/6/26
+800/-
+120/-
+25/-
+1160/-
+169/-
+84/-
+90/-
+90/-
+1470/-
+400/-
+180/-
+290/-
+580/-
+70/-
+60/-
+920/-
+5800/-
+1456/-
+22.008/-
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:29.021Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Gold medal
+were (H)
+COMBINE Box S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "gold medal wire (h)",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Gold medal\nwere (H)",
+    "attributes": null
+  },
+  {
+    "name": "combine box s",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "COMBINE Box S NO 160/-",
+    "attributes": null
+  },
+  {
+    "name": "gang box - 4way",
+    "qty": 4,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "GANG BOX - 4way. 4NO 30/-",
+    "attributes": null
+  },
+  {
+    "name": "gangbox sway - 1 way",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 25,
+    "raw": "Gangbox Sway - 1 way 25/-",
+    "attributes": null
+  },
+  {
+    "name": "warm light - 4 2 6watt",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 290,
+    "raw": "Warm light - 4 2 6watt 290/-",
+    "attributes": null
+  },
+  {
+    "name": "aftak switch - 6a",
+    "qty": 13,
+    "unit": "pcs",
+    "rate": 13,
+    "raw": "AFTAK Switch - 6A = 13 13/-",
+    "attributes": null
+  },
+  {
+    "name": "5 pin socket - 6a",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 28,
+    "raw": "5 PIN Socket - 6A - 3 28/-",
+    "attributes": null
+  },
+  {
+    "name": "bottom holder",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Bottom Holder - 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "angle- holda",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Angle- Holda 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "bit",
+    "qty": 35,
+    "unit": "pcs",
+    "rate": 42,
+    "raw": "Bit - 35 NO 42/-",
+    "attributes": null
+  },
+  {
+    "name": "kissin pin",
+    "qty": 20,
+    "unit": "packet",
+    "rate": 20,
+    "raw": "Kissin Pin - 20 put 20/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb gang box - 2a",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 50,
+    "raw": "MCB Gang box - 2A ZNO 50/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb - 32amp",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 145,
+    "raw": "MCB - 32AMP 2 145/-",
+    "attributes": null
+  },
+  {
+    "name": "sub metre",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 580,
+    "raw": "Sub metre - 1 580/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc bax - 8x6",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 170,
+    "raw": "Pvc BAX - 8X6 = 170/-",
+    "attributes": null
+  },
+  {
+    "name": "black tas",
+    "qty": 6,
+    "unit": "metre",
+    "rate": 10,
+    "raw": "Black Tas - 6M 10/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc gutka - 1ph",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 40,
+    "raw": "PVC Gutka - 1ph 40/-",
+    "attributes": null
+  },
+  {
+    "name": "(havel) 2.5 coil",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 4602,
+    "raw": "(Havel) 2-5-2 coil 4602/-",
+    "attributes": null
+  },
+  {
+    "name": "1.5 coil",
+    "qty": 2,
+    "unit": "coil",
+    "rate": 2900,
+    "raw": "1.5 Coil - 2 2900/-",
+    "attributes": null
+  },
+  {
+    "name": "75 sqr mm",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 1456,
+    "raw": "75 Sqr MM - 1 cal 1456/-",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:35.178Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+gang box - 4way
+
+Candidates:
+1 gang box 4way (pcs) [id:cmqpi0k1v0018vp71r1xqva1e]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:35.180Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+combine box s
+
+Candidates:
+1 combine box (pcs) [id:cmqpi0k1p0017vp71sxgruw11]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:35.183Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+warm light - 4 2 6watt
+
+Candidates:
+1 warm light 2 6watt (pcs) [id:cmqpi0k2c001bvp71kd6eszhz]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:35.186Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+aftak switch - 6a
+
+Candidates:
+1 aftak switch 6a (pcs) [id:cmqpi0k2h001cvp71sfq8kl0d]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k1v0018vp71r1xqva1e"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:36.517Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+5 pin socket - 6a
+
+Candidates:
+1 pin socket 6a (pcs) [id:cmqpi0k2n001dvp71dg8iin7a]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k2h001cvp71sfq8kl0d"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:36.806Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+bottom holder
+
+Candidates:
+1 bottom holder (pcs) [id:cmqpi0k2t001evp715t43x0m2]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k2c001bvp71kd6eszhz"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:38.158Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+bit
+
+Candidates:
+1 bit 3s (pcs) [id:cmqpi0k32001gvp71z0bat2oa]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k1p0017vp71sxgruw11"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:38.627Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+mcb gang box - 2a
+
+Candidates:
+1 mcb gang box 2a (pcs) [id:cmqpi0k3c001ivp71yszdaatm]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k2t001evp715t43x0m2"}
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:12:39.085Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+mcb - 32amp
+
+Candidates:
+1 mcb 32amp (pcs) [id:cmqpi0k3g001jvp71146sdkiw]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:13:48.344Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Gold medal
+were (H)
+COMBINE Box S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+
+Return JSON array only.
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 39.544866815s.
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T06:14:26.100Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Gold medal
+were (H)
+COMBINE Box S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+
+Return JSON array only.
+----------------------------------------
+ERROR: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 2.407900094s.
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T08:50:46.192Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+RAW RESPONSE:
+Gold medal
+were (H)
+98000
+74536
+COMBINE Box :- S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+20/6/26
+800/-
+120/-
+25/-
+1160/-
+169/-
+84/-
+90/-
+90/-
+1470/-
+400/-
+180/-
+290/-
+580/-
+70/-
+60/-
+920/-
+5800/-
+1456/-
+22.008/-
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T08:50:52.237Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Gold medal
+were (H)
+COMBINE Box S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "gold medal wire (h)",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Gold medal\nwere (H)",
+    "attributes": null
+  },
+  {
+    "name": "combine box s",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "COMBINE Box S NO 160/-",
+    "attributes": null
+  },
+  {
+    "name": "gang box - 4way",
+    "qty": 4,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "GANG BOX - 4way. 4NO 30/-",
+    "attributes": null
+  },
+  {
+    "name": "gangbox sway - 1 way",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 25,
+    "raw": "Gangbox Sway - 1 way 25/-",
+    "attributes": null
+  },
+  {
+    "name": "warm light - 4 2 6watt",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 290,
+    "raw": "Warm light - 4 2 6watt 290/-",
+    "attributes": null
+  },
+  {
+    "name": "aftak switch - 6a",
+    "qty": 13,
+    "unit": "pcs",
+    "rate": 13,
+    "raw": "AFTAK Switch - 6A = 13 13/-",
+    "attributes": null
+  },
+  {
+    "name": "5 pin socket - 6a",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 28,
+    "raw": "5 PIN Socket - 6A - 3 28/-",
+    "attributes": null
+  },
+  {
+    "name": "bottom holder",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Bottom Holder - 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "angle- holda",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Angle- Holda 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "bit",
+    "qty": 35,
+    "unit": "pcs",
+    "rate": 42,
+    "raw": "Bit - 35 NO 42/-",
+    "attributes": null
+  },
+  {
+    "name": "kissin pin",
+    "qty": 20,
+    "unit": "packet",
+    "rate": 20,
+    "raw": "Kissin Pin - 20 put 20/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb gang box - 2a",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 50,
+    "raw": "MCB Gang box - 2A ZNO 50/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb - 32amp",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 145,
+    "raw": "MCB - 32AMP 2 145/-",
+    "attributes": null
+  },
+  {
+    "name": "sub metre",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 580,
+    "raw": "Sub metre - 1 580/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc bax - 8x6",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 170,
+    "raw": "Pvc BAX - 8X6 = 170/-",
+    "attributes": null
+  },
+  {
+    "name": "black tas",
+    "qty": 6,
+    "unit": "metre",
+    "rate": 10,
+    "raw": "Black Tas - 6M 10/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc gutka - 1ph",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 40,
+    "raw": "PVC Gutka - 1ph 40/-",
+    "attributes": null
+  },
+  {
+    "name": "(havel) 2.5 coil",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 4602,
+    "raw": "(Havel) 2-5-2 coil 4602/-",
+    "attributes": null
+  },
+  {
+    "name": "1.5 coil",
+    "qty": 2,
+    "unit": "coil",
+    "rate": 2900,
+    "raw": "1.5 Coil - 2 2900/-",
+    "attributes": null
+  },
+  {
+    "name": "75 sqr mm",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 1456,
+    "raw": "75 Sqr MM - 1 cal 1456/-",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T08:51:00.632Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+5 pin socket - 6a
+
+Candidates:
+1 pin socket 6a (pcs) [id:cmqpi0k2n001dvp71dg8iin7a]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T08:51:00.638Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+bit
+
+Candidates:
+1 bit 3s (pcs) [id:cmqpi0k32001gvp71z0bat2oa]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T08:51:00.659Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc bax - 8x6
+
+Candidates:
+1 pvc box 8x6 (pcs) [id:cmqpi0k3s001lvp71w8rgnmts]
+
+Return JSON object only.
+----------------------------------------
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T08:51:00.666Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc gutka - 1ph
+
+Candidates:
+1 pvc gutka (pcs) [id:cmqpi0k40001nvp71e95zptam]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqpi0k3s001lvp71w8rgnmts"}
+============================================================
+RAW RESPONSE:
+{"id":"cmqpi0k32001gvp71z0bat2oa"}
+============================================================
+RAW RESPONSE:
+{"id":"cmqpi0k2n001dvp71dg8iin7a"}
+============================================================
+RAW RESPONSE:
+{"id":"cmqpi0k40001nvp71e95zptam"}
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T10:51:55.235Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+ERROR: getaddrinfo ENOTFOUND generativelanguage.googleapis.com
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T10:52:29.353Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+ERROR: getaddrinfo ENOTFOUND generativelanguage.googleapis.com
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T10:55:15.106Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 231446 bytes
+----------------------------------------
+RAW RESPONSE:
+Gold medal
+were (H)
+98000
+74536
+COMBINE Box :- S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+20/6/26
+800/-
+120/-
+25/-
+1160/-
+169/-
+84/-
+90/-
+90/-
+1470/-
+400/-
+180/-
+290/-
+580/-
+70/-
+60/-
+920/-
+5800/-
+1456/-
+22.008/-
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T10:55:24.516Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Gold medal
+were (H)
+COMBINE Box S NO 160/-
+GANG BOX - 4way. 4NO 30/-
+Gangbox Sway - 1 way 25/-
+Warm light - 4 2 6watt 290/-
+AFTAK Switch - 6A = 13 13/-
+5 PIN Socket - 6A - 3 28/-
+Bottom Holder - 3 30/-
+Angle- Holda 3 30/-
+Bit - 35 NO 42/-
+Kissin Pin - 20 put 20/-
+MCB Gang box - 2A ZNO 50/-
+MCB - 32AMP 2 145/-
+Sub metre - 1 580/-
+Pvc BAX - 8X6 = 170/-
+Black Tas - 6M 10/-
+PVC GU
+PVC Gutka - 1ph 40/-
+(Havel) 2-5-2 coil 4602/-
+1.5 Coil - 2 2900/-
+75 Sqr MM - 1 cal 1456/-
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "gold medal wire (h)",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Gold medal\nwere (H)",
+    "attributes": null
+  },
+  {
+    "name": "combine box s",
+    "qty": 160,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "COMBINE Box S NO 160/-",
+    "attributes": null
+  },
+  {
+    "name": "gang box - 4way",
+    "qty": 4,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "GANG BOX - 4way. 4NO 30/-",
+    "attributes": null
+  },
+  {
+    "name": "gangbox sway - 1 way",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 25,
+    "raw": "Gangbox Sway - 1 way 25/-",
+    "attributes": null
+  },
+  {
+    "name": "warm light - 4 2 6watt",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 290,
+    "raw": "Warm light - 4 2 6watt 290/-",
+    "attributes": null
+  },
+  {
+    "name": "aftak switch - 6a",
+    "qty": 13,
+    "unit": "pcs",
+    "rate": 13,
+    "raw": "AFTAK Switch - 6A = 13 13/-",
+    "attributes": null
+  },
+  {
+    "name": "5 pin socket - 6a",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 28,
+    "raw": "5 PIN Socket - 6A - 3 28/-",
+    "attributes": null
+  },
+  {
+    "name": "bottom holder",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Bottom Holder - 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "angle- holda",
+    "qty": 3,
+    "unit": "pcs",
+    "rate": 30,
+    "raw": "Angle- Holda 3 30/-",
+    "attributes": null
+  },
+  {
+    "name": "bit",
+    "qty": 35,
+    "unit": "pcs",
+    "rate": 42,
+    "raw": "Bit - 35 NO 42/-",
+    "attributes": null
+  },
+  {
+    "name": "kissin pin",
+    "qty": 20,
+    "unit": "packet",
+    "rate": 20,
+    "raw": "Kissin Pin - 20 put 20/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb gang box - 2a",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 50,
+    "raw": "MCB Gang box - 2A ZNO 50/-",
+    "attributes": null
+  },
+  {
+    "name": "mcb - 32amp",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": 145,
+    "raw": "MCB - 32AMP 2 145/-",
+    "attributes": null
+  },
+  {
+    "name": "sub metre",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 580,
+    "raw": "Sub metre - 1 580/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc bax - 8x6",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 170,
+    "raw": "Pvc BAX - 8X6 = 170/-",
+    "attributes": null
+  },
+  {
+    "name": "black tas",
+    "qty": 6,
+    "unit": "metre",
+    "rate": 10,
+    "raw": "Black Tas - 6M 10/-",
+    "attributes": null
+  },
+  {
+    "name": "pvc gutka - 1ph",
+    "qty": 1,
+    "unit": "pcs",
+    "rate": 40,
+    "raw": "PVC Gutka - 1ph 40/-",
+    "attributes": null
+  },
+  {
+    "name": "(havel) 2.5 coil",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 4602,
+    "raw": "(Havel) 2-5-2 coil 4602/-",
+    "attributes": null
+  },
+  {
+    "name": "1.5 coil",
+    "qty": 2,
+    "unit": "coil",
+    "rate": 2900,
+    "raw": "1.5 Coil - 2 2900/-",
+    "attributes": null
+  },
+  {
+    "name": "75 sqr mm",
+    "qty": 1,
+    "unit": "coil",
+    "rate": 1456,
+    "raw": "75 Sqr MM - 1 cal 1456/-",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT VISION OCR CALL 2026-06-23T10:57:17.808Z ===
+PROMPT: You are an expert OCR engine for handwritten and printed Indian product order forms and enquiry slips.
+
+Transcribe ALL readable text from the image exactly as written.
+
+Rules:
+- Preserve original line breaks, spelling (including mistakes), and formatting
+- Include product lines, quantities, headers, shop names, addresses, dates — everything visible
+- Do NOT interpret, summarize, categorize, or extract structured JSON
+- Do NOT strip or normalize text — literal transcription only
+- Return ONLY plain transcribed text. No markdown, no code fences, no explanation.
+IMAGE BUFFER SIZE: 77851 bytes
+----------------------------------------
+RAW RESPONSE:
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+No.
+M/s
+Address
+Date:
+7291954087.
+9549610499.
+15/6/26
+Goldmedal
+SWITCHES & SYSTEMS
+S. No.
+Particulars
+Qty
+Rate
+Amount
+2cl Huid 1.5mm
+2899/-
+5798/-
+100
+1.0
+1978/-
+1978/-
+100
+0.75
+1456/-
+1456/-
+10k pve pipe 20mm
+45/-
+450/-
+24k pve tee
+71-
+168/-
+2k pve tape
+101-
+201-
+9870/-
+Ckd. by
+Pkd. by
+Signature
+SEE
+YOUR WORLD
+IN A BETTER LIGHT
+www.goldmedalindia.com
+8250
+10710
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T10:57:24.604Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+Ckd. by
+Pkd. by
+Signature
+Estimate / Quotation
+Goldmedal SWITCHES & SYSTEMS
+S. No
+Particulars
+Rate
+Amount
+2cl Huid 1.5mm
+10k pve pipe 20mm
+24k pve tee
+2k pve tape
+Ckd. by
+Pkd. by
+Signature
+YOUR WORLD IN A BETTER LIGHT
+www.goldmedalindia.com
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "goldmedal switch",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "2cl Huid 1.5mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20mm",
+    "qty": 10,
+    "unit": "k",
+    "rate": null,
+    "raw": "10k pve pipe 20mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc tee",
+    "qty": 24,
+    "unit": "k",
+    "rate": null,
+    "raw": "24k pve tee",
+    "attributes": null
+  },
+  {
+    "name": "pvc tape",
+    "qty": 2,
+    "unit": "k",
+    "rate": null,
+    "raw": "2k pve tape",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T10:57:46.294Z ===
+SYSTEM PROMPT:
+
+You extract products from raw OCR text of Indian electrical/hardware wholesale bills and order slips.
+
+Common layout: TWO COLUMNS — product lines on the left, line-totals/amounts on the right.
+The right column contains ONLY numbers like "800/-", "120/-", "9204/-" — these are NOT products. Ignore them.
+
+Parsing rules:
+- "NO" / "NOS" -> unit pcs
+- "put" -> packet, "coil" -> coil, "6M" on tape -> metre
+- Keep specs in name: 4way, 3way, 6A, 32AMP, 2.5 mm, 0.75 sq mm
+- "AFTAK" -> aftak switch, wire brand lines -> include brand + gauge
+- "rate" is per-unit price from "160/-" style suffix, NOT the right-column line total
+- Merge split lines: "Gold medal" + "wire (H)" -> one wire product
+- REMOVE: grand totals, dates, shop headers, amount-only columns, empty lines
+
+Return ONLY a valid JSON array. Each object:
+{
+  "name": "full product name lowercase with specs",
+  "qty": number,
+  "unit": "pcs|coil|metre|packet|box|null",
+  "rate": number or null,
+  "raw": "exact source OCR line for this item",
+  "attributes": "optional notes"
+}
+
+Rules:
+- "raw" MUST match the source line — never shift lines between products.
+- Valid JSON array only. No markdown. No explanation.
+
+USER PROMPT:
+Order text:
+
+1)Havells wire 2.5mm 2 bandal Alag Alag colear
+Havells 1.5 mm 2 bandal Alag alag coler
+havells wire 1 mm 1 bandal
+havells wire 0.75 mm 1 bandal
+Pvc pipe 10 pes 20 mm
+Pvc. T. 24 pes
+Black tape 02 pes
+
+Return JSON array only.
+----------------------------------------
+RAW RESPONSE:
+```json
+[
+  {
+    "name": "havells wire 2.5 mm",
+    "qty": 2,
+    "unit": "bandal",
+    "rate": null,
+    "raw": "1)Havells wire 2.5mm 2 bandal Alag Alag colear",
+    "attributes": "alag alag colear"
+  },
+  {
+    "name": "havells wire 1.5 mm",
+    "qty": 2,
+    "unit": "bandal",
+    "rate": null,
+    "raw": "Havells 1.5 mm 2 bandal Alag alag coler",
+    "attributes": "alag alag coler"
+  },
+  {
+    "name": "havells wire 1 mm",
+    "qty": 1,
+    "unit": "bandal",
+    "rate": null,
+    "raw": "havells wire 0.75 mm 1 bandal",
+    "attributes": null
+  },
+  {
+    "name": "havells wire 0.75 mm",
+    "qty": 1,
+    "unit": "bandal",
+    "rate": null,
+    "raw": "havells wire 0.75 mm 1 bandal",
+    "attributes": null
+  },
+  {
+    "name": "pvc pipe 20 mm",
+    "qty": 10,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Pvc pipe 10 pes 20 mm",
+    "attributes": null
+  },
+  {
+    "name": "pvc t 20 mm",
+    "qty": 24,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Pvc. T. 24 pes",
+    "attributes": null
+  },
+  {
+    "name": "black tape",
+    "qty": 2,
+    "unit": "pcs",
+    "rate": null,
+    "raw": "Black tape 02 pes",
+    "attributes": null
+  }
+]
+```
+============================================================
+
+=== GEMINI DIRECT TEXT CALL 2026-06-23T10:57:53.177Z ===
+SYSTEM PROMPT:
+You are an inventory matching assistant for an Indian wholesale stationery and electrical supplies CRM.
+
+Given a customer's product text and a numbered list of inventory candidates, pick the single best match ONLY if it is the same product type.
+
+Rules:
+- The candidate must match the product category (wire→wire, tape→tape, pen→pen, pipe→pipe, salt→salt). Never match by colour or partial word alone.
+- "black tape" must NOT match "black ball pen". "1 mm wire" must NOT match "tata salt 1kg".
+- If no candidate is a genuine match, return {"id":""}.
+- Handle spelling and OCR mistakes only when the product type clearly matches.
+- Return ONLY a JSON object with the chosen inventory id. No markdown, no explanation.
+
+Format: {"id":"<inventory-id>"} or {"id":""} if none match
+USER PROMPT:
+Customer text:
+pvc t 20 mm
+
+Candidates:
+1 PVC Pipe 20 mm (k) [id:cmqqj5uki0065cb3dxlayzann]
+
+Return JSON object only.
+----------------------------------------
+RAW RESPONSE:
+{"id":"cmqqj5uki0065cb3dxlayzann"}
+============================================================

@@ -1,0 +1,43 @@
+{
+  "summary": "Retest iteration 2. Found one CRITICAL frontend regression: Login.jsx used useEffect without importing it -> 'useEffect is not defined' PAGEERROR, blocking ALL UI flows because the login screen renders blank. I fixed this single-line import (added useEffect to the react import). After the fix, the full end-to-end UI flow PASSES: login -> simulate-inbound -> open conversation -> upload slip via ocr-file-input -> ocr-progress visible -> 6 ocr-rows rendered -> create-enquiry-button navigates to /enquiries/:id -> edit qty/gst -> finalize-enquiry-button navigates to /quotations/:id -> quotation-image renders -> send-quotation-button -> delivery-status shows 'sent' with 'Sent on WhatsApp' toast. CRM row navigation, CustomerProfile (stats/timeline/top-products), Inventory rate-cell inline edit, and Automation rule-card-{id} all PASS.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/files/quotations/*", "issue": "Signed file URL returned uses http:// scheme inside an https:// page -> 'Mixed Content' browser warning (auto-upgraded to https). Should use protocol-relative URL or honor request scheme."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Login.jsx", "issue": "useEffect was used (line 18) WITHOUT importing it from React. Caused 'ReferenceError: useEffect is not defined' on every visit to /login, breaking the entire app (white screen, no inputs render). FIXED by changing `import { useState }` -> `import { useEffect, useState }`.", "selector": "/login", "priority": "CRITICAL"},
+      {"component": "Conversation.jsx create-enquiry-button", "issue": "Button sits at viewport y=1082.5 in 1920x1080 viewport (overflow-auto sidebar) — Playwright force-clicks at element center which is outside viewport, so the React handler does not fire. Real users can scroll/click fine, but it makes E2E flaky. Suggest a sticky footer for the action button inside the ocr-rows aside.", "selector": "[data-testid=create-enquiry-button]", "priority": "LOW"},
+      {"component": "QuotationPreview delivery-status", "issue": "Container has testid 'delivery-status' but its text content concatenates label + timestamp ('sentSent just now'). Minor — consider scoping testid to just the status word.", "selector": "[data-testid=delivery-status]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Already fixed by testing agent) Add useEffect to React import in /app/frontend/src/pages/Login.jsx. Main agent should keep this fix.",
+    "(Optional) Make the 'Create enquiry' button sticky to the bottom of the right sidebar so it never falls below the viewport.",
+    "(Optional) Generate signed file URLs with https:// (or protocol-relative) to remove Mixed Content browser warnings.",
+    "(Optional) Tighten data-testid='delivery-status' scope so its text contains only the status (e.g. 'sent') and not the trailing timestamp."
+  ],
+  "critical_code_review_comments": [
+    "Login.jsx broke the whole app due to a missing import — every change to the Login redirect should be smoke-tested in the browser; consider adding a basic 'login page renders' Playwright test in CI.",
+    "Enquiry editor exposes testids `qty-input-{i}`, `rate-input-{i}`, `gst-input`, `finalize-enquiry-button`, `save-enquiry-button` (not the `enquiry-qty-*`/`enquiry-gst-input` names mentioned in the request). Naming is consistent within the page but worth aligning with the request spec / docs.",
+    "Backend logs show a passlib bcrypt warning ('module bcrypt has no attribute __about__') — non-blocking but noisy; consider pinning passlib/bcrypt or switching to bcrypt directly."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/Login.jsx (added missing useEffect import)"
+  ],
+  "success_rate": {"backend": "100% (all REST flows exercised end-to-end via UI succeed; iteration_1 had 21/22 pytest pass and Gemini model is now correct)", "frontend": "100% after my one-line fix to Login.jsx (was 0% before — blank login screen)"},
+  "test_credentials": "admin@example.com / Admin@1234 (seeded)",
+  "seed_data_creation": "Created via test: 4 inbound conversations (TEST_OCR/+919900112299, TEST_E2E/+91990012xxxx, TEST_E2E_v2/+91990013xxxx, TEST_E2E_v3..v5/+919900xxxxxx) each with OCR job, 1 enquiry (cqukqkcp5pshyc4tput77x339), 1 quotation QT-2026-06-00002 (₹1,606.57, 6 items, GST 18%) marked status=sent. Inventory A4 Copier Paper rate changed to ₹123.50.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login.jsx import bug has been fixed by testing agent (added useEffect to react import). All previously-reported flows are now green: OCR->enquiry->quotation->send, CRM row nav -> CustomerProfile, Inventory rate inline edit, Automation rule cards. Use page.evaluate(\"() => document.querySelector('[data-testid=create-enquiry-button]').click()\") to bypass viewport clipping on the create-enquiry-button at 1920x1080 if writing Playwright tests, OR set viewport height >= 1200 OR scroll element bottom into view. Enquiry editor uses testids `row-{i}`, `qty-input-{i}`, `rate-input-{i}`, `gst-input`, not the `enquiry-*` names in the request. Mocked APIs (MSG91/GCV/S3) are confirmed working; Gemini real call returns 6 deterministic rows for any uploaded PNG.",
+  "rca_of_the_issue": "RCA (Login white screen): /app/frontend/src/pages/Login.jsx line 18 uses useEffect(...) for the post-auth redirect, but line 1 imported only { useState } from 'react'. At runtime React threw 'ReferenceError: useEffect is not defined' inside the Login component render, the React error boundary remained empty, and the page rendered a blank canvas — preventing the entire iteration's UI testing. Mitigation applied: changed line 1 to `import { useEffect, useState } from 'react';`. Verified by re-running E2E: login -> /inbox succeeds and complete OCR-to-send flow passes."
+}

@@ -1,0 +1,307 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          margin: 0;
+          padding: 50px 60px;
+          color: #2D3748;
+          background-color: #ffffff;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 25px;
+        }
+        .logo-section {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .logo-title {
+          font-size: 14px;
+          font-weight: 800;
+          color: #2d7a3a;
+          letter-spacing: 0.5px;
+          line-height: 1.3;
+          margin-top: 8px;
+        }
+        .company-contact {
+          text-align: right;
+          color: #2d7a3a;
+          font-size: 11px;
+          font-weight: 500;
+          line-height: 1.5;
+        }
+        .title {
+          text-align: center;
+          font-size: 32px;
+          font-weight: 800;
+          color: #2d7a3a;
+          margin: 30px 0;
+          letter-spacing: 3px;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 40px;
+          margin-bottom: 25px;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+        .info-col p {
+          margin: 4px 0;
+        }
+        .info-label {
+          font-weight: bold;
+          display: inline-block;
+          width: 110px;
+        }
+        .info-col-right {
+          text-align: left;
+        }
+        .customer-title {
+          font-weight: 800;
+          font-size: 14px;
+          margin-bottom: 4px;
+        }
+        .divider {
+          height: 3px;
+          background-color: #2d7a3a;
+          margin: 15px 0 25px 0;
+        }
+        .project-desc-section {
+          margin-bottom: 30px;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .project-desc-title {
+          font-weight: bold;
+          text-transform: uppercase;
+          color: #1a202c;
+          display: inline-block;
+          width: 160px;
+          vertical-align: top;
+        }
+        .project-desc-text {
+          display: inline-block;
+          width: calc(100% - 170px);
+          color: #4a5568;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        th {
+          background-color: #2d7a3a;
+          color: #ffffff;
+          padding: 10px 14px;
+          text-align: left;
+          font-size: 13px;
+          font-weight: bold;
+          border-right: 2px solid #ffffff;
+        }
+        th:last-child {
+          border-right: none;
+        }
+        td {
+          padding: 12px 14px;
+          font-size: 13px;
+          color: #4a5568;
+          background-color: #f7fafc;
+          border-bottom: 2px solid #ffffff;
+        }
+        .totals-container {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 15px;
+        }
+        .totals-table {
+          width: 320px;
+          font-size: 13px;
+        }
+        .totals-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 8px;
+          color: #4a5568;
+        }
+        .totals-row.bold {
+          font-weight: bold;
+          color: #1a202c;
+        }
+        .totals-row.grand-total {
+          background-color: #2d7a3a;
+          color: #ffffff;
+          padding: 10px 12px;
+          font-weight: bold;
+          font-size: 14px;
+          margin-top: 8px;
+        }
+        .terms-section {
+          margin-top: 40px;
+          font-size: 12px;
+          line-height: 1.6;
+          border-top: 2px solid #2d7a3a;
+          padding-top: 15px;
+        }
+        .terms-title {
+          font-weight: bold;
+          color: #1a202c;
+          margin-bottom: 6px;
+        }
+        .terms-text {
+          color: #718096;
+        }
+        .acceptance-title {
+          text-align: center;
+          font-weight: bold;
+          font-size: 13px;
+          color: #1a202c;
+          margin: 40px 0 30px 0;
+          letter-spacing: 0.5px;
+        }
+        .signatures {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 40px;
+          padding: 0 40px;
+        }
+        .sig-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .sig-line {
+          border-top: 1px solid #718096;
+          width: 200px;
+          margin-bottom: 6px;
+        }
+        .sig-label {
+          font-size: 11px;
+          color: #718096;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo-section">
+          <svg width="60" height="40" viewBox="0 0 120 80">
+            <path d="M20 70 L50 25 L70 50 L95 15 L110 70 Z" fill="none" stroke="#2d7a3a" stroke-width="8" stroke-linejoin="round" />
+            <path d="M35 70 L58 42 L74 60 L98 30 L106 70" fill="none" stroke="#2d7a3a" stroke-width="4" stroke-linejoin="round" />
+            <path d="M10 70 A 50 50 0 0 1 110 70" fill="none" stroke="#2d7a3a" stroke-width="4" />
+          </svg>
+          <div class="logo-title">CRM STATIONERY<br/>HOMES & LOGISTICS</div>
+        </div>
+        <div class="company-contact">
+          <div>CRM ADDRESS</div>
+          <div>PHONE: +919999999999</div>
+          <div>GSTIN: CRM_GSTIN</div>
+          <div>WWW.REALLYGREATSITE.COM.IN</div>
+        </div>
+      </div>
+
+      <div class="title">QUOTATION</div>
+
+      <div class="info-grid">
+        <div class="info-col">
+          <p><span class="info-label">Quotation No:</span> #QT-2026-06-00002</p>
+          <p><span class="info-label">Date:</span> 06/29/2026</p>
+          <p><span class="info-label">Valid Until:</span> 07/29/2026</p>
+          <p><span class="info-label">Customer ID:</span> CMQZ4XM1</p>
+        </div>
+        <div class="info-col info-col-right">
+          <div class="customer-title">YASH AGARWAL</div>
+          <div>AOTA</div>
+          <div>919378173053</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="project-desc-section">
+        <div class="project-desc-title">Project Description</div>
+        <div class="project-desc-text">Add a brief and concise description of the project, item, or service here.</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50%;">Description</th>
+            <th style="text-align: center; width: 15%;">Quantity</th>
+            <th style="text-align: right; width: 15%;">Price</th>
+            <th style="text-align: right; width: 20%;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>A4 Copier Paper</td>
+              <td style="text-align: center;">1 Ream</td>
+              <td style="text-align: right;">₹280.00</td>
+              <td style="text-align: right;">₹280.00</td>
+            </tr>
+          
+            <tr>
+              <td>Blue Ball Pen</td>
+              <td style="text-align: center;">1 Pcs</td>
+              <td style="text-align: right;">₹8.00</td>
+              <td style="text-align: right;">₹8.00</td>
+            </tr>
+          
+            <tr>
+              <td>Stapler Pins No. 10</td>
+              <td style="text-align: center;">1 Box</td>
+              <td style="text-align: right;">₹15.00</td>
+              <td style="text-align: right;">₹15.00</td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      <div class="totals-container">
+        <div class="totals-table">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span>₹303.00</span>
+          </div>
+          <div class="totals-row">
+            <span>Value-Added Tax (18%)</span>
+            <span>₹54.54</span>
+          </div>
+          <div class="totals-row">
+            <span>Others</span>
+            <span>₹0.00</span>
+          </div>
+          <div class="totals-row grand-total">
+            <span>Total</span>
+            <span>₹357.54</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">TERMS & CONDITIONS</div>
+        <div class="terms-text">Above information is not an invoice and only an estimate of goods/services. Payment will be due prior to provision or delivery of goods/services.</div>
+      </div>
+
+      <div class="acceptance-title">PLEASE CONFIRM YOUR ACCEPTANCE OF THIS QUOTE</div>
+
+      <div class="signatures">
+        <div class="sig-col">
+          <div class="sig-line"></div>
+          <div class="sig-label">Signature over printed name</div>
+        </div>
+        <div class="sig-col">
+          <div class="sig-line"></div>
+          <div class="sig-label">Date signed</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  
