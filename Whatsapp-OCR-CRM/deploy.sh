@@ -28,7 +28,7 @@ NODE_MAJOR="${NODE_MAJOR:-20}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_ROOT="${APP_ROOT:-$SCRIPT_DIR}"
-ENV_FILE="$APP_ROOT/.env"
+ENV_FILE=".env"
 SECRETS_FILE="$APP_ROOT/.deploy-secrets"
 LOG_DIR="$APP_ROOT/logs"
 HTTPD_CONF="/etc/httpd/conf.d/mahabir-crm.conf"
@@ -89,6 +89,57 @@ npm_install_project() {
   else
     run_as_app_user npm install
   fi
+}
+
+# Escape single quotes for use inside PostgreSQL string literals.
+sql_literal() {
+  printf "%s" "$1" | sed "s/'/''/g"
+}
+
+load_db_secrets() {
+  # shellcheck disable=SC1090
+  [[ -f "$SECRETS_FILE" ]] && source "$SECRETS_FILE"
+  if [[ -z "${DB_PASS:-}" ]]; then
+    DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)"
+    echo "DB_PASS='$DB_PASS'" >> "$SECRETS_FILE"
+    chmod 600 "$SECRETS_FILE"
+    chown root:root "$SECRETS_FILE"
+    log "Generated database password in $SECRETS_FILE"
+  fi
+}
+
+ensure_pg_hba() {
+  local pg_hba="/var/lib/pgsql/data/pg_hba.conf"
+  [[ -f "$pg_hba" ]] || return
+  local rule="host    ${DB_NAME}    ${DB_USER}    127.0.0.1/32    scram-sha-256"
+  if ! grep -qF "$rule" "$pg_hba"; then
+    echo "$rule" >> "$pg_hba"
+    systemctl reload postgresql
+    log "Added PostgreSQL password auth rule for ${DB_USER}@${DB_NAME}"
+  fi
+}
+
+sync_postgres_credentials() {
+  load_db_secrets
+  local escaped_pass
+  escaped_pass="$(sql_literal "$DB_PASS")"
+
+  if sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
+    sudo -u postgres psql -c "ALTER USER \"$DB_USER\" WITH PASSWORD '$escaped_pass';"
+    log "Synchronized PostgreSQL password for user $DB_USER"
+  else
+    sudo -u postgres psql -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$escaped_pass';"
+    log "Created PostgreSQL user $DB_USER"
+  fi
+
+  if ! sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1; then
+    sudo -u postgres psql -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";"
+    log "Created PostgreSQL database $DB_NAME"
+  fi
+
+  sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO \"$DB_USER\";"
+  sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" || true
+  ensure_pg_hba
 }
 
 require_root() {
@@ -226,32 +277,7 @@ setup_postgres() {
   systemctl enable postgresql
   systemctl start postgresql
 
-  # Load secrets
-  # shellcheck disable=SC1090
-  [[ -f "$SECRETS_FILE" ]] && source "$SECRETS_FILE"
-  DB_PASS="${DB_PASS:-}"
-
-  if [[ -z "$DB_PASS" ]]; then
-    DB_PASS="$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)"
-    echo "DB_PASS='$DB_PASS'" >> "$SECRETS_FILE"
-    chmod 600 "$SECRETS_FILE"
-    chown root:root "$SECRETS_FILE"
-  fi
-
-  sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
-  sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-  sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
-  sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" || true
-
-  # Allow password auth from localhost
-  local pg_hba="/var/lib/pgsql/data/pg_hba.conf"
-  if [[ -f "$pg_hba" ]] && ! grep -q "127.0.0.1/32.*scram-sha-256" "$pg_hba"; then
-    echo "host    $DB_NAME    $DB_USER    127.0.0.1/32    scram-sha-256" >> "$pg_hba"
-    systemctl reload postgresql
-  fi
-
+  sync_postgres_credentials
   install_pgvector
 }
 
@@ -280,24 +306,18 @@ read_env_val() {
 
 write_env() {
   log "Writing $ENV_FILE…"
-  # shellcheck disable=SC1090
-  [[ -f "$SECRETS_FILE" ]] && source "$SECRETS_FILE"
+  load_db_secrets
 
   local jwt_secret jwt_refresh db_pass
   jwt_secret="$(read_env_val JWT_SECRET)"
   jwt_refresh="$(read_env_val JWT_REFRESH_SECRET)"
-  db_pass="${DB_PASS:-$(read_env_val DB_PASS)}"
+  db_pass="$DB_PASS"
 
   if [[ -z "$jwt_secret" ]]; then
     jwt_secret="$(openssl rand -hex 32)"
   fi
   if [[ -z "$jwt_refresh" ]]; then
     jwt_refresh="$(openssl rand -hex 32)"
-  fi
-  if [[ -z "$db_pass" ]]; then
-    db_pass="$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)"
-    echo "DB_PASS='$db_pass'" >> "$SECRETS_FILE"
-    chmod 600 "$SECRETS_FILE"
   fi
 
   local database_url="postgresql://${DB_USER}:${db_pass}@127.0.0.1:5432/${DB_NAME}"
@@ -378,6 +398,8 @@ build_backend() {
 
 sync_database() {
   log "Syncing database schema…"
+  sync_postgres_credentials
+  write_env
   cd "$APP_ROOT/backend"
   if [[ "$UPDATE_ONLY" -eq 0 ]]; then
     run_as_app_user npx prisma db push --accept-data-loss
