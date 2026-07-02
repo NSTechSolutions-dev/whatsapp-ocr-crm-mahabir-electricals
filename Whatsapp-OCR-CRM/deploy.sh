@@ -68,21 +68,17 @@ arch_ok() {
 
 dnf_install() {
   log "Installing system packages via dnf…"
+  # On Amazon Linux 2023, proxy/rewrite/headers modules ship inside httpd (not separate packages).
   dnf install -y \
     git \
     httpd \
     mod_ssl \
-    mod_proxy \
-    mod_proxy_http \
-    mod_proxy_wstunnel \
-    mod_rewrite \
-    mod_headers \
     certbot \
     python3-certbot-apache \
     redis6 \
     postgresql15 \
     postgresql15-server \
-    postgresql15-devel \
+    postgresql15-server-devel \
     gcc \
     make \
     openssl \
@@ -109,6 +105,22 @@ dnf_install() {
     nspr \
     libdrm \
     mesa-libgbm
+  verify_httpd_modules
+}
+
+verify_httpd_modules() {
+  log "Verifying Apache modules (bundled with httpd on AL2023)…"
+  local required=(proxy proxy_http proxy_wstunnel rewrite headers ssl)
+  local missing=()
+  for mod in "${required[@]}"; do
+    if ! httpd -M 2>/dev/null | grep -q "${mod}_module"; then
+      missing+=("$mod")
+    fi
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    die "Missing Apache modules: ${missing[*]}. Ensure httpd is installed and modules are enabled."
+  fi
+  log "Required Apache modules are loaded"
 }
 
 install_node() {
@@ -311,7 +323,7 @@ git_pull() {
 build_backend() {
   log "Building backend…"
   cd "$APP_ROOT/backend"
-  sudo -u "$APP_USER" npm ci --legacy-peer-deps 2>/dev/null || sudo -u "$APP_USER" npm install --legacy-peer-deps
+  sudo -u "$APP_USER" npm ci 2>/dev/null || sudo -u "$APP_USER" npm install
   sudo -u "$APP_USER" npx prisma generate
   sudo -u "$APP_USER" npm run build
   # Puppeteer Chromium for quotation PDFs (ARM)

@@ -7,6 +7,7 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "reseed": "ts-node scripts/reseed-and-embed.ts",
@@ -16,7 +17,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",
     "@aws-sdk/s3-request-presigner": "^3.500.0",
-    "@prisma/client": "^5.10.0",
+    "@prisma/client": "^5.22.0",
     "axios": "^1.17.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.1.0",
@@ -33,7 +34,6 @@
     "node-cron": "^3.0.3",
     "pg": "^8.11.3",
     "puppeteer": "^22.3.0",
-    "redis": "^4.6.13",
     "socket.io": "^4.7.4",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
@@ -44,7 +44,6 @@
     "@types/cors": "^2.8.17",
     "@types/csurf": "^1.11.2",
     "@types/express": "^4.17.21",
-    "@types/ioredis": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.11.24",
