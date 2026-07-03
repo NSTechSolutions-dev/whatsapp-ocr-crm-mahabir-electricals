@@ -501,7 +501,25 @@ build_frontend() {
     NEXT_PUBLIC_SOCKET_URL="https://${DOMAIN}" \
     npm run build
   verify_frontend_build
-  prepare_next_static
+  prepare_next_build
+}
+
+verify_frontend_html_sync() {
+  local disk_chunk html_chunk attempt
+  disk_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1)")"
+  [[ -n "$disk_chunk" ]] || die "Cannot find main-app chunk on disk"
+
+  for attempt in 1 2 3 4 5 6; do
+    html_chunk="$(curl -sf "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
+      | grep -oE 'main-app-[a-f0-9]+\.js' | head -1 || true)"
+    if [[ "$html_chunk" == "$disk_chunk" ]]; then
+      log "Frontend HTML matches build (${disk_chunk})"
+      return 0
+    fi
+    warn "Frontend HTML/build mismatch (attempt ${attempt}/6): HTML=${html_chunk:-none} disk=${disk_chunk}"
+    sleep 3
+  done
+  die "Frontend still serving stale HTML (${html_chunk:-unknown}) — expected ${disk_chunk}"
 }
 
 verify_frontend_build() {
@@ -517,23 +535,17 @@ verify_frontend_build() {
   log "Frontend build verified ($(basename "$main_app"))"
 }
 
-prepare_next_static() {
-  local static_dir="$APP_ROOT/frontend/.next/static"
-  if [[ ! -d "$static_dir" ]]; then
-    warn "Missing $static_dir — frontend build may be incomplete"
+prepare_next_build() {
+  if [[ ! -d "$APP_ROOT/frontend/.next" ]]; then
+    warn "Missing $APP_ROOT/frontend/.next — frontend build may be incomplete"
     return
   fi
-  chmod -R a+rX "$APP_ROOT/frontend/.next"
-  if command -v chcon >/dev/null 2>&1; then
-    chcon -R -t httpd_sys_content_t "$APP_ROOT/frontend/.next" 2>/dev/null || \
-      setsebool -P httpd_read_user_content 1 2>/dev/null || true
-  fi
-  log "Prepared .next/static for Apache"
+  chown -R "$APP_USER:$APP_GROUP" "$APP_ROOT/frontend/.next" 2>/dev/null || true
+  log "Frontend .next build ready for Next.js"
 }
 
 apache_proxy_block() {
   local proto="$1"
-  local static_dir="${APP_ROOT}/frontend/.next/static"
   cat <<EOF
     ProxyPreserveHost On
     RequestHeader set X-Forwarded-Proto "${proto}"
@@ -545,15 +557,6 @@ apache_proxy_block() {
     RewriteCond %{HTTP:Upgrade} =websocket [NC]
     RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
 
-    # Serve /_next/static from disk (Next.js returns 400 for these behind Apache proxy)
-    ProxyPassMatch ^/_next/static/ !
-    AliasMatch ^/_next/static/(.*)$ ${static_dir}/\$1
-    <Directory "${static_dir}">
-        Require all granted
-        Options -Indexes
-        Header set Cache-Control "public, max-age=31536000, immutable"
-    </Directory>
-
     ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
     ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
 
@@ -563,7 +566,8 @@ apache_proxy_block() {
     ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
     ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
 
-    ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
+    # Proxy ALL frontend traffic (HTML + /_next/static) through Next.js so chunk hashes always match
+    ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/ connectiontimeout=5 timeout=300
     ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
 EOF
 }
@@ -583,11 +587,19 @@ setup_pm2() {
 
   if run_as_app_user "$pm2_cmd" describe mahabir-crm-backend &>/dev/null; then
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
-      "$pm2_cmd" restart "$ECOSYSTEM" --update-env
+      "$pm2_cmd" restart mahabir-crm-backend --update-env
   else
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
-      "$pm2_cmd" start "$ECOSYSTEM"
+      "$pm2_cmd" start "$ECOSYSTEM" --only mahabir-crm-backend
   fi
+
+  # Cold-start frontend after every build so HTML and /_next/static share the same build id
+  run_as_app_user "$pm2_cmd" delete mahabir-crm-frontend 2>/dev/null || true
+  sleep 2
+  run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
+    "$pm2_cmd" start "$ECOSYSTEM" --only mahabir-crm-frontend --update-env
+
+  verify_frontend_html_sync
 
   run_as_app_user "$pm2_cmd" save
   if [[ "$UPDATE_ONLY" -eq 0 ]]; then
@@ -715,14 +727,18 @@ health_check() {
     (echo >/dev/tcp/127.0.0.1/"${FRONTEND_PORT}") 2>/dev/null && ok=1
   fi
   [[ "$ok" -eq 1 ]] && log "Frontend OK (port ${FRONTEND_PORT})" || warn "Frontend health check failed"
-  local main_chunk
+  local main_chunk html_chunk
   main_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1 || true)")"
   if [[ -n "$main_chunk" ]] && command -v curl >/dev/null 2>&1; then
-    if curl -sf "http://127.0.0.1:${FRONTEND_PORT}/_next/static/chunks/${main_chunk}" >/dev/null \
-      || curl -sf "https://${DOMAIN}/_next/static/chunks/${main_chunk}" >/dev/null; then
-      log "Frontend static chunk OK (${main_chunk})"
+    html_chunk="$(curl -sf "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
+      | grep -oE 'main-app-[a-f0-9]+\.js' | head -1 || true)"
+    if [[ "$html_chunk" != "$main_chunk" ]]; then
+      warn "HTML references ${html_chunk:-unknown} but build has ${main_chunk}"
+    elif curl -sf "https://${DOMAIN}/_next/static/chunks/${main_chunk}" >/dev/null 2>&1 \
+      || curl -sf "http://127.0.0.1:${FRONTEND_PORT}/_next/static/chunks/${main_chunk}" >/dev/null 2>&1; then
+      log "Frontend static chunk OK via site (${main_chunk})"
     else
-      warn "Frontend static chunk check failed (${main_chunk}) — hard-refresh browser after deploy"
+      warn "Frontend static chunk check failed (${main_chunk})"
     fi
   fi
 }
