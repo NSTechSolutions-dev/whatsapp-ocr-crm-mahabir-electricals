@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getPresignedUrl } from "../../lib/s3";
-import { sendTemplateMessage } from "../../../src/services/whatsapp.service";
+import { sendTemplateMessage } from "../../services/whatsapp.service";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
