@@ -199,17 +199,39 @@ dnf_install() {
   verify_httpd_modules
 }
 
+httpd_module_list() {
+  local bin=""
+  for candidate in /usr/sbin/httpd /usr/bin/httpd; do
+    [[ -x "$candidate" ]] && bin="$candidate" && break
+  done
+  [[ -z "$bin" ]] && command -v httpd &>/dev/null && bin="$(command -v httpd)"
+  [[ -n "$bin" ]] || return 1
+  # On AL2023, module list may be written to stderr — capture both streams.
+  "$bin" -M 2>&1
+}
+
+httpd_has_module() {
+  local mod="$1"
+  local list="$2"
+  grep -qE "(^|[[:space:]])${mod}_module([[:space:]]|\(|$)" <<< "$list"
+}
+
 verify_httpd_modules() {
   log "Verifying Apache modules (bundled with httpd on AL2023)…"
+  local list
+  list="$(httpd_module_list || true)"
+  if [[ -z "$list" ]]; then
+    warn "Could not run httpd -M — skipping module check"
+    return 0
+  fi
   local required=(proxy proxy_http proxy_wstunnel rewrite headers ssl)
   local missing=()
+  local mod
   for mod in "${required[@]}"; do
-    if ! httpd -M 2>/dev/null | grep -q "${mod}_module"; then
-      missing+=("$mod")
-    fi
+    httpd_has_module "$mod" "$list" || missing+=("$mod")
   done
   if [[ ${#missing[@]} -gt 0 ]]; then
-    die "Missing Apache modules: ${missing[*]}. Ensure httpd is installed and modules are enabled."
+    die "Missing Apache modules: ${missing[*]}. Run: /usr/sbin/httpd -M 2>&1 | grep -E 'proxy|rewrite|ssl'"
   fi
   log "Required Apache modules are loaded"
 }
