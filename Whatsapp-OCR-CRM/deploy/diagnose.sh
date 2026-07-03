@@ -38,6 +38,25 @@ echo "=== Backend logs (last 15 lines) ==="
 tail -15 "$APP_ROOT/logs/backend-error.log" 2>/dev/null || echo "(no error log)"
 echo
 
+echo "=== Port 3000 listener ==="
+if command -v ss >/dev/null 2>&1; then
+  ss -tlnp 2>/dev/null | grep ':3000 ' || echo "Nothing on :3000"
+  listen_pid="$(ss -tlnp 2>/dev/null | grep ':3000 ' | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2 || true)"
+  if [[ -n "$listen_pid" ]]; then
+    echo "PID ${listen_pid} cwd: $(readlink -f /proc/${listen_pid}/cwd 2>/dev/null || echo unknown)"
+  fi
+else
+  echo "(ss not available)"
+fi
+echo
+
+echo "=== Frontend build vs HTML ==="
+server_chunk="$(grep -roh 'main-app-[a-f0-9]\+\.js' "$APP_ROOT/frontend/.next/server" 2>/dev/null | sort -u | head -1 || true)"
+html_chunk="$(curl -sf -H 'Cache-Control: no-cache' http://127.0.0.1:3000/ 2>/dev/null | grep -oE 'main-app-[a-f0-9]+\.js' | head -1 || true)"
+echo "Server build chunk: ${server_chunk:-MISSING}"
+echo "HTML chunk:         ${html_chunk:-MISSING}"
+echo
+
 echo "=== Health checks ==="
 curl -sf "http://127.0.0.1:4000/api/health" && echo || echo "Backend: DOWN on :4000"
 curl -sf -o /dev/null "http://127.0.0.1:3000/" && echo "Frontend: OK on :3000" || echo "Frontend: DOWN on :3000"

@@ -74,6 +74,63 @@ ensure_app_ownership() {
   chown -R "$APP_USER:$APP_GROUP" "$target" 2>/dev/null || chown -R "$APP_USER:$APP_USER" "$target"
 }
 
+# Chunk hash embedded in the server build (what `next start` should serve).
+frontend_main_chunk() {
+  local chunk f
+  chunk="$(grep -roh 'main-app-[a-f0-9]\+\.js' "$APP_ROOT/frontend/.next/server" 2>/dev/null | sort -u | head -1 || true)"
+  if [[ -n "$chunk" ]]; then
+    echo "$chunk"
+    return 0
+  fi
+  f="$(ls -t "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1 || true)"
+  [[ -n "$f" ]] && basename "$f"
+}
+
+free_port() {
+  local port="$1" pid
+  log "Ensuring port ${port} is free…"
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k "${port}/tcp" 2>/dev/null || true
+  fi
+  if command -v ss >/dev/null 2>&1; then
+    while read -r pid; do
+      [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]] || continue
+      local cwd=""
+      cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
+      warn "Killing PID ${pid} on :${port} (cwd: ${cwd:-unknown})"
+      kill -9 "$pid" 2>/dev/null || true
+    done < <(ss -tlnp 2>/dev/null | grep ":${port} " | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u)
+  fi
+  sleep 2
+}
+
+verify_frontend_listener() {
+  local listen_pid listen_cwd expected_cwd="$APP_ROOT/frontend"
+  listen_pid="$(ss -tlnp 2>/dev/null | grep ":${FRONTEND_PORT} " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2 || true)"
+  [[ -n "$listen_pid" ]] || die "Nothing is listening on port ${FRONTEND_PORT} after frontend start"
+  listen_cwd="$(readlink -f "/proc/${listen_pid}/cwd" 2>/dev/null || true)"
+  if [[ "$listen_cwd" != "$expected_cwd" ]]; then
+    die "Port ${FRONTEND_PORT} held by PID ${listen_pid} (cwd: ${listen_cwd:-unknown}), expected ${expected_cwd}"
+  fi
+  log "Frontend listening on :${FRONTEND_PORT} (PID ${listen_pid})"
+}
+
+prune_stale_next_chunks() {
+  local expected server_dir="$APP_ROOT/frontend/.next/server"
+  [[ -d "$server_dir" ]] || return 0
+  expected="$(frontend_main_chunk)"
+  [[ -n "$expected" ]] || return 0
+  local f base
+  for f in "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js; do
+    [[ -e "$f" ]] || continue
+    base="$(basename "$f")"
+    if [[ "$base" != "$expected" ]]; then
+      rm -f "$f"
+      log "Removed stale static chunk ${base} (build uses ${expected})"
+    fi
+  done
+}
+
 npm_install_project() {
   local project_dir="$1"
   local label="$2"
@@ -495,44 +552,46 @@ build_frontend() {
   npm_install_project "$APP_ROOT/frontend" "frontend"
   cd "$APP_ROOT/frontend"
   log "Cleaning previous Next.js build…"
-  rm -rf .next
+  run_as_app_user bash -c 'rm -rf .next'
   run_as_app_user env \
     NODE_ENV=production \
     NEXT_PUBLIC_SOCKET_URL="https://${DOMAIN}" \
     npm run build
+  prune_stale_next_chunks
   verify_frontend_build
   prepare_next_build
 }
 
 verify_frontend_html_sync() {
   local disk_chunk html_chunk attempt
-  disk_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1)")"
-  [[ -n "$disk_chunk" ]] || die "Cannot find main-app chunk on disk"
+  disk_chunk="$(frontend_main_chunk)"
+  [[ -n "$disk_chunk" ]] || die "Cannot find main-app chunk in .next/server build"
 
-  for attempt in 1 2 3 4 5 6; do
-    html_chunk="$(curl -sf "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
+  for attempt in $(seq 1 10); do
+    html_chunk="$(curl -sf -H 'Cache-Control: no-cache' "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
       | grep -oE 'main-app-[a-f0-9]+\.js' | head -1 || true)"
     if [[ "$html_chunk" == "$disk_chunk" ]]; then
       log "Frontend HTML matches build (${disk_chunk})"
       return 0
     fi
-    warn "Frontend HTML/build mismatch (attempt ${attempt}/6): HTML=${html_chunk:-none} disk=${disk_chunk}"
+    warn "Frontend HTML/build mismatch (attempt ${attempt}/10): HTML=${html_chunk:-none} disk=${disk_chunk}"
     sleep 3
   done
-  die "Frontend still serving stale HTML (${html_chunk:-unknown}) — expected ${disk_chunk}"
+  die "Frontend still serving stale HTML (${html_chunk:-unknown}) — expected ${disk_chunk}. Check: ss -tlnp | grep :${FRONTEND_PORT}"
 }
 
 verify_frontend_build() {
   local static_dir="$APP_ROOT/frontend/.next/static"
   local main_app page_chunk layout_chunk
   [[ -d "$static_dir" ]] || die "Frontend build failed: $static_dir missing"
-  main_app="$(ls "$static_dir/chunks/main-app-"*.js 2>/dev/null | head -1 || true)"
-  page_chunk="$(ls "$static_dir/chunks/app/page-"*.js 2>/dev/null | head -1 || true)"
-  layout_chunk="$(ls "$static_dir/chunks/app/layout-"*.js 2>/dev/null | head -1 || true)"
-  [[ -n "$main_app" && -f "$main_app" ]] || die "Frontend build incomplete: main-app chunk missing"
+  main_app="$(frontend_main_chunk)"
+  page_chunk="$(ls -t "$static_dir/chunks/app/page-"*.js 2>/dev/null | head -1 || true)"
+  layout_chunk="$(ls -t "$static_dir/chunks/app/layout-"*.js 2>/dev/null | head -1 || true)"
+  [[ -n "$main_app" ]] || die "Frontend build incomplete: main-app chunk missing from server build"
+  [[ -f "$static_dir/chunks/${main_app}" ]] || die "Frontend build incomplete: static chunk ${main_app} missing"
   [[ -n "$page_chunk" && -f "$page_chunk" ]] || die "Frontend build incomplete: app/page chunk missing"
   [[ -n "$layout_chunk" && -f "$layout_chunk" ]] || die "Frontend build incomplete: app/layout chunk missing"
-  log "Frontend build verified ($(basename "$main_app"))"
+  log "Frontend build verified (${main_app})"
 }
 
 prepare_next_build() {
@@ -594,11 +653,12 @@ setup_pm2() {
   fi
 
   # Cold-start frontend after every build so HTML and /_next/static share the same build id
+  run_as_app_user "$pm2_cmd" stop mahabir-crm-frontend 2>/dev/null || true
   run_as_app_user "$pm2_cmd" delete mahabir-crm-frontend 2>/dev/null || true
-  sleep 2
+  free_port "$FRONTEND_PORT"
   run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
     "$pm2_cmd" start "$ECOSYSTEM" --only mahabir-crm-frontend --update-env
-
+  verify_frontend_listener
   verify_frontend_html_sync
 
   run_as_app_user "$pm2_cmd" save
@@ -728,9 +788,9 @@ health_check() {
   fi
   [[ "$ok" -eq 1 ]] && log "Frontend OK (port ${FRONTEND_PORT})" || warn "Frontend health check failed"
   local main_chunk html_chunk
-  main_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1 || true)")"
+  main_chunk="$(frontend_main_chunk)"
   if [[ -n "$main_chunk" ]] && command -v curl >/dev/null 2>&1; then
-    html_chunk="$(curl -sf "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
+    html_chunk="$(curl -sf -H 'Cache-Control: no-cache' "http://127.0.0.1:${FRONTEND_PORT}/" 2>/dev/null \
       | grep -oE 'main-app-[a-f0-9]+\.js' | head -1 || true)"
     if [[ "$html_chunk" != "$main_chunk" ]]; then
       warn "HTML references ${html_chunk:-unknown} but build has ${main_chunk}"
