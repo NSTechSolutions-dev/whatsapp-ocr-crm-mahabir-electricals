@@ -40,6 +40,7 @@ const backendEnv = {
 const frontendEnv = {
   NODE_ENV: "production",
   HOSTNAME: "0.0.0.0",
+  PORT: "3000",
   NEXT_PUBLIC_SOCKET_URL: fileEnv.NEXT_PUBLIC_SOCKET_URL || socketUrl,
 };
 
@@ -72,8 +73,8 @@ module.exports = {
     {
       name: "mahabir-crm-frontend",
       cwd: path.join(appRoot, "frontend"),
-      script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000 -H 0.0.0.0",
+      script: "npm",
+      args: "run start",
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "512M",
@@ -81,7 +82,10 @@ module.exports = {
       error_file: path.join(appRoot, "logs", "frontend-error.log"),
       out_file: path.join(appRoot, "logs", "frontend-out.log"),
       ...pm2Logs,
-      ...pm2Stability,
+      autorestart: true,
+      max_restarts: 50,
+      min_uptime: 2000,
+      restart_delay: 2000,
     },
   ],
 };

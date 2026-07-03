@@ -38,6 +38,11 @@ echo "=== Backend logs (last 15 lines) ==="
 tail -15 "$APP_ROOT/logs/backend-error.log" 2>/dev/null || echo "(no error log)"
 echo
 
+echo "=== Frontend PM2 / logs ==="
+"$PM2" describe mahabir-crm-frontend 2>/dev/null | grep -E 'status|restarts|uptime|error' || echo "Frontend not in PM2"
+tail -20 "$APP_ROOT/logs/frontend-error.log" 2>/dev/null || echo "(no frontend error log)"
+echo
+
 echo "=== Port 3000 listener ==="
 if command -v ss >/dev/null 2>&1; then
   ss -tlnp 2>/dev/null | grep ':3000 ' || echo "Nothing on :3000"

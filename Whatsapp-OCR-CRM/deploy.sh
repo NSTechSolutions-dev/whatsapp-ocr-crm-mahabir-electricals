@@ -106,13 +106,47 @@ free_port() {
 
 verify_frontend_listener() {
   local listen_pid listen_cwd expected_cwd="$APP_ROOT/frontend"
-  listen_pid="$(ss -tlnp 2>/dev/null | grep ":${FRONTEND_PORT} " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2 || true)"
-  [[ -n "$listen_pid" ]] || die "Nothing is listening on port ${FRONTEND_PORT} after frontend start"
+  listen_pid="$(ss -tlnp 2>/dev/null | grep -E ":${FRONTEND_PORT}\\b" | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2 || true)"
+  if [[ -z "$listen_pid" ]]; then
+    if curl -sf --max-time 3 "http://127.0.0.1:${FRONTEND_PORT}/" >/dev/null 2>&1; then
+      log "Frontend responding on :${FRONTEND_PORT}"
+      return 0
+    fi
+    return 1
+  fi
   listen_cwd="$(readlink -f "/proc/${listen_pid}/cwd" 2>/dev/null || true)"
   if [[ "$listen_cwd" != "$expected_cwd" ]]; then
     die "Port ${FRONTEND_PORT} held by PID ${listen_pid} (cwd: ${listen_cwd:-unknown}), expected ${expected_cwd}"
   fi
   log "Frontend listening on :${FRONTEND_PORT} (PID ${listen_pid})"
+}
+
+show_frontend_pm2_logs() {
+  local pm2_cmd="${1:-$APP_ROOT/deploy/pm2.sh}"
+  warn "── frontend-error.log (last 25 lines) ──"
+  tail -25 "$LOG_DIR/frontend-error.log" 2>/dev/null || echo "(empty)"
+  warn "── frontend-out.log (last 15 lines) ──"
+  tail -15 "$LOG_DIR/frontend-out.log" 2>/dev/null || echo "(empty)"
+  run_as_app_user "$pm2_cmd" logs mahabir-crm-frontend --lines 15 --nostream 2>/dev/null || true
+}
+
+wait_for_frontend_ready() {
+  local pm2_cmd="$APP_ROOT/deploy/pm2.sh" attempt pid
+  [[ -f "$APP_ROOT/frontend/.next/BUILD_ID" ]] || die "No frontend production build at $APP_ROOT/frontend/.next — build failed"
+
+  for attempt in $(seq 1 30); do
+    pid="$(run_as_app_user "$pm2_cmd" pid mahabir-crm-frontend 2>/dev/null || true)"
+    if [[ -z "$pid" ]]; then
+      show_frontend_pm2_logs "$pm2_cmd"
+      die "Frontend PM2 process exited during startup (attempt ${attempt})"
+    fi
+    if verify_frontend_listener; then
+      return 0
+    fi
+    sleep 2
+  done
+  show_frontend_pm2_logs "$pm2_cmd"
+  die "Frontend did not become ready on :${FRONTEND_PORT} within 60s"
 }
 
 prune_stale_next_chunks() {
@@ -599,7 +633,7 @@ prepare_next_build() {
     warn "Missing $APP_ROOT/frontend/.next — frontend build may be incomplete"
     return
   fi
-  chown -R "$APP_USER:$APP_GROUP" "$APP_ROOT/frontend/.next" 2>/dev/null || true
+  ensure_app_ownership "$APP_ROOT/frontend/.next"
   log "Frontend .next build ready for Next.js"
 }
 
@@ -658,7 +692,7 @@ setup_pm2() {
   free_port "$FRONTEND_PORT"
   run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
     "$pm2_cmd" start "$ECOSYSTEM" --only mahabir-crm-frontend --update-env
-  verify_frontend_listener
+  wait_for_frontend_ready
   verify_frontend_html_sync
 
   run_as_app_user "$pm2_cmd" save
