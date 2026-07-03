@@ -571,21 +571,25 @@ EOF
 setup_pm2() {
   log "Starting / reloading PM2 processes…"
   mkdir -p "$LOG_DIR"
-  chown -R "$APP_USER:$APP_GROUP" "$LOG_DIR" "$APP_ROOT/.cache" 2>/dev/null || true
+  chown -R "$APP_USER:$APP_GROUP" "$LOG_DIR" "$APP_ROOT/.cache" "$APP_ROOT/.pm2" 2>/dev/null || true
 
   export APP_ROOT DEPLOY_DOMAIN="$DOMAIN"
   cd "$APP_ROOT"
 
-  if run_as_app_user pm2 describe mahabir-crm-backend &>/dev/null; then
-    # Full restart so Next.js picks up the fresh .next build (reload keeps stale HTML cache).
+  verify_pm2_env || die "PM2 env check failed — fix $ENV_FILE and run: $APP_ROOT/deploy/diagnose.sh"
+
+  local pm2_cmd="$APP_ROOT/deploy/pm2.sh"
+  chmod +x "$pm2_cmd"
+
+  if run_as_app_user "$pm2_cmd" describe mahabir-crm-backend &>/dev/null; then
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
-      pm2 restart "$ECOSYSTEM" --update-env
+      "$pm2_cmd" restart "$ECOSYSTEM" --update-env
   else
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
-      pm2 start "$ECOSYSTEM"
+      "$pm2_cmd" start "$ECOSYSTEM"
   fi
 
-  run_as_app_user pm2 save
+  run_as_app_user "$pm2_cmd" save
   if [[ "$UPDATE_ONLY" -eq 0 ]]; then
     env PATH="$PATH:$(npm root -g)/../bin" pm2 startup systemd -u "$APP_USER" --hp "$APP_ROOT" 2>/dev/null | \
       grep -E '^sudo' | bash || warn "Run 'pm2 startup' manually if PM2 does not survive reboot"
@@ -669,18 +673,39 @@ setup_ssl() {
   systemctl enable certbot-renew.timer 2>/dev/null || true
 }
 
+verify_pm2_env() {
+  log "Verifying .env loads into PM2…"
+  local missing
+  missing="$(cd "$APP_ROOT" && sudo -u "$APP_USER" env HOME="$APP_ROOT" PM2_HOME="$APP_ROOT/.pm2" APP_ROOT="$APP_ROOT" \
+    node -e "
+const c = require('./deploy/ecosystem.config.cjs');
+const e = c.apps[0].env;
+const required = ['DATABASE_URL','REDIS_URL','JWT_SECRET','JWT_REFRESH_SECRET','MSG91_AUTH_KEY','AWS_ACCESS_KEY_ID'];
+const miss = required.filter((k) => !e[k]);
+if (miss.length) { console.log(miss.join(' ')); process.exit(1); }
+" 2>&1)" || {
+    warn "Missing env keys for backend: ${missing:-unknown}"
+    return 1
+  }
+  log "PM2 env check passed"
+  return 0
+}
+
 health_check() {
   log "Health checks…"
-  sleep 3
-  local ok=0
-  if command -v curl >/dev/null 2>&1; then
-    curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/health" >/dev/null && ok=1
-  elif command -v wget >/dev/null 2>&1; then
-    wget -q -O /dev/null "http://127.0.0.1:${BACKEND_PORT}/api/health" && ok=1
-  else
-    (echo >/dev/tcp/127.0.0.1/"${BACKEND_PORT}") 2>/dev/null && ok=1
-  fi
-  [[ "$ok" -eq 1 ]] && log "Backend OK (port ${BACKEND_PORT})" || warn "Backend health check failed"
+  local ok=0 attempt
+  for attempt in 1 2 3 4 5 6; do
+    sleep 5
+    if curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/health" >/dev/null 2>&1; then
+      ok=1
+      break
+    fi
+    warn "Backend not ready yet (attempt ${attempt}/6)…"
+  done
+  [[ "$ok" -eq 1 ]] && log "Backend OK (port ${BACKEND_PORT})" || {
+    warn "Backend health check failed — run: $APP_ROOT/deploy/diagnose.sh"
+    warn "Logs: $APP_ROOT/deploy/pm2.sh logs mahabir-crm-backend --lines 30"
+  }
   ok=0
   if command -v curl >/dev/null 2>&1; then
     curl -sf "http://127.0.0.1:${FRONTEND_PORT}/" >/dev/null && ok=1

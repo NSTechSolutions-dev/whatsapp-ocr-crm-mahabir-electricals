@@ -24,8 +24,8 @@ function loadEnvFiles() {
 const loadedEnvPath = loadEnvFiles();
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string(),
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
   JWT_SECRET: z.string(),
   JWT_REFRESH_SECRET: z.string(),
   MSG91_AUTH_KEY: z.string(),
