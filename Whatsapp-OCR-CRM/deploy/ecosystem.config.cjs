@@ -25,7 +25,7 @@ module.exports = {
       name: "mahabir-crm-frontend",
       cwd: path.join(appRoot, "frontend"),
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000 -H 127.0.0.1",
+      args: "start -p 3000 -H 0.0.0.0",
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "512M",

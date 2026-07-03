@@ -14,6 +14,10 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // Apache proxies /api and /webhooks directly to the backend in production.
+    if (process.env.NODE_ENV === "production") {
+      return [];
+    }
     return [
       {
         source: "/api/:path*",

@@ -475,6 +475,58 @@ build_frontend() {
     NODE_ENV=production \
     NEXT_PUBLIC_SOCKET_URL="https://${DOMAIN}" \
     npm run build
+  prepare_next_static
+}
+
+prepare_next_static() {
+  local static_dir="$APP_ROOT/frontend/.next/static"
+  if [[ ! -d "$static_dir" ]]; then
+    warn "Missing $static_dir — frontend build may be incomplete"
+    return
+  fi
+  chmod -R a+rX "$APP_ROOT/frontend/.next"
+  if command -v chcon >/dev/null 2>&1; then
+    chcon -R -t httpd_sys_content_t "$APP_ROOT/frontend/.next" 2>/dev/null || \
+      setsebool -P httpd_read_user_content 1 2>/dev/null || true
+  fi
+  log "Prepared .next/static for Apache to serve directly"
+}
+
+apache_proxy_block() {
+  local proto="$1"
+  cat <<EOF
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "${proto}"
+    RequestHeader set X-Forwarded-For expr=%{REMOTE_ADDR}
+    RequestHeader set X-Real-IP expr=%{REMOTE_ADDR}
+    RequestHeader set X-Forwarded-Host expr=%{HTTP_HOST}
+
+    # WebSocket (Socket.io)
+    RewriteEngine On
+    RewriteCond %{HTTP:Upgrade} =websocket [NC]
+    RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
+
+    # Next.js static assets — serve from disk (bypasses Next.js proxy 400s)
+    ProxyPass /_next/static !
+    Alias /_next/static ${APP_ROOT}/frontend/.next/static
+    <Directory "${APP_ROOT}/frontend/.next/static">
+        Require all granted
+        Options -Indexes
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </Directory>
+
+    ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
+    ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
+
+    ProxyPass /api http://127.0.0.1:${BACKEND_PORT}/api
+    ProxyPassReverse /api http://127.0.0.1:${BACKEND_PORT}/api
+
+    ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
+    ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
+
+    ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
+    ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
+EOF
 }
 
 setup_pm2() {
@@ -517,29 +569,7 @@ write_httpd_conf() {
     SSLCertificateFile /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/${DOMAIN}/privkey.pem
 
-    ProxyPreserveHost On
-    RequestHeader set X-Forwarded-Proto "https"
-    RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-    RequestHeader set X-Real-IP "%{REMOTE_ADDR}s"
-
-    # WebSocket (Socket.io)
-    RewriteEngine On
-    RewriteCond %{HTTP:Upgrade} =websocket [NC]
-    RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
-
-    ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
-    ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
-
-    # Backend API + MSG91 webhooks
-    ProxyPass /api http://127.0.0.1:${BACKEND_PORT}/api
-    ProxyPassReverse /api http://127.0.0.1:${BACKEND_PORT}/api
-
-    ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
-    ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
-
-    # Next.js frontend
-    ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
-    ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
+$(apache_proxy_block "https")
 
     ErrorLog  /var/log/httpd/mahabir-crm-error.log
     CustomLog /var/log/httpd/mahabir-crm-access.log combined
@@ -553,24 +583,7 @@ setup_httpd_plain() {
 <VirtualHost *:80>
     ServerName ${DOMAIN}
 
-    ProxyPreserveHost On
-    RequestHeader set X-Forwarded-Proto "http"
-
-    RewriteEngine On
-    RewriteCond %{HTTP:Upgrade} =websocket [NC]
-    RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
-
-    ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
-    ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
-
-    ProxyPass /api http://127.0.0.1:${BACKEND_PORT}/api
-    ProxyPassReverse /api http://127.0.0.1:${BACKEND_PORT}/api
-
-    ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
-    ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
-
-    ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
-    ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
+$(apache_proxy_block "http")
 
     ErrorLog  /var/log/httpd/mahabir-crm-error.log
     CustomLog /var/log/httpd/mahabir-crm-access.log combined
@@ -664,7 +677,12 @@ incremental_update() {
   sync_database
   build_frontend
   setup_pm2
-  systemctl reload httpd 2>/dev/null || true
+  if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
+    write_httpd_conf
+  else
+    setup_httpd_plain
+  fi
+  systemctl reload httpd 2>/dev/null || systemctl restart httpd 2>/dev/null || true
   health_check
   log "Update complete: https://${DOMAIN}"
 }
