@@ -31,6 +31,7 @@ module.exports = {
       max_memory_restart: "512M",
       env: {
         NODE_ENV: "production",
+        HOSTNAME: "0.0.0.0",
         NEXT_PUBLIC_SOCKET_URL: socketUrl,
       },
       error_file: path.join(appRoot, "logs", "frontend-error.log"),

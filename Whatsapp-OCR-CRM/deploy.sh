@@ -494,11 +494,27 @@ build_frontend() {
   log "Building frontend…"
   npm_install_project "$APP_ROOT/frontend" "frontend"
   cd "$APP_ROOT/frontend"
+  log "Cleaning previous Next.js build…"
+  rm -rf .next
   run_as_app_user env \
     NODE_ENV=production \
     NEXT_PUBLIC_SOCKET_URL="https://${DOMAIN}" \
     npm run build
+  verify_frontend_build
   prepare_next_static
+}
+
+verify_frontend_build() {
+  local static_dir="$APP_ROOT/frontend/.next/static"
+  local main_app page_chunk layout_chunk
+  [[ -d "$static_dir" ]] || die "Frontend build failed: $static_dir missing"
+  main_app="$(ls "$static_dir/chunks/main-app-"*.js 2>/dev/null | head -1 || true)"
+  page_chunk="$(ls "$static_dir/chunks/app/page-"*.js 2>/dev/null | head -1 || true)"
+  layout_chunk="$(ls "$static_dir/chunks/app/layout-"*.js 2>/dev/null | head -1 || true)"
+  [[ -n "$main_app" && -f "$main_app" ]] || die "Frontend build incomplete: main-app chunk missing"
+  [[ -n "$page_chunk" && -f "$page_chunk" ]] || die "Frontend build incomplete: app/page chunk missing"
+  [[ -n "$layout_chunk" && -f "$layout_chunk" ]] || die "Frontend build incomplete: app/layout chunk missing"
+  log "Frontend build verified ($(basename "$main_app"))"
 }
 
 prepare_next_static() {
@@ -508,16 +524,11 @@ prepare_next_static() {
     return
   fi
   chmod -R a+rX "$APP_ROOT/frontend/.next"
-  if command -v chcon >/dev/null 2>&1; then
-    chcon -R -t httpd_sys_content_t "$APP_ROOT/frontend/.next" 2>/dev/null || \
-      setsebool -P httpd_read_user_content 1 2>/dev/null || true
-  fi
-  log "Prepared .next/static for Apache to serve directly"
+  log "Frontend .next permissions updated"
 }
 
 apache_proxy_block() {
   local proto="$1"
-  local static_dir="${APP_ROOT}/frontend/.next/static"
   cat <<EOF
     ProxyPreserveHost On
     RequestHeader set X-Forwarded-Proto "${proto}"
@@ -530,15 +541,6 @@ apache_proxy_block() {
     RewriteCond %{HTTP:Upgrade} =websocket [NC]
     RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
 
-    # Next.js static assets — serve from disk (must exclude BEFORE ProxyPass /)
-    ProxyPassMatch ^/_next/static/ !
-    AliasMatch ^/_next/static/(.*)$ ${static_dir}/\$1
-    <Directory "${static_dir}">
-        Require all granted
-        Options -Indexes
-        Header set Cache-Control "public, max-age=31536000, immutable"
-    </Directory>
-
     ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
     ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
 
@@ -548,6 +550,7 @@ apache_proxy_block() {
     ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
     ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
 
+    # Next.js (HTML + /_next/static must come from the same process/build)
     ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
     ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
 EOF
@@ -562,8 +565,9 @@ setup_pm2() {
   cd "$APP_ROOT"
 
   if run_as_app_user pm2 describe mahabir-crm-backend &>/dev/null; then
+    # Full restart so Next.js picks up the fresh .next build (reload keeps stale HTML cache).
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
-      pm2 reload "$ECOSYSTEM" --update-env
+      pm2 restart "$ECOSYSTEM" --update-env
   else
     run_as_app_user env APP_ROOT="$APP_ROOT" DEPLOY_DOMAIN="$DOMAIN" \
       pm2 start "$ECOSYSTEM"
@@ -674,6 +678,15 @@ health_check() {
     (echo >/dev/tcp/127.0.0.1/"${FRONTEND_PORT}") 2>/dev/null && ok=1
   fi
   [[ "$ok" -eq 1 ]] && log "Frontend OK (port ${FRONTEND_PORT})" || warn "Frontend health check failed"
+  local main_chunk
+  main_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1 || true)")"
+  if [[ -n "$main_chunk" ]] && command -v curl >/dev/null 2>&1; then
+    if curl -sf "http://127.0.0.1:${FRONTEND_PORT}/_next/static/chunks/${main_chunk}" >/dev/null; then
+      log "Frontend static chunk OK (${main_chunk})"
+    else
+      warn "Frontend static chunk missing via Next.js — check pm2 logs"
+    fi
+  fi
 }
 
 full_install() {
