@@ -1,8 +1,27 @@
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { z } from "zod";
 
-dotenv.config({ path: path.join(__dirname, "../../../.env") });
+function loadEnvFiles() {
+  const candidates = [
+    process.env.ENV_FILE,
+    path.join(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../.env"),
+    path.resolve(__dirname, "../../.env"),
+    path.resolve(__dirname, "../../../.env"),
+  ].filter((p): p is string => Boolean(p));
+
+  for (const envPath of candidates) {
+    if (fs.existsSync(envPath)) {
+      dotenv.config({ path: envPath });
+      return envPath;
+    }
+  }
+  return null;
+}
+
+const loadedEnvPath = loadEnvFiles();
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -46,6 +65,11 @@ const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error("❌ Invalid environment variables:", parsed.error.format());
+  if (loadedEnvPath) {
+    console.error(`   Loaded .env from: ${loadedEnvPath}`);
+  } else {
+    console.error("   No .env file found (check PM2 env or $APP_ROOT/.env permissions)");
+  }
   process.exit(1);
 }
 

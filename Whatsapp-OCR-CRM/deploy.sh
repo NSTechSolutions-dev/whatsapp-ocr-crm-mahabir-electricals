@@ -361,20 +361,18 @@ sync_env_database_url() {
 }
 
 ensure_backend_env() {
-  if paths_same "$ENV_FILE" "$BACKEND_ENV_FILE"; then
-    log "Backend uses root .env (same file or symlink)"
+  if [[ ! -f "$ENV_FILE" ]]; then
+    warn "Missing $ENV_FILE — backend will not start until it exists"
     return
   fi
-  if [[ -L "$BACKEND_ENV_FILE" ]]; then
-    local target
-    target="$(readlink "$BACKEND_ENV_FILE")"
-    if paths_same "$ENV_FILE" "$BACKEND_ENV_FILE" || paths_same "$ENV_FILE" "$APP_ROOT/backend/$target"; then
-      return
-    fi
+  if [[ -e "$BACKEND_ENV_FILE" ]] && ! paths_same "$ENV_FILE" "$BACKEND_ENV_FILE"; then
+    rm -f "$BACKEND_ENV_FILE"
   fi
-  cp "$ENV_FILE" "$BACKEND_ENV_FILE"
-  chmod 640 "$BACKEND_ENV_FILE"
-  chown "$APP_USER:$APP_GROUP" "$BACKEND_ENV_FILE" 2>/dev/null || true
+  if [[ ! -e "$BACKEND_ENV_FILE" ]]; then
+    ln -sf "../.env" "$BACKEND_ENV_FILE"
+    log "Linked backend/.env → .env"
+  fi
+  chown -h "$APP_USER:$APP_GROUP" "$BACKEND_ENV_FILE" 2>/dev/null || true
 }
 
 create_env_from_template() {
@@ -453,6 +451,8 @@ write_env() {
     log "Creating $ENV_FILE…"
     create_env_from_template
   fi
+  chmod 640 "$ENV_FILE"
+  chown "$APP_USER:$APP_GROUP" "$ENV_FILE" 2>/dev/null || chown "$APP_USER:$APP_USER" "$ENV_FILE"
   ensure_backend_env
 }
 
@@ -524,11 +524,16 @@ prepare_next_static() {
     return
   fi
   chmod -R a+rX "$APP_ROOT/frontend/.next"
-  log "Frontend .next permissions updated"
+  if command -v chcon >/dev/null 2>&1; then
+    chcon -R -t httpd_sys_content_t "$APP_ROOT/frontend/.next" 2>/dev/null || \
+      setsebool -P httpd_read_user_content 1 2>/dev/null || true
+  fi
+  log "Prepared .next/static for Apache"
 }
 
 apache_proxy_block() {
   local proto="$1"
+  local static_dir="${APP_ROOT}/frontend/.next/static"
   cat <<EOF
     ProxyPreserveHost On
     RequestHeader set X-Forwarded-Proto "${proto}"
@@ -536,10 +541,18 @@ apache_proxy_block() {
     RequestHeader set X-Real-IP expr=%{REMOTE_ADDR}
     RequestHeader set X-Forwarded-Host expr=%{HTTP_HOST}
 
-    # WebSocket (Socket.io)
     RewriteEngine On
     RewriteCond %{HTTP:Upgrade} =websocket [NC]
     RewriteRule ^/socket.io/(.*) ws://127.0.0.1:${BACKEND_PORT}/socket.io/\$1 [P,L]
+
+    # Serve /_next/static from disk (Next.js returns 400 for these behind Apache proxy)
+    ProxyPassMatch ^/_next/static/ !
+    AliasMatch ^/_next/static/(.*)$ ${static_dir}/\$1
+    <Directory "${static_dir}">
+        Require all granted
+        Options -Indexes
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </Directory>
 
     ProxyPass /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
     ProxyPassReverse /socket.io/ http://127.0.0.1:${BACKEND_PORT}/socket.io/
@@ -550,7 +563,6 @@ apache_proxy_block() {
     ProxyPass /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
     ProxyPassReverse /webhooks http://127.0.0.1:${BACKEND_PORT}/api/webhooks
 
-    # Next.js (HTML + /_next/static must come from the same process/build)
     ProxyPass / http://127.0.0.1:${FRONTEND_PORT}/
     ProxyPassReverse / http://127.0.0.1:${FRONTEND_PORT}/
 EOF
@@ -681,10 +693,11 @@ health_check() {
   local main_chunk
   main_chunk="$(basename "$(ls "$APP_ROOT/frontend/.next/static/chunks/main-app-"*.js 2>/dev/null | head -1 || true)")"
   if [[ -n "$main_chunk" ]] && command -v curl >/dev/null 2>&1; then
-    if curl -sf "http://127.0.0.1:${FRONTEND_PORT}/_next/static/chunks/${main_chunk}" >/dev/null; then
+    if curl -sf "http://127.0.0.1:${FRONTEND_PORT}/_next/static/chunks/${main_chunk}" >/dev/null \
+      || curl -sf "https://${DOMAIN}/_next/static/chunks/${main_chunk}" >/dev/null; then
       log "Frontend static chunk OK (${main_chunk})"
     else
-      warn "Frontend static chunk missing via Next.js — check pm2 logs"
+      warn "Frontend static chunk check failed (${main_chunk}) — hard-refresh browser after deploy"
     fi
   fi
 }
