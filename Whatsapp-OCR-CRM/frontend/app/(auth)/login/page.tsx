@@ -14,8 +14,8 @@ function LoginForm() {
   const { login, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("Admin@1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -87,10 +87,6 @@ function LoginForm() {
               {submitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-
-          <p className="text-xs text-ink-muted mt-8">
-            Demo credentials are pre-filled. Press <span className="font-medium text-ink">Sign in</span> to continue.
-          </p>
         </div>
       </div>
       <div
