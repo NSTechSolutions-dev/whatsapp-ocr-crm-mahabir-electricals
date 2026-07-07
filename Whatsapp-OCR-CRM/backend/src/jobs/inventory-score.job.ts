@@ -6,6 +6,7 @@ import { ProductExtractionError } from "../services/product-extraction.service";
 import { GeminiApiError } from "../lib/gemini-retry";
 import { isOcrJobCancelled } from "../lib/ocr-job-state";
 import { createSystemNotification } from "../utils/notification";
+import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
 
 export const inventoryScoreWorker = new Worker(
@@ -65,7 +66,7 @@ export const inventoryScoreWorker = new Worker(
         await updateJobState("failed", {
           status: "failed",
           failedStep: "inventory_score",
-          error: pipelineError?.message || "Gemini processing failed",
+          error: formatUserErrorMessage(pipelineError, "Gemini processing failed. Please try again."),
           retryable,
           rawText,
           ocrConfidence,
@@ -188,7 +189,7 @@ export const inventoryScoreWorker = new Worker(
       await updateJobState("failed", {
         status: "failed",
         failedStep: "inventory_score",
-        error: error.message || "Unknown error occurred",
+        error: formatUserErrorMessage(error, "Gemini processing failed. Please try again."),
         retryable,
         rawText,
         ocrConfidence,

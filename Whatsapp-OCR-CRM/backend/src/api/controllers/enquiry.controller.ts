@@ -12,6 +12,7 @@ import { buildInventorySearchText, deriveAliasesFromRaw, formatProductName, norm
 import { learnFromCorrections, learnFromEnquiry } from "../../services/learning.service";
 import { GeminiApiError } from "../../lib/gemini-retry";
 import { ProductExtractionError } from "../../services/product-extraction.service";
+import { formatUserErrorMessage } from "../../utils/user-error-message";
 
 async function enrichEnquiry(enquiryId: string) {
   const e = await prisma.enquiry.findUnique({
@@ -477,7 +478,7 @@ export async function reparseSourceData(req: Request, res: Response) {
           : false;
     const status = retryable ? 503 : 500;
     return res.status(status).json({
-      detail: error?.message || "Gemini processing failed",
+      detail: formatUserErrorMessage(error, "Gemini processing failed. Please try again."),
       retryable,
     });
   }

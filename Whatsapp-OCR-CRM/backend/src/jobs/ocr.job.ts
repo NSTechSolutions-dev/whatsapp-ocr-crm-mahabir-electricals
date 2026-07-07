@@ -4,6 +4,7 @@ import { getBuffer } from "../lib/s3";
 import { detectDocumentText } from "../lib/gcv";
 import { GeminiApiError } from "../lib/gemini-retry";
 import { isOcrJobCancelled } from "../lib/ocr-job-state";
+import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
 import { inventoryScoreQueue } from "./queues";
 
@@ -78,7 +79,7 @@ export const ocrWorker = new Worker(
       await updateJobState("failed", {
         status: "failed",
         failedStep: "ocr",
-        error: error.message || "Unknown error occurred",
+        error: formatUserErrorMessage(error, "Gemini OCR failed. Please try again."),
         retryable: geminiError?.retryable ?? true,
       });
       return;

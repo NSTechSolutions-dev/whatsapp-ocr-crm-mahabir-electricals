@@ -4,6 +4,7 @@ import { upload } from "../../lib/s3";
 import { inboundQueue, inventoryScoreQueue } from "../../jobs/queues";
 import { redisConnection } from "../../lib/redis";
 import { cancelConversationJobs, markStaleJobsFailed } from "../../lib/ocr-job-state";
+import { formatUserErrorMessage } from "../../utils/user-error-message";
 import { logger } from "../../utils/logger";
 
 function detectMime(filename: string | undefined, buffer: Buffer): string {
@@ -147,7 +148,7 @@ export async function getOcrResult(req: Request, res: Response) {
       ocrConfidence: parsed.ocrConfidence || null,
       conversationId: parsed.conversationId || null,
       s3Key: parsed.s3Key || null,
-      error: parsed.error || null,
+      error: parsed.error ? formatUserErrorMessage(parsed.error) : null,
       retryable: parsed.retryable ?? false,
       failedStep: parsed.failedStep || null,
     });
@@ -260,7 +261,7 @@ export async function listActiveJobs(req: Request, res: Response) {
             step: parsed.step,
             status: parsed.status,
             createdAt: parsed.createdAt,
-            error: parsed.error || null,
+            error: parsed.error ? formatUserErrorMessage(parsed.error) : null,
             retryable: parsed.retryable ?? false,
             enquiryId: parsed.enquiryId || null,
           });

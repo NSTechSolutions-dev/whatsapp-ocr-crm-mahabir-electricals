@@ -7,6 +7,7 @@ import { timeAgo } from "../../../../lib/format";
 import { socket } from "../../../../lib/socket";
 import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { formatUserErrorMessage } from "../../../../lib/user-error";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -236,7 +237,7 @@ export default function ConversationPage() {
       }
 
       if (j.data.status === "failed") {
-        toast.error(j.data.error || "Gemini processing failed");
+        toast.error(formatUserErrorMessage(j.data.error, "Gemini processing failed"));
         setBusy(false);
         onComplete?.();
         return;
@@ -392,7 +393,9 @@ export default function ConversationPage() {
             {ocrJob.status === "failed" && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md space-y-2">
                 <div className="text-sm text-red-800 font-medium">Gemini processing failed</div>
-                <div className="text-xs text-red-700">{ocrJob.error || "Rate limit or temporary API error"}</div>
+                <div className="text-xs text-red-700">
+                  {formatUserErrorMessage(ocrJob.error, "Rate limit or temporary API error")}
+                </div>
                 {(ocrJob.retryable ?? true) && (
                   <Button
                     size="sm"
@@ -646,9 +649,22 @@ function SimulateMessagePanel({
   );
 }
 
+function resolveMediaUrl(mediaUrl: string | null): string | null {
+  if (!mediaUrl) return null;
+  if (mediaUrl.startsWith("http")) return mediaUrl;
+  if (mediaUrl.startsWith("/")) return mediaUrl;
+  return `/api/files/${mediaUrl}`;
+}
+
+function isPdfUrl(url: string): boolean {
+  return url.includes("/pdf") || url.toLowerCase().endsWith(".pdf");
+}
+
 function MessageBubble({ m }: { m: Message }) {
   const isOut = m.direction === "OUTBOUND";
-  const url = m.mediaUrl ? (m.mediaUrl.startsWith("http") ? m.mediaUrl : `/api/files/${m.mediaUrl}`) : null;
+  const url = resolveMediaUrl(m.mediaUrl);
+  const showImage = !!url && m.type === "image";
+  const showPdf = !!url && (m.type === "document" || isPdfUrl(url));
 
   return (
     <div className={`flex ${isOut ? "justify-end" : "justify-start"}`} data-testid={`msg-${m.id}`}>
@@ -659,10 +675,28 @@ function MessageBubble({ m }: { m: Message }) {
             : "bg-secondary text-ink border border-line/60"
         }`}
       >
-        {url && m.type === "image" && (
+        {showImage && (
           <a href={url} target="_blank" rel="noreferrer">
             <img src={url} alt="" className="max-h-[260px] rounded mb-1 object-cover" />
           </a>
+        )}
+        {showPdf && (
+          <div className="mb-2 space-y-2">
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline"
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              Open quotation PDF
+            </a>
+            <iframe
+              src={url}
+              title="Quotation PDF preview"
+              className="w-full h-52 rounded border border-line bg-white"
+            />
+          </div>
         )}
         {m.content && <MessageContent content={m.content} type={m.type} />}
         <div className="text-[10px] text-ink-muted mt-1.5 flex gap-2">
@@ -675,6 +709,10 @@ function MessageBubble({ m }: { m: Message }) {
 }
 
 function MessageContent({ content, type }: { content: string; type: string }) {
+  if (content.startsWith("Quotation ")) {
+    return <div className="text-sm font-medium text-ink break-words">{content}</div>;
+  }
+
   if (type === "template" && content.includes("|")) {
     const parts = content.split("|").map((part) => part.trim()).filter(Boolean);
     const [title, ...rest] = parts;

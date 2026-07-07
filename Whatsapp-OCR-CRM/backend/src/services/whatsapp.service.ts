@@ -4,6 +4,13 @@ import { logger } from "../utils/logger";
 import type { Msg91DocumentHeader } from "../lib/msg91";
 import { normalizePhone } from "../utils/phone";
 
+function buildTemplateContent(templateName: string, variables: string[], hasDocument: boolean): string {
+  if (hasDocument && variables[0]) {
+    return `Quotation ${variables[0]}`;
+  }
+  return [templateName, ...variables].join(" | ");
+}
+
 export interface TemplateMessageOptions {
   variables?: string[];
   documentHeader?: Msg91DocumentHeader;
@@ -110,17 +117,15 @@ export async function sendTemplateMessage(
       resolvedConversationId = conversation.id;
     }
 
-    const contentParts = [templateName, ...variables];
-    const content = documentHeader
-      ? `${templateName} | ${variables.join(" | ")} | PDF attached`
-      : contentParts.join(" | ");
+    const content = buildTemplateContent(templateName, variables, !!documentHeader);
 
     const message = await prisma.whatsappMessage.create({
       data: {
         conversationId: resolvedConversationId,
         direction: "OUTBOUND",
-        type: "template",
+        type: documentHeader ? "document" : "template",
         content,
+        mediaUrl: documentHeader?.url ?? null,
       },
     });
 

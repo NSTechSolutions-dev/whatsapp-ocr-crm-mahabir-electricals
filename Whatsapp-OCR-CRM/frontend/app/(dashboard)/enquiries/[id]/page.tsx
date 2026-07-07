@@ -11,6 +11,7 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { formatINR, timeAgo, formatDate } from "../../../../lib/format";
+import { formatUserErrorMessage } from "../../../../lib/user-error";
 
 interface RowData {
   id?: string;
@@ -1253,7 +1254,10 @@ function SourcePreview({
       setIsEditing(false);
       onUpdate();
     } catch (e: any) {
-      const detail = e?.response?.data?.detail || "Gemini parse failed";
+      const detail = formatUserErrorMessage(
+        e?.response?.data?.detail,
+        "Gemini parse failed. Please try again."
+      );
       const retryable = !!e?.response?.data?.retryable;
       setParseError(detail);
       setParseRetryable(retryable);
@@ -1303,7 +1307,6 @@ function SourcePreview({
                 {parseError && (
                   <p className="text-[10px] text-red-600 leading-snug">
                     {parseError}
-                    {parseRetryable ? " — click Retry when the rate limit clears." : ""}
                   </p>
                 )}
               </div>
