@@ -121,6 +121,12 @@ export async function sendQuotation(req: Request, res: Response) {
       return res.status(404).json({ detail: "Quotation not found" });
     }
 
+    if (!q.s3Key.toLowerCase().endsWith(".pdf")) {
+      return res.status(400).json({
+        detail: "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
+      });
+    }
+
     // Determine target customer
     let targetCustomer = q.enquiry.customer;
     let targetConversationId = q.enquiry.conversationId;

@@ -609,22 +609,51 @@ function SimulateMessagePanel({
 
 function MessageBubble({ m }: { m: Message }) {
   const isOut = m.direction === "OUTBOUND";
-  // If the mediaUrl is relative, rewrite to proxy through /api/files endpoint
   const url = m.mediaUrl ? (m.mediaUrl.startsWith("http") ? m.mediaUrl : `/api/files/${m.mediaUrl}`) : null;
 
   return (
     <div className={`flex ${isOut ? "justify-end" : "justify-start"}`} data-testid={`msg-${m.id}`}>
-      <div className={`max-w-[70%] rounded-lg px-4 py-2.5 ${isOut ? "bg-brand-50 text-brand" : "bg-secondary text-ink"}`}>
+      <div
+        className={`max-w-[min(70%,42rem)] min-w-0 rounded-lg px-4 py-2.5 ${
+          isOut
+            ? "bg-emerald-50 text-ink border border-emerald-200/70"
+            : "bg-secondary text-ink border border-line/60"
+        }`}
+      >
         {url && m.type === "image" && (
           <a href={url} target="_blank" rel="noreferrer">
             <img src={url} alt="" className="max-h-[260px] rounded mb-1 object-cover" />
           </a>
         )}
-        {m.content && <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>}
-        <div className="text-[10px] text-ink-muted mt-1 flex gap-2">
+        {m.content && <MessageContent content={m.content} type={m.type} />}
+        <div className="text-[10px] text-ink-muted mt-1.5 flex gap-2">
           <span>{timeAgo(m.createdAt)}</span>
+          {isOut && <span className="text-emerald-700/80">Sent</span>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function MessageContent({ content, type }: { content: string; type: string }) {
+  if (type === "template" && content.includes("|")) {
+    const parts = content.split("|").map((part) => part.trim()).filter(Boolean);
+    const [title, ...rest] = parts;
+    return (
+      <div className="text-sm space-y-1 min-w-0 break-words [overflow-wrap:anywhere]">
+        <div className="font-medium text-ink">{title}</div>
+        {rest.map((part, index) => (
+          <div key={index} className="text-xs text-ink-muted leading-relaxed">
+            {part}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-sm whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere] min-w-0">
+      {content}
     </div>
   );
 }

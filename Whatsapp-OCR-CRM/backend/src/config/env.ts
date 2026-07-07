@@ -76,6 +76,7 @@ const envSchema = z.object({
   COMPANY_ADDRESS: z.string().default("Mahabir Electricals, India"),
   COMPANY_GSTIN: z.string().default("YOUR_GSTIN"),
   COMPANY_PHONE: z.string().default("+91XXXXXXXXXX"),
+  PUPPETEER_EXECUTABLE_PATH: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

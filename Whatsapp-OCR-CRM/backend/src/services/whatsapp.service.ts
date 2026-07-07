@@ -111,8 +111,9 @@ export async function sendTemplateMessage(
     }
 
     const contentParts = [templateName, ...variables];
-    if (documentHeader) contentParts.push(documentHeader.url);
-    const content = contentParts.join(" | ");
+    const content = documentHeader
+      ? `${templateName} | ${variables.join(" | ")} | PDF attached`
+      : contentParts.join(" | ");
 
     const message = await prisma.whatsappMessage.create({
       data: {

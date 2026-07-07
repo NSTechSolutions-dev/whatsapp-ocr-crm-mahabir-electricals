@@ -352,14 +352,29 @@ export async function generateQuotation(enquiryId: string, gstPercent = 18.0): P
   // Render using Puppeteer
   let browser;
   try {
-    browser = await puppeteer.launch({
+    const launchOptions: Parameters<typeof puppeteer.launch>[0] = {
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    };
+    const executablePath =
+      env.PUPPETEER_EXECUTABLE_PATH?.trim() || process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
+    if (executablePath) {
+      launchOptions.executablePath = executablePath;
+      logger.info(`Using Puppeteer executable: ${executablePath}`);
+    }
+
+    browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(30_000);
+    page.setDefaultTimeout(60_000);
     await page.setViewport({ width: 1200, height: 1600, deviceScaleFactor: 2 });
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-    const buffer = await page.pdf({ format: "A4", printBackground: true });
+    await page.setContent(htmlContent, { waitUntil: "load", timeout: 30_000 });
+    const buffer = await page.pdf({ format: "A4", printBackground: true, timeout: 60_000 });
 
     const key = `quotations/${year}/${month}/${enquiryId}.pdf`;
     await upload(key, buffer, "application/pdf");
