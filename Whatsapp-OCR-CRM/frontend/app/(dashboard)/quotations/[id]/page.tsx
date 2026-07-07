@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { Send, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, timeAgo } from "../../../../lib/format";
 
@@ -22,6 +22,7 @@ interface QuotationData {
   gstPercent: number;
   gstAmount: number;
   presignedUrl: string;
+  pdfReady?: boolean;
   sentAt: string | null;
   deliveryStatus: string | null;
   customer?: Customer;
@@ -39,6 +40,7 @@ export default function QuotationPreviewPage() {
   const { id } = useParams() as { id: string };
   const [q, setQ] = useState<QuotationData | null>(null);
   const [sending, setSending] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   
   // Custom customer send state
   const [customMode, setCustomMode] = useState(false);
@@ -84,6 +86,19 @@ export default function QuotationPreviewPage() {
     
     return () => clearTimeout(timer);
   }, [searchQuery, customMode]);
+
+  const regenerate = async () => {
+    setRegenerating(true);
+    try {
+      await api.post(`/quotations/${id}/regenerate`, { gstPercent: q?.gstPercent || 18 });
+      toast.success("Quotation PDF regenerated");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "PDF regeneration failed");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const send = async () => {
     setSending(true);
@@ -154,6 +169,24 @@ export default function QuotationPreviewPage() {
           <div className="font-display text-3xl font-semibold text-brand tabular mt-1">{formatINR(q.grandTotal)}</div>
         </div>
       </div>
+
+      {!q.pdfReady && (
+        <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900 flex items-center justify-between gap-4">
+          <div>
+            PDF is not ready for WhatsApp delivery. Regenerate to create a proper PDF file.
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-amber-300"
+            onClick={regenerate}
+            disabled={regenerating}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? "animate-spin" : ""}`} />
+            {regenerating ? "Regenerating…" : "Regenerate PDF"}
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-surface border border-line rounded-lg shadow-card overflow-hidden min-h-[300px]">

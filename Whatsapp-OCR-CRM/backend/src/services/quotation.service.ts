@@ -2,9 +2,35 @@ import puppeteer from "puppeteer";
 import { prisma } from "../lib/prisma";
 import { upload, getPresignedUrl } from "../lib/s3";
 import { env } from "../config/env";
+import { resolvePuppeteerExecutable } from "../lib/puppeteer-path";
 import { logger } from "../utils/logger";
 
-export async function generateQuotation(enquiryId: string, gstPercent = 18.0): Promise<any> {
+interface GenerateQuotationOptions {
+  existingNumber?: string;
+  requirePdf?: boolean;
+}
+
+export async function regenerateQuotationPdf(quotationId: string, gstPercent = 18.0): Promise<any> {
+  const existing = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    select: { enquiryId: true, number: true },
+  });
+
+  if (!existing) {
+    throw new Error("Quotation not found");
+  }
+
+  return generateQuotation(existing.enquiryId, gstPercent, {
+    existingNumber: existing.number,
+    requirePdf: true,
+  });
+}
+
+export async function generateQuotation(
+  enquiryId: string,
+  gstPercent = 18.0,
+  options: GenerateQuotationOptions = {}
+): Promise<any> {
   const enquiry = await prisma.enquiry.findUnique({
     where: { id: enquiryId },
     include: {
@@ -28,34 +54,35 @@ export async function generateQuotation(enquiryId: string, gstPercent = 18.0): P
   const gstAmount = subtotal * (gstPercent / 100);
   const grandTotal = subtotal + gstAmount;
 
-  // Generate Quotation number: QT-YYYY-MM-XXXXX with row lock on Sequence
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
-  const sequenceKey = `quotation-${year}-${month}`;
 
-  let seqNum = 1;
-  await prisma.$transaction(async (tx) => {
-    // Attempt to select Sequence with row lock
-    const existingSeq: any[] = await tx.$queryRaw`
-      SELECT * FROM "Sequence" WHERE key = ${sequenceKey} FOR UPDATE
-    `;
-
-    if (existingSeq.length > 0) {
-      seqNum = existingSeq[0].value + 1;
-      await tx.$queryRaw`
-        UPDATE "Sequence" SET value = ${seqNum}, "updatedAt" = NOW() WHERE key = ${sequenceKey}
+  let quotationNumber = options.existingNumber;
+  if (!quotationNumber) {
+    const sequenceKey = `quotation-${year}-${month}`;
+    let seqNum = 1;
+    await prisma.$transaction(async (tx) => {
+      const existingSeq: any[] = await tx.$queryRaw`
+        SELECT * FROM "Sequence" WHERE key = ${sequenceKey} FOR UPDATE
       `;
-    } else {
-      await tx.$executeRaw`
-        INSERT INTO "Sequence" (id, key, value, "updatedAt") 
-        VALUES (${`seq_${Date.now()}`}, ${sequenceKey}, 1, NOW())
-      `;
-      seqNum = 1;
-    }
-  });
 
-  const quotationNumber = `QT-${year}-${month}-${String(seqNum).padStart(5, "0")}`;
+      if (existingSeq.length > 0) {
+        seqNum = existingSeq[0].value + 1;
+        await tx.$queryRaw`
+          UPDATE "Sequence" SET value = ${seqNum}, "updatedAt" = NOW() WHERE key = ${sequenceKey}
+        `;
+      } else {
+        await tx.$executeRaw`
+          INSERT INTO "Sequence" (id, key, value, "updatedAt") 
+          VALUES (${`seq_${Date.now()}`}, ${sequenceKey}, 1, NOW())
+        `;
+        seqNum = 1;
+      }
+    });
+
+    quotationNumber = `QT-${year}-${month}-${String(seqNum).padStart(5, "0")}`;
+  }
 
   // Build HTML string
   const htmlContent = `
@@ -361,11 +388,12 @@ export async function generateQuotation(enquiryId: string, gstPercent = 18.0): P
         "--disable-gpu",
       ],
     };
-    const executablePath =
-      env.PUPPETEER_EXECUTABLE_PATH?.trim() || process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
+    const executablePath = resolvePuppeteerExecutable();
     if (executablePath) {
       launchOptions.executablePath = executablePath;
       logger.info(`Using Puppeteer executable: ${executablePath}`);
+    } else {
+      logger.warn("Puppeteer executable not found; bundled Chromium will be used if available");
     }
 
     browser = await puppeteer.launch(launchOptions);
@@ -399,7 +427,13 @@ export async function generateQuotation(enquiryId: string, gstPercent = 18.0): P
 
     return quotation;
   } catch (error) {
-    logger.error("Puppeteer rendering failed, falling back to mock HTML file: " + error);
+    logger.error("Puppeteer rendering failed: " + error);
+    if (options.requirePdf) {
+      throw new Error(
+        `PDF generation failed. Ensure Chrome is installed and PUPPETEER_EXECUTABLE_PATH is set. ${error}`
+      );
+    }
+
     const key = `quotations/${year}/${month}/${enquiryId}.html`;
     await upload(key, Buffer.from(htmlContent), "text/html");
     

@@ -3,6 +3,7 @@ import { redisConnection } from "../lib/redis";
 import { getBuffer } from "../lib/s3";
 import { detectDocumentText } from "../lib/gcv";
 import { GeminiApiError } from "../lib/gemini-retry";
+import { isOcrJobCancelled } from "../lib/ocr-job-state";
 import { logger } from "../utils/logger";
 import { inventoryScoreQueue } from "./queues";
 
@@ -14,6 +15,11 @@ export const ocrWorker = new Worker(
     const logPrefix = source ? `[${source}]` : "";
     const id = jobId || messageId;
     logger.info(`${logPrefix} ocrWorker starting job ${id}`);
+
+    if (jobId && (await isOcrJobCancelled(jobId))) {
+      logger.info(`${logPrefix} Skipping cancelled OCR job ${jobId}`);
+      return;
+    }
 
     const updateJobState = async (step: string, extra = {}) => {
       if (!jobId) return;
@@ -80,6 +86,6 @@ export const ocrWorker = new Worker(
   },
   {
     connection: redisConnection,
-    concurrency: 5,
+    concurrency: 2,
   }
 );

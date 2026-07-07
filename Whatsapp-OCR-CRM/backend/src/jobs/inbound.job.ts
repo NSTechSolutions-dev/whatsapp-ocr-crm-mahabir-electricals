@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import { redisConnection } from "../lib/redis";
 import { logger } from "../utils/logger";
 import { ocrQueue } from "./queues";
+import { isOcrJobCancelled } from "../lib/ocr-job-state";
 
 export const inboundWorker = new Worker(
   "inboundQueue",
@@ -10,6 +11,11 @@ export const inboundWorker = new Worker(
     
     const sourceLabel = source || (jobId ? "staff_upload" : "webhook");
     logger.info(`[${sourceLabel}] inboundWorker received message ${messageId || jobId} from customer ${customerId}`);
+
+    if (jobId && (await isOcrJobCancelled(jobId))) {
+      logger.info(`[${sourceLabel}] Skipping cancelled OCR job ${jobId}`);
+      return;
+    }
 
     try {
       // If this is a staff upload (has jobId), update Redis step to "ocr"
@@ -53,6 +59,6 @@ export const inboundWorker = new Worker(
   },
   {
     connection: redisConnection,
-    concurrency: 5,
+    concurrency: 2,
   }
 );

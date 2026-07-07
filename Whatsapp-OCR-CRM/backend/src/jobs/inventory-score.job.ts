@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import { runQuotationPipeline } from "../services/quotation-pipeline.service";
 import { ProductExtractionError } from "../services/product-extraction.service";
 import { GeminiApiError } from "../lib/gemini-retry";
+import { isOcrJobCancelled } from "../lib/ocr-job-state";
 import { createSystemNotification } from "../utils/notification";
 import { logger } from "../utils/logger";
 
@@ -15,6 +16,11 @@ export const inventoryScoreWorker = new Worker(
     const logPrefix = source ? `[${source}]` : "";
     const id = jobId || messageId;
     logger.info(`${logPrefix} inventoryScoreWorker starting job ${id} (${msgType || "unknown"})`);
+
+    if (jobId && (await isOcrJobCancelled(jobId))) {
+      logger.info(`${logPrefix} Skipping cancelled OCR job ${jobId}`);
+      return;
+    }
 
     const updateJobState = async (step: string, extra = {}) => {
       if (!jobId) return;

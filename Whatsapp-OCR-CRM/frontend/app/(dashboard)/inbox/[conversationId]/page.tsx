@@ -102,6 +102,7 @@ export default function ConversationPage() {
   const [data, setData] = useState<ConversationData | null>(null);
   const [enquiries, setEnquiries] = useState<EnquirySummary[]>([]);
   const [activeJobs, setActiveJobs] = useState<ProcessingJob[]>([]);
+  const [cancellingJobs, setCancellingJobs] = useState(false);
   const [ocrJob, setOcrJob] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -145,6 +146,21 @@ export default function ConversationPage() {
       setActiveJobs(r.data.items || []);
     } catch (e) {
       // Silent fail
+    }
+  };
+
+  const cancelActiveJobs = async () => {
+    setCancellingJobs(true);
+    try {
+      const r = await api.post("/ocr/active-jobs/cancel", { conversationId });
+      toast.success(`Cancelled ${r.data.cancelled || 0} processing job(s)`);
+      setOcrJob(null);
+      setBusy(false);
+      await loadActiveJobs();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "Failed to cancel processing jobs");
+    } finally {
+      setCancellingJobs(false);
     }
   };
 
@@ -397,9 +413,22 @@ export default function ConversationPage() {
 
         {/* Enquiry History */}
         <div className="flex-1 overflow-y-auto px-6 py-5 border-t border-line">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-3">
-            Past Enquiries ({enquiries.length + activeJobs.length})
-          </h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              Past Enquiries ({enquiries.length + activeJobs.length})
+            </h4>
+            {activeJobs.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={cancelActiveJobs}
+                disabled={cancellingJobs}
+              >
+                {cancellingJobs ? "Cancelling…" : `Cancel ${activeJobs.length} processing`}
+              </Button>
+            )}
+          </div>
           {enquiries.length === 0 && activeJobs.length === 0 ? (
             <div className="text-xs text-ink-muted">No enquiries yet.</div>
           ) : (

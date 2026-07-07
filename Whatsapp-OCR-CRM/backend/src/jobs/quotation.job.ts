@@ -19,6 +19,7 @@ export const quotationWorker = new Worker(
   },
   {
     connection: redisConnection,
-    concurrency: 3,
+    concurrency: 1,
+    lockDuration: 120_000,
   }
 );

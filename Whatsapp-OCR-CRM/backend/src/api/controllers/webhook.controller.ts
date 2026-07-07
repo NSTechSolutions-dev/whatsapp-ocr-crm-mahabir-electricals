@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { prisma } from "../../lib/prisma";
 import { upload } from "../../lib/s3";
 import { inboundQueue } from "../../jobs/queues";
-import { createOcrJobState } from "../../lib/ocr-job-state";
+import { createOcrJobState, findActiveJobForMessage } from "../../lib/ocr-job-state";
 import { verifyMsg91Signature } from "../../lib/msg91";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
@@ -227,6 +227,18 @@ export async function msg91Webhook(req: Request, res: Response) {
       });
     }
 
+    const existingJobId = await findActiveJobForMessage(message.id);
+    if (existingJobId) {
+      logger.info(`Skipping duplicate OCR job for message ${message.id} (existing job ${existingJobId})`);
+      return res.json({
+        ok: true,
+        conversationId: conversation.id,
+        messageId: message.id,
+        jobId: existingJobId,
+        deduped: true,
+      });
+    }
+
     const jobId = await createOcrJobState({
       conversationId: conversation.id,
       customerId: customer.id,
@@ -312,6 +324,18 @@ export async function simulateInbound(req: Request, res: Response) {
         duplicate: true,
         conversationId: conversation.id,
         messageId: message.id,
+      });
+    }
+
+    const existingJobId = await findActiveJobForMessage(message.id);
+    if (existingJobId) {
+      logger.info(`Skipping duplicate OCR job for message ${message.id} (existing job ${existingJobId})`);
+      return res.json({
+        ok: true,
+        conversationId: conversation.id,
+        messageId: message.id,
+        jobId: existingJobId,
+        deduped: true,
       });
     }
 

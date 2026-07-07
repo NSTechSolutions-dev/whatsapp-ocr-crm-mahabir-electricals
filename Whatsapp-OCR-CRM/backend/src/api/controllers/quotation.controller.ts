@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getPresignedUrl } from "../../lib/s3";
 import { sendTemplateMessage } from "../../services/whatsapp.service";
+import { regenerateQuotationPdf } from "../../services/quotation.service";
 import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
@@ -83,6 +84,7 @@ export async function getQuotation(req: Request, res: Response) {
       sentAt: q.sentAt?.toISOString() || sendHistory[0]?.sentAt || null,
       createdAt: q.createdAt.toISOString(),
       presignedUrl,
+      pdfReady: q.s3Key.toLowerCase().endsWith(".pdf"),
       enquiry: q.enquiry,
       customer: q.enquiry.customer,
       items: q.enquiry.items,
@@ -99,6 +101,32 @@ export async function getQuotation(req: Request, res: Response) {
   }
 }
 
+export async function regenerateQuotation(req: Request, res: Response) {
+  const { id } = req.params;
+  const gstPercent = Number(req.body?.gstPercent) || 18;
+
+  try {
+    const quotation = await regenerateQuotationPdf(id, gstPercent);
+    const presignedUrl = await getPresignedUrl(quotation.s3Key, 3600);
+
+    await logActivity(req.user!.id, "regenerate", "quotation", id);
+
+    return res.json({
+      ok: true,
+      id: quotation.id,
+      s3Key: quotation.s3Key,
+      pdfReady: quotation.s3Key.toLowerCase().endsWith(".pdf"),
+      presignedUrl,
+      number: quotation.number,
+    });
+  } catch (error: any) {
+    logger.error(`Error regenerating quotation ${id}: ` + error);
+    return res.status(500).json({
+      detail: error?.message || "Failed to regenerate quotation PDF",
+    });
+  }
+}
+
 export async function sendQuotation(req: Request, res: Response) {
   const { id } = req.params;
   const { customerId, newCustomer, gstPercent: bodyGst } = req.body as {
@@ -108,7 +136,7 @@ export async function sendQuotation(req: Request, res: Response) {
   };
 
   try {
-    const q = await prisma.quotation.findUnique({
+    let q = await prisma.quotation.findUnique({
       where: { id },
       include: {
         enquiry: {
@@ -122,6 +150,23 @@ export async function sendQuotation(req: Request, res: Response) {
     }
 
     if (!q.s3Key.toLowerCase().endsWith(".pdf")) {
+      try {
+        logger.info(`sendQuotation: auto-regenerating PDF for quotation ${id}`);
+        await regenerateQuotationPdf(id, Number(bodyGst) || 18);
+        q = await prisma.quotation.findUnique({
+          where: { id },
+          include: {
+            enquiry: {
+              include: { customer: true },
+            },
+          },
+        });
+      } catch (error) {
+        logger.error(`sendQuotation: PDF regeneration failed for ${id}: ${error}`);
+      }
+    }
+
+    if (!q || !q.s3Key.toLowerCase().endsWith(".pdf")) {
       return res.status(400).json({
         detail: "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
       });

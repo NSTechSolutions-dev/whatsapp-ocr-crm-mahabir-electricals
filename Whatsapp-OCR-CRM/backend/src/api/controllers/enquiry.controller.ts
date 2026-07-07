@@ -366,10 +366,25 @@ export async function finalizeEnquiry(req: Request, res: Response) {
       });
     });
 
+    let bullJobId = `quote-${id}`;
+    const existingQuoteJob = await quotationQueue.getJob(bullJobId);
+    if (existingQuoteJob) {
+      const state = await existingQuoteJob.getState();
+      if (state === "active") {
+        const started = existingQuoteJob.processedOn;
+        if (started && Date.now() - started > 5 * 60 * 1000) {
+          await existingQuoteJob.remove();
+          bullJobId = `quote-${id}-${Date.now()}`;
+        }
+      } else if (["completed", "failed", "waiting", "delayed"].includes(state)) {
+        await existingQuoteJob.remove();
+      }
+    }
+
     await quotationQueue.add(
       "generate",
       { enquiryId: id, gstPercent },
-      { jobId: `quote-${id}`, removeOnComplete: true }
+      { jobId: bullJobId, removeOnComplete: true }
     );
 
     await logActivity(req.user!.id, "finalize", "enquiry", id);

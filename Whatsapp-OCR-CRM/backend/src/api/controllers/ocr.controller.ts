@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { upload } from "../../lib/s3";
 import { inboundQueue, inventoryScoreQueue } from "../../jobs/queues";
 import { redisConnection } from "../../lib/redis";
+import { cancelConversationJobs, markStaleJobsFailed } from "../../lib/ocr-job-state";
 import { logger } from "../../utils/logger";
 
 function detectMime(filename: string | undefined, buffer: Buffer): string {
@@ -226,6 +227,8 @@ export async function listActiveJobs(req: Request, res: Response) {
   }
 
   try {
+    await markStaleJobsFailed(conversationId);
+
     // Scan for all job keys
     const jobKeys: string[] = [];
     let cursor = "0";
@@ -268,6 +271,22 @@ export async function listActiveJobs(req: Request, res: Response) {
     return res.json({ items: jobs });
   } catch (error) {
     logger.error("Error listing active OCR jobs: " + error);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+export async function cancelActiveJobs(req: Request, res: Response) {
+  const { conversationId } = req.body as { conversationId?: string };
+
+  if (!conversationId) {
+    return res.status(400).json({ detail: "conversationId required" });
+  }
+
+  try {
+    const cancelled = await cancelConversationJobs(conversationId);
+    return res.json({ ok: true, cancelled });
+  } catch (error) {
+    logger.error("Error cancelling active OCR jobs: " + error);
     return res.status(500).json({ detail: "Internal server error" });
   }
 }
