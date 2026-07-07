@@ -1,6 +1,12 @@
 import { prisma } from "../lib/prisma";
 import { whatsappQueue } from "../jobs/queues";
 import { logger } from "../utils/logger";
+import type { Msg91DocumentHeader } from "../lib/msg91";
+
+export interface TemplateMessageOptions {
+  variables?: string[];
+  documentHeader?: Msg91DocumentHeader;
+}
 
 export async function sendImageMessage(
   phone: string,
@@ -67,11 +73,20 @@ export async function sendImageMessage(
 export async function sendTemplateMessage(
   phone: string,
   templateName: string,
-  variables: string[] = [],
+  variablesOrOptions: string[] | TemplateMessageOptions = [],
   conversationId?: string
 ): Promise<string> {
   try {
     let resolvedConversationId = conversationId;
+
+    let variables: string[];
+    let documentHeader: Msg91DocumentHeader | undefined;
+    if (Array.isArray(variablesOrOptions)) {
+      variables = variablesOrOptions;
+    } else {
+      variables = variablesOrOptions.variables || [];
+      documentHeader = variablesOrOptions.documentHeader;
+    }
 
     let customer = await prisma.customer.findUnique({ where: { phone } });
     if (!customer) {
@@ -92,7 +107,9 @@ export async function sendTemplateMessage(
       resolvedConversationId = conversation.id;
     }
 
-    const content = `${templateName} | ${variables.join(" ")}`;
+    const contentParts = [templateName, ...variables];
+    if (documentHeader) contentParts.push(documentHeader.url);
+    const content = contentParts.join(" | ");
 
     const message = await prisma.whatsappMessage.create({
       data: {
@@ -109,6 +126,7 @@ export async function sendTemplateMessage(
       type: "template",
       templateName,
       variables,
+      documentHeader,
     });
 
     await prisma.conversation.update({

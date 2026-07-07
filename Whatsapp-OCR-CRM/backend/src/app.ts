@@ -16,6 +16,7 @@ import automationRouter from "./api/routes/automation.routes";
 import userRouter from "./api/routes/user.routes";
 import webhookRouter from "./api/routes/webhook.routes";
 import fileRouter from "./api/routes/file.routes";
+import publicRouter from "./api/routes/public.routes";
 import notificationRouter from "./api/routes/notification.routes";
 import learningRouter from "./api/routes/learning.routes";
 
@@ -57,6 +58,7 @@ app.use("/api/customers", customerRouter);
 app.use("/api/automation", automationRouter);
 app.use("/api/users", userRouter);
 app.use("/api/webhooks", webhookRouter);
+app.use("/api/public", publicRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/learning", learningRouter);
 app.use("/api", fileRouter);

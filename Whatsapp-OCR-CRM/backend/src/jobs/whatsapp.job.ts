@@ -7,7 +7,8 @@ import { logger } from "../utils/logger";
 export const whatsappWorker = new Worker(
   "whatsappQueue",
   async (job) => {
-    const { messageId, phone, type, imageUrl, caption, templateName, variables, text } = job.data;
+    const { messageId, phone, type, imageUrl, caption, templateName, variables, documentHeader, text } =
+      job.data;
     logger.info(`Worker sending WhatsApp message: ${messageId} to ${phone}`);
 
     try {
@@ -18,6 +19,7 @@ export const whatsappWorker = new Worker(
         caption,
         templateName,
         variables,
+        documentHeader,
         text,
       });
 

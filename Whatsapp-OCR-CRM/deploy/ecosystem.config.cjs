@@ -11,7 +11,11 @@ function loadEnvFile(filePath) {
   try {
     const dotenv = require(path.join(appRoot, "backend/node_modules/dotenv"));
     const result = dotenv.config({ path: filePath });
-    return result.parsed || {};
+    const parsed = result.parsed || {};
+    // Skip empty values so PM2 does not inject GEMINI_API_KEY= and block the real key from .env
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([, value]) => value != null && String(value).trim() !== "")
+    );
   } catch (err) {
     console.warn(`[ecosystem] dotenv failed for ${filePath}:`, err.message);
     return {};

@@ -3,6 +3,19 @@ import fs from "fs";
 import path from "path";
 import { z } from "zod";
 
+function applyEnvFile(envPath: string) {
+  dotenv.config({ path: envPath });
+  // PM2 may inject empty strings (e.g. GEMINI_API_KEY=) which block dotenv — backfill from file.
+  const parsed = dotenv.parse(fs.readFileSync(envPath));
+  for (const [key, value] of Object.entries(parsed)) {
+    if (value === undefined || value === null) continue;
+    const current = process.env[key];
+    if (!current || current.trim() === "") {
+      process.env[key] = value;
+    }
+  }
+}
+
 function loadEnvFiles() {
   const candidates = [
     process.env.ENV_FILE,
@@ -14,7 +27,7 @@ function loadEnvFiles() {
 
   for (const envPath of candidates) {
     if (fs.existsSync(envPath)) {
-      dotenv.config({ path: envPath });
+      applyEnvFile(envPath);
       return envPath;
     }
   }
@@ -31,6 +44,10 @@ const envSchema = z.object({
   MSG91_AUTH_KEY: z.string(),
   MSG91_WEBHOOK_SECRET: z.string(),
   MSG91_INTEGRATED_NUMBER: z.string(),
+  MSG91_WHATSAPP_NAMESPACE: z
+    .string()
+    .default("f4c1fc28_4118_4c8c_9bc6_e6e0a37418f5"),
+  MSG91_TEMPLATE_LANGUAGE: z.string().default("en"),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_TEXT_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_VISION_MODEL: z.string().default("gemini-2.5-flash-lite"),

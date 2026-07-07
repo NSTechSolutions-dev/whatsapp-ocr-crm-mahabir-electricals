@@ -509,6 +509,8 @@ JWT_REFRESH_SECRET=${jwt_refresh}
 MSG91_AUTH_KEY=${msg91_key}
 MSG91_WEBHOOK_SECRET=${msg91_secret}
 MSG91_INTEGRATED_NUMBER=${msg91_number}
+MSG91_WHATSAPP_NAMESPACE=f4c1fc28_4118_4c8c_9bc6_e6e0a37418f5
+MSG91_TEMPLATE_LANGUAGE=en
 MSG91_MOCK=0
 GEMINI_API_KEY=${gemini_key}
 AWS_ACCESS_KEY_ID=${aws_key}
@@ -532,6 +534,20 @@ EOF
   if grep -q "CHANGE_ME" "$ENV_FILE"; then
     warn "Edit $ENV_FILE and set MSG91 / AWS / GEMINI keys before production use."
   fi
+  if [[ -z "$gemini_key" ]]; then
+    warn "GEMINI_API_KEY is empty — OCR/AI webhook pipeline will fail until you set it in $ENV_FILE"
+  fi
+}
+
+warn_missing_gemini() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    return
+  fi
+  local gemini_val
+  gemini_val="$(read_env_val GEMINI_API_KEY "")"
+  if [[ -z "$gemini_val" ]]; then
+    warn "GEMINI_API_KEY is missing or empty in $ENV_FILE — set it and run: sudo -u $APP_USER pm2 reload $ECOSYSTEM --update-env"
+  fi
 }
 
 write_env() {
@@ -545,6 +561,7 @@ write_env() {
   chmod 640 "$ENV_FILE"
   chown "$APP_USER:$APP_GROUP" "$ENV_FILE" 2>/dev/null || chown "$APP_USER:$APP_USER" "$ENV_FILE"
   ensure_backend_env
+  warn_missing_gemini
 }
 
 git_pull() {

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getPresignedUrl } from "../../lib/s3";
 import { sendTemplateMessage } from "../../services/whatsapp.service";
+import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
@@ -165,10 +166,9 @@ export async function sendQuotation(req: Request, res: Response) {
       return res.status(400).json({ detail: "Customer missing" });
     }
 
-    // Get 7 days (604800 seconds) presigned S3 url for customer delivery
-    const presigned = await getPresignedUrl(q.s3Key, 7 * 24 * 3600);
+    const pdfProxyUrl = getQuotationPdfPublicUrl(q.id);
 
-    // Calculate Grand Total for template if needed, though we send q.number and presigned as primary variables
+    // Calculate Grand Total for template caption in CRM history
     const items = await prisma.enquiryItem.findMany({ where: { enquiryId: q.enquiryId } });
     let subtotal = 0;
     for (const item of items) {
@@ -179,12 +179,11 @@ export async function sendQuotation(req: Request, res: Response) {
 
     const caption = `Quotation ${q.number} — Grand Total Rs ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // Send to the target customer using the approved template
     const messageId = await sendTemplateMessage(
       targetCustomer.phone,
       "quotation_pdf_delivery",
-      [q.number, presigned],
-      targetConversationId // Will create new conversation if needed
+      [q.number, pdfProxyUrl],
+      targetConversationId
     );
 
     const now = new Date();
