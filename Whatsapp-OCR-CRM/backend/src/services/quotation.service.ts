@@ -1,9 +1,94 @@
 import puppeteer from "puppeteer";
 import { prisma } from "../lib/prisma";
-import { upload, getPresignedUrl } from "../lib/s3";
+import { upload, getPresignedUrl, getBuffer } from "../lib/s3";
 import { env } from "../config/env";
 import { resolvePuppeteerExecutable } from "../lib/puppeteer-path";
 import { logger } from "../utils/logger";
+
+function isPdfBuffer(buffer: Buffer): boolean {
+  return buffer.length >= 5 && buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+}
+
+async function renderHtmlToPdf(htmlContent: string): Promise<Buffer> {
+  let browser;
+  try {
+    const launchOptions: Parameters<typeof puppeteer.launch>[0] = {
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    };
+    const executablePath = resolvePuppeteerExecutable();
+    if (executablePath) {
+      launchOptions.executablePath = executablePath;
+      logger.info(`Using Puppeteer executable: ${executablePath}`);
+    } else {
+      logger.warn("Puppeteer executable not found; bundled Chromium will be used if available");
+    }
+
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(30_000);
+    page.setDefaultTimeout(60_000);
+    await page.setViewport({ width: 1200, height: 1600, deviceScaleFactor: 2 });
+    await page.setContent(htmlContent, { waitUntil: "load", timeout: 30_000 });
+    return await page.pdf({ format: "A4", printBackground: true, timeout: 60_000 });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+export async function isQuotationPdfReady(s3Key: string): Promise<boolean> {
+  try {
+    const buffer = await getBuffer(s3Key);
+    return isPdfBuffer(buffer);
+  } catch {
+    return s3Key.toLowerCase().endsWith(".pdf");
+  }
+}
+
+export async function ensureQuotationPdf(quotationId: string, gstPercent = 18.0): Promise<any> {
+  const existing = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    select: { id: true, enquiryId: true, number: true, s3Key: true },
+  });
+
+  if (!existing) {
+    throw new Error("Quotation not found");
+  }
+
+  try {
+    const current = await getBuffer(existing.s3Key);
+    if (isPdfBuffer(current)) {
+      return existing;
+    }
+  } catch (error) {
+    logger.warn(`Could not read quotation file ${existing.s3Key}: ${error}`);
+  }
+
+  if (existing.s3Key.toLowerCase().endsWith(".html")) {
+    try {
+      const html = (await getBuffer(existing.s3Key)).toString("utf-8");
+      const pdfBuffer = await renderHtmlToPdf(html);
+      const pdfKey = existing.s3Key.replace(/\.html$/i, ".pdf");
+      await upload(pdfKey, pdfBuffer, "application/pdf");
+      const presignedUrl = await getPresignedUrl(pdfKey);
+      return prisma.quotation.update({
+        where: { id: quotationId },
+        data: { s3Key: pdfKey, s3Url: presignedUrl },
+      });
+    } catch (error) {
+      logger.error(`HTML to PDF conversion failed for quotation ${quotationId}: ${error}`);
+    }
+  }
+
+  return regenerateQuotationPdf(quotationId, gstPercent);
+}
 
 interface GenerateQuotationOptions {
   existingNumber?: string;
@@ -376,33 +461,8 @@ export async function generateQuotation(
     </html>
   `;
 
-  // Render using Puppeteer
-  let browser;
   try {
-    const launchOptions: Parameters<typeof puppeteer.launch>[0] = {
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-    };
-    const executablePath = resolvePuppeteerExecutable();
-    if (executablePath) {
-      launchOptions.executablePath = executablePath;
-      logger.info(`Using Puppeteer executable: ${executablePath}`);
-    } else {
-      logger.warn("Puppeteer executable not found; bundled Chromium will be used if available");
-    }
-
-    browser = await puppeteer.launch(launchOptions);
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(30_000);
-    page.setDefaultTimeout(60_000);
-    await page.setViewport({ width: 1200, height: 1600, deviceScaleFactor: 2 });
-    await page.setContent(htmlContent, { waitUntil: "load", timeout: 30_000 });
-    const buffer = await page.pdf({ format: "A4", printBackground: true, timeout: 60_000 });
+    const buffer = await renderHtmlToPdf(htmlContent);
 
     const key = `quotations/${year}/${month}/${enquiryId}.pdf`;
     await upload(key, buffer, "application/pdf");
@@ -454,9 +514,5 @@ export async function generateQuotation(
       },
     });
     return quotation;
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
   }
 }

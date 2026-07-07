@@ -152,13 +152,23 @@ export default function ConversationPage() {
   const cancelActiveJobs = async () => {
     setCancellingJobs(true);
     try {
-      const r = await api.post("/ocr/active-jobs/cancel", { conversationId });
-      toast.success(`Cancelled ${r.data.cancelled || 0} processing job(s)`);
+      const r = await api.post("/ocr/active-jobs/cancel", { conversationId }, { timeout: 30000 });
+      const cleared = r.data.cancelled || 0;
+      if (cleared === 0) {
+        toast.message("No stuck jobs to clear");
+      } else {
+        toast.success(`Cleared ${cleared} stuck job(s)`);
+      }
       setOcrJob(null);
       setBusy(false);
       await loadActiveJobs();
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Failed to cancel processing jobs");
+      const status = e?.response?.status;
+      if (status === 404) {
+        toast.error("Clear jobs is not available yet — deploy the latest backend");
+      } else {
+        toast.error(e?.response?.data?.detail || "Failed to clear processing jobs");
+      }
     } finally {
       setCancellingJobs(false);
     }
@@ -425,7 +435,7 @@ export default function ConversationPage() {
                 onClick={cancelActiveJobs}
                 disabled={cancellingJobs}
               >
-                {cancellingJobs ? "Cancelling…" : `Cancel ${activeJobs.length} processing`}
+                {cancellingJobs ? "Clearing…" : `Clear ${activeJobs.length} stuck`}
               </Button>
             )}
           </div>

@@ -314,7 +314,7 @@ export default function UnifiedEnquiryPage() {
         }
       }
 
-      const r = await api.post(`/quotations/${quotationId}/send`, payload);
+      const r = await api.post(`/quotations/${quotationId}/send`, payload, { timeout: 120000 });
       const recipient = r.data.customer?.name || r.data.customer?.phone || "customer";
       toast.success(`Quotation sent to ${recipient}`);
 

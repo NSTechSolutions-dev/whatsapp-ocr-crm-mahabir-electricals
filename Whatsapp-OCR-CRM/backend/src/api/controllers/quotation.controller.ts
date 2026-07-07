@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getPresignedUrl } from "../../lib/s3";
 import { sendTemplateMessage } from "../../services/whatsapp.service";
-import { regenerateQuotationPdf } from "../../services/quotation.service";
+import { regenerateQuotationPdf, ensureQuotationPdf, isQuotationPdfReady } from "../../services/quotation.service";
 import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
@@ -31,6 +31,7 @@ export async function getQuotation(req: Request, res: Response) {
     }
 
     const presignedUrl = await getPresignedUrl(q.s3Key, 3600);
+    const pdfReady = await isQuotationPdfReady(q.s3Key);
 
     const sendHistoryRaw = await prisma.whatsappMessage.findMany({
       where: {
@@ -84,7 +85,7 @@ export async function getQuotation(req: Request, res: Response) {
       sentAt: q.sentAt?.toISOString() || sendHistory[0]?.sentAt || null,
       createdAt: q.createdAt.toISOString(),
       presignedUrl,
-      pdfReady: q.s3Key.toLowerCase().endsWith(".pdf"),
+      pdfReady,
       enquiry: q.enquiry,
       customer: q.enquiry.customer,
       items: q.enquiry.items,
@@ -106,8 +107,9 @@ export async function regenerateQuotation(req: Request, res: Response) {
   const gstPercent = Number(req.body?.gstPercent) || 18;
 
   try {
-    const quotation = await regenerateQuotationPdf(id, gstPercent);
+    const quotation = await ensureQuotationPdf(id, gstPercent);
     const presignedUrl = await getPresignedUrl(quotation.s3Key, 3600);
+    const pdfReady = await isQuotationPdfReady(quotation.s3Key);
 
     await logActivity(req.user!.id, "regenerate", "quotation", id);
 
@@ -115,7 +117,7 @@ export async function regenerateQuotation(req: Request, res: Response) {
       ok: true,
       id: quotation.id,
       s3Key: quotation.s3Key,
-      pdfReady: quotation.s3Key.toLowerCase().endsWith(".pdf"),
+      pdfReady,
       presignedUrl,
       number: quotation.number,
     });
@@ -149,10 +151,10 @@ export async function sendQuotation(req: Request, res: Response) {
       return res.status(404).json({ detail: "Quotation not found" });
     }
 
-    if (!q.s3Key.toLowerCase().endsWith(".pdf")) {
+    if (!(await isQuotationPdfReady(q.s3Key))) {
       try {
-        logger.info(`sendQuotation: auto-regenerating PDF for quotation ${id}`);
-        await regenerateQuotationPdf(id, Number(bodyGst) || 18);
+        logger.info(`sendQuotation: ensuring PDF for quotation ${id}`);
+        await ensureQuotationPdf(id, Number(bodyGst) || 18);
         q = await prisma.quotation.findUnique({
           where: { id },
           include: {
@@ -162,11 +164,11 @@ export async function sendQuotation(req: Request, res: Response) {
           },
         });
       } catch (error) {
-        logger.error(`sendQuotation: PDF regeneration failed for ${id}: ${error}`);
+        logger.error(`sendQuotation: PDF preparation failed for ${id}: ${error}`);
       }
     }
 
-    if (!q || !q.s3Key.toLowerCase().endsWith(".pdf")) {
+    if (!q || !(await isQuotationPdfReady(q.s3Key))) {
       return res.status(400).json({
         detail: "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
       });

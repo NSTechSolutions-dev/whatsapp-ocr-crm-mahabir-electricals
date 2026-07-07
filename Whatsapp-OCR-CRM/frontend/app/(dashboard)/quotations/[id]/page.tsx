@@ -90,7 +90,7 @@ export default function QuotationPreviewPage() {
   const regenerate = async () => {
     setRegenerating(true);
     try {
-      await api.post(`/quotations/${id}/regenerate`, { gstPercent: q?.gstPercent || 18 });
+      await api.post(`/quotations/${id}/regenerate`, { gstPercent: q?.gstPercent || 18 }, { timeout: 120000 });
       toast.success("Quotation PDF regenerated");
       await load();
     } catch (e: any) {
@@ -119,7 +119,7 @@ export default function QuotationPreviewPage() {
         // If neither selected, fall back to original customer
       }
       
-      const r = await api.post(`/quotations/${id}/send`, payload);
+      const r = await api.post(`/quotations/${id}/send`, payload, { timeout: 120000 });
       toast.success(`Sent to ${r.data.customerId ? "customer" : "original customer"}`);
       await load();
       

@@ -84,21 +84,10 @@ export async function cancelConversationJobs(conversationId: string): Promise<nu
     if (!state) continue;
 
     const parsed = JSON.parse(state);
-    if (parsed.conversationId !== conversationId || parsed.status !== "processing") {
-      continue;
-    }
+    if (parsed.conversationId !== conversationId) continue;
+    if (!["processing", "failed", "cancelled"].includes(parsed.status)) continue;
 
-    await redisConnection.setex(
-      key,
-      3600,
-      JSON.stringify({
-        ...parsed,
-        status: "cancelled",
-        step: "cancelled",
-        error: "Cancelled by user",
-        retryable: false,
-      })
-    );
+    await redisConnection.del(key);
     cancelled += 1;
   }
 
