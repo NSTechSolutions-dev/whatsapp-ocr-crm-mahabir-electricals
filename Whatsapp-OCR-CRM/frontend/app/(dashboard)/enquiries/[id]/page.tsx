@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package } from "lucide-react";
+import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,6 +48,7 @@ interface QuotationData {
   gstPercent: number;
   gstAmount: number;
   presignedUrl: string;
+  pdfReady?: boolean;
   sentAt: string | null;
   deliveryStatus: string | null;
   customer?: Customer;
@@ -87,6 +88,7 @@ export default function UnifiedEnquiryPage() {
   // Quotation state
   const [quotation, setQuotation] = useState<QuotationData | null>(null);
   const [sending, setSending] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   
   // Custom customer send state
   const [customMode, setCustomMode] = useState(false);
@@ -291,6 +293,25 @@ export default function UnifiedEnquiryPage() {
 
   const resolveQuotationId = (overrideId?: string) =>
     overrideId ?? quotation?.id ?? data?.quotation?.id ?? null;
+
+  const regeneratePdf = async () => {
+    const quotationId = resolveQuotationId();
+    if (!quotationId) {
+      toast.error("Quotation not loaded yet");
+      return;
+    }
+
+    setRegenerating(true);
+    try {
+      await api.post(`/quotations/${quotationId}/regenerate`, { gstPercent: Number(gst) || 18 }, { timeout: 120000 });
+      toast.success("Quotation PDF generated");
+      await loadQuotation(quotationId);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "PDF generation failed");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const sendQuotation = async (overrideQuotationId?: string) => {
     const quotationId = resolveQuotationId(overrideQuotationId);
@@ -851,6 +872,23 @@ export default function UnifiedEnquiryPage() {
                       </button>
                     </>
                   )}
+                </div>
+              )}
+
+              {quotation && quotation.pdfReady === false && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+                  <span>PDF file missing. Generate before sending on WhatsApp.</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px] border-amber-300 shrink-0"
+                    onClick={regeneratePdf}
+                    disabled={regenerating}
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${regenerating ? "animate-spin" : ""}`} />
+                    {regenerating ? "Generating…" : "Generate PDF"}
+                  </Button>
                 </div>
               )}
 

@@ -152,6 +152,7 @@ export async function sendQuotation(req: Request, res: Response) {
     }
 
     if (!(await isQuotationPdfReady(q.s3Key))) {
+      let pdfError: string | null = null;
       try {
         logger.info(`sendQuotation: ensuring PDF for quotation ${id}`);
         await ensureQuotationPdf(id, Number(bodyGst) || 18);
@@ -163,15 +164,18 @@ export async function sendQuotation(req: Request, res: Response) {
             },
           },
         });
-      } catch (error) {
-        logger.error(`sendQuotation: PDF preparation failed for ${id}: ${error}`);
+      } catch (error: any) {
+        pdfError = error?.message || String(error);
+        logger.error(`sendQuotation: PDF preparation failed for ${id}: ${pdfError}`);
       }
-    }
 
-    if (!q || !(await isQuotationPdfReady(q.s3Key))) {
-      return res.status(400).json({
-        detail: "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
-      });
+      if (!q || !(await isQuotationPdfReady(q.s3Key))) {
+        return res.status(400).json({
+          detail:
+            pdfError ||
+            "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
+        });
+      }
     }
 
     // Determine target customer
