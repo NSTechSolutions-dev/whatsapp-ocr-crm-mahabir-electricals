@@ -9,6 +9,49 @@ import { verifyMsg91Signature } from "../../lib/msg91";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { normalizePhone } from "../../utils/phone";
+import {
+  buildInboundWebhookDedupeKey,
+  claimInboundWebhook,
+  parseMsg91Inbound,
+} from "../../utils/webhook-dedup";
+
+async function findRecentDuplicateMessage(
+  conversationId: string,
+  msgType: string,
+  content: string | null,
+  sourceMediaUrl: string | null
+) {
+  const since = new Date(Date.now() - 120_000);
+  const trimmed = content?.trim();
+
+  if (trimmed) {
+    return prisma.whatsappMessage.findFirst({
+      where: {
+        conversationId,
+        direction: "INBOUND",
+        type: msgType,
+        content: trimmed,
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (sourceMediaUrl) {
+    return prisma.whatsappMessage.findFirst({
+      where: {
+        conversationId,
+        direction: "INBOUND",
+        type: msgType,
+        createdAt: { gte: since },
+        OR: [{ mediaUrl: sourceMediaUrl }, { content: sourceMediaUrl }],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  return null;
+}
 
 async function upsertInboundMessage(
   phone: string,
@@ -16,7 +59,8 @@ async function upsertInboundMessage(
   msgType: string,
   content: string | null,
   mediaUrl: string | null,
-  waMessageId: string | null
+  waMessageId: string | null,
+  sourceMediaUrl: string | null
 ) {
   const normalizedPhone = normalizePhone(phone);
 
@@ -38,7 +82,6 @@ async function upsertInboundMessage(
     }
   }
 
-  // 1. Upsert Customer
   let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
   if (!customer) {
     customer = await prisma.customer.create({
@@ -51,7 +94,6 @@ async function upsertInboundMessage(
     });
   }
 
-  // 2. Upsert Conversation
   const waConversationId = `wa-${customer.id}`;
   let conversation = await prisma.conversation.findUnique({
     where: { waConversationId },
@@ -66,7 +108,24 @@ async function upsertInboundMessage(
     });
   }
 
-  // 3. Create Message
+  const recentDuplicate = await findRecentDuplicateMessage(
+    conversation.id,
+    msgType,
+    content,
+    sourceMediaUrl
+  );
+  if (recentDuplicate) {
+    logger.info(
+      `Skipping recent duplicate inbound message in conversation ${conversation.id} (messageId=${recentDuplicate.id})`
+    );
+    return {
+      customer,
+      conversation,
+      message: recentDuplicate,
+      duplicate: true as const,
+    };
+  }
+
   const message = await prisma.whatsappMessage.create({
     data: {
       conversationId: conversation.id,
@@ -78,7 +137,6 @@ async function upsertInboundMessage(
     },
   });
 
-  // 4. Update Conversation timestamp
   await prisma.conversation.update({
     where: { id: conversation.id },
     data: { lastMessageAt: new Date() },
@@ -92,7 +150,6 @@ export async function msg91Webhook(req: Request, res: Response) {
   const signature = req.headers["x-msg91-signature"] as string;
   const isMock = process.env.MSG91_MOCK !== "0";
 
-  // Signature check
   if (!isMock) {
     const shouldSkip = env.MSG91_WEBHOOK_SECRET === "skip" || env.MSG91_WEBHOOK_SECRET.includes("dummy");
     if (!shouldSkip) {
@@ -102,27 +159,30 @@ export async function msg91Webhook(req: Request, res: Response) {
     }
   }
 
-  const payload = req.body;
-  const phone = payload.customerNumber || payload.from || payload.phone;
-  const msgType = payload.contentType || payload.messageType || payload.type || "text";
-  const name = payload.customerName || payload.name || null;
-  const content = payload.text || payload.content || null;
-  let mediaUrl = payload.url || payload.mediaUrl || null;
-  const waMessageId =
-    payload.uuid ||
-    payload.messageId ||
-    payload.message_id ||
-    payload.messages?.[0]?.id ||
-    payload.messages?.[0]?.uuid ||
-    null;
+  const payload = req.body as Record<string, unknown>;
+  const { phone, msgType, name, content, sourceMediaUrl, waMessageId } = parseMsg91Inbound(payload);
 
   if (!phone) {
     logger.warn("Webhook request rejected: phone/customerNumber is missing");
     return res.status(400).json({ detail: "Missing phone" });
   }
 
+  const dedupeKey = buildInboundWebhookDedupeKey({
+    waMessageId,
+    phone,
+    msgType,
+    content,
+    sourceMediaUrl,
+  });
+
+  if (!(await claimInboundWebhook(dedupeKey))) {
+    logger.info(`Duplicate inbound webhook suppressed before processing (key=${dedupeKey})`);
+    return res.json({ ok: true, duplicate: true, dedupeKey });
+  }
+
+  let mediaUrl = sourceMediaUrl;
+
   try {
-    // If type is image, download media and upload to S3
     if (msgType === "image" && mediaUrl) {
       try {
         const response = await axios.get(mediaUrl, { responseType: "arraybuffer" });
@@ -131,7 +191,6 @@ export async function msg91Webhook(req: Request, res: Response) {
         const uuid = crypto.randomUUID();
         const key = `uploads/whatsapp/${today}/${uuid}.png`;
         await upload(key, buffer, "image/png");
-        // Use key as mediaUrl or getPresignedUrl
         mediaUrl = key;
       } catch (err) {
         logger.error("Failed to download or upload webhook media: " + err);
@@ -144,7 +203,8 @@ export async function msg91Webhook(req: Request, res: Response) {
       msgType,
       content,
       mediaUrl,
-      waMessageId
+      waMessageId,
+      sourceMediaUrl
     );
 
     if (duplicate) {
@@ -165,16 +225,24 @@ export async function msg91Webhook(req: Request, res: Response) {
       source: "webhook",
     });
 
-    await inboundQueue.add("processMessage", {
-      jobId,
-      messageId: message.id,
-      msgType,
-      content,
-      mediaUrl,
-      customerId: customer.id,
-      conversationId: conversation.id,
-      source: "webhook",
-    });
+    await inboundQueue.add(
+      "processMessage",
+      {
+        jobId,
+        messageId: message.id,
+        msgType,
+        content,
+        mediaUrl,
+        customerId: customer.id,
+        conversationId: conversation.id,
+        source: "webhook",
+      },
+      {
+        jobId: `inbound-msg-${message.id}`,
+        removeOnComplete: true,
+        removeOnFail: 100,
+      }
+    );
 
     const io = req.app.get("io");
     if (io) {
@@ -217,14 +285,24 @@ export async function simulateInbound(req: Request, res: Response) {
       }
     }
 
-    const { conversation, message, customer } = await upsertInboundMessage(
+    const { conversation, message, customer, duplicate } = await upsertInboundMessage(
       phone,
       name || null,
       msgType,
       content || null,
       finalMediaUrl,
-      `sim-${Date.now()}`
+      `sim-${Date.now()}`,
+      mediaUrl || null
     );
+
+    if (duplicate) {
+      return res.json({
+        ok: true,
+        duplicate: true,
+        conversationId: conversation.id,
+        messageId: message.id,
+      });
+    }
 
     const jobId = await createOcrJobState({
       conversationId: conversation.id,
@@ -235,16 +313,24 @@ export async function simulateInbound(req: Request, res: Response) {
       source: "webhook",
     });
 
-    await inboundQueue.add("processMessage", {
-      jobId,
-      messageId: message.id,
-      msgType,
-      content: content || null,
-      mediaUrl: finalMediaUrl,
-      customerId: customer.id,
-      conversationId: conversation.id,
-      source: "webhook",
-    });
+    await inboundQueue.add(
+      "processMessage",
+      {
+        jobId,
+        messageId: message.id,
+        msgType,
+        content: content || null,
+        mediaUrl: finalMediaUrl,
+        customerId: customer.id,
+        conversationId: conversation.id,
+        source: "webhook",
+      },
+      {
+        jobId: `inbound-msg-${message.id}`,
+        removeOnComplete: true,
+        removeOnFail: 100,
+      }
+    );
 
     const io = req.app.get("io");
     if (io) {

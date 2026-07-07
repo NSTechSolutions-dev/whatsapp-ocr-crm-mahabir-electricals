@@ -565,9 +565,14 @@ write_env() {
 }
 
 git_pull() {
-  if [[ -d "$APP_ROOT/.git" ]]; then
+  local git_root="$APP_ROOT"
+  if [[ ! -d "$APP_ROOT/.git" && -d "$(dirname "$APP_ROOT")/.git" ]]; then
+    git_root="$(dirname "$APP_ROOT")"
+    log "Using parent git root: $git_root"
+  fi
+  if [[ -d "$git_root/.git" ]]; then
     log "Pulling latest code…"
-    run_as_app_user git -C "$APP_ROOT" pull --ff-only || warn "git pull failed — continuing with current tree"
+    run_as_app_user git -C "$git_root" pull --ff-only || warn "git pull failed — continuing with current tree"
   else
     warn "No .git directory — skipping git pull"
   fi
