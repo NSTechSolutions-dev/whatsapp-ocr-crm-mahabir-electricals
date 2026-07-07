@@ -79,9 +79,21 @@ export async function getConversation(req: Request, res: Response) {
       return res.status(404).json({ detail: "Conversation not found" });
     }
 
-    const messages = await prisma.whatsappMessage.findMany({
+    const messagesRaw = await prisma.whatsappMessage.findMany({
       where: { conversationId },
       orderBy: { createdAt: "asc" },
+    });
+
+    const seenIds = new Set<string>();
+    const seenWaIds = new Set<string>();
+    const messages = messagesRaw.filter((m) => {
+      if (seenIds.has(m.id)) return false;
+      seenIds.add(m.id);
+      if (m.waMessageId) {
+        if (seenWaIds.has(m.waMessageId)) return false;
+        seenWaIds.add(m.waMessageId);
+      }
+      return true;
     });
 
     // Mark as read or reset unread if any counter existed. In our model we don't have it on Postgres, so no-op is fine.

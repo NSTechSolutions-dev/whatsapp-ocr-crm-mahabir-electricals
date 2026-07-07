@@ -112,7 +112,19 @@ export default function ConversationPage() {
   const load = async () => {
     try {
       const r = await api.get(`/inbox/${conversationId}`);
-      setData(r.data);
+      const raw = r.data.messages || [];
+      const seen = new Set<string>();
+      const seenWa = new Set<string>();
+      const messages = raw.filter((m: Message) => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        if (m.waMessageId) {
+          if (seenWa.has(m.waMessageId)) return false;
+          seenWa.add(m.waMessageId);
+        }
+        return true;
+      });
+      setData({ ...r.data, messages });
     } catch (e) {
       toast.error("Failed to load conversation");
     }
@@ -156,8 +168,8 @@ export default function ConversationPage() {
     socket.on("new_message", (msg: Message) => {
       setData((prev) => {
         if (!prev) return prev;
-        // Check for duplicates
         if (prev.messages.some((m) => m.id === msg.id)) return prev;
+        if (msg.waMessageId && prev.messages.some((m) => m.waMessageId === msg.waMessageId)) return prev;
         return {
           ...prev,
           messages: [...prev.messages, msg],

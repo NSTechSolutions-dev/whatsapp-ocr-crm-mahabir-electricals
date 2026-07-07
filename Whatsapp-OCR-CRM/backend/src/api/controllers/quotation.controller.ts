@@ -181,8 +181,14 @@ export async function sendQuotation(req: Request, res: Response) {
 
     const messageId = await sendTemplateMessage(
       targetCustomer.phone,
-      "quotation_pdf_delivery",
-      [q.number, pdfProxyUrl],
+      "mahabir_quotation_pdf_delivery",
+      {
+        variables: [q.number],
+        documentHeader: {
+          url: pdfProxyUrl,
+          filename: `${q.number}.pdf`,
+        },
+      },
       targetConversationId
     );
 

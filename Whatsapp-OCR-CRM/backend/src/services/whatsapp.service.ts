@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { whatsappQueue } from "../jobs/queues";
 import { logger } from "../utils/logger";
 import type { Msg91DocumentHeader } from "../lib/msg91";
+import { normalizePhone } from "../utils/phone";
 
 export interface TemplateMessageOptions {
   variables?: string[];
@@ -15,12 +16,13 @@ export async function sendImageMessage(
   conversationId?: string
 ): Promise<string> {
   try {
+    const normalizedPhone = normalizePhone(phone);
     let resolvedConversationId = conversationId;
 
     // Find customer by phone
-    let customer = await prisma.customer.findUnique({ where: { phone } });
+    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
     if (!customer) {
-      customer = await prisma.customer.create({ data: { phone } });
+      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
     }
 
     if (!resolvedConversationId) {
@@ -51,7 +53,7 @@ export async function sendImageMessage(
     // Enqueue MSG91 sending via BullMQ
     await whatsappQueue.add("sendImage", {
       messageId: message.id,
-      phone,
+      phone: normalizedPhone,
       type: "image",
       imageUrl,
       caption,
@@ -77,6 +79,7 @@ export async function sendTemplateMessage(
   conversationId?: string
 ): Promise<string> {
   try {
+    const normalizedPhone = normalizePhone(phone);
     let resolvedConversationId = conversationId;
 
     let variables: string[];
@@ -88,9 +91,9 @@ export async function sendTemplateMessage(
       documentHeader = variablesOrOptions.documentHeader;
     }
 
-    let customer = await prisma.customer.findUnique({ where: { phone } });
+    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
     if (!customer) {
-      customer = await prisma.customer.create({ data: { phone } });
+      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
     }
 
     if (!resolvedConversationId) {
@@ -122,7 +125,7 @@ export async function sendTemplateMessage(
 
     await whatsappQueue.add("sendTemplate", {
       messageId: message.id,
-      phone,
+      phone: normalizedPhone,
       type: "template",
       templateName,
       variables,
@@ -147,11 +150,12 @@ export async function sendTextMessage(
   conversationId?: string
 ): Promise<string> {
   try {
+    const normalizedPhone = normalizePhone(phone);
     let resolvedConversationId = conversationId;
 
-    let customer = await prisma.customer.findUnique({ where: { phone } });
+    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
     if (!customer) {
-      customer = await prisma.customer.create({ data: { phone } });
+      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
     }
 
     if (!resolvedConversationId) {
@@ -179,7 +183,7 @@ export async function sendTextMessage(
 
     await whatsappQueue.add("sendText", {
       messageId: message.id,
-      phone,
+      phone: normalizedPhone,
       type: "text",
       text,
     });

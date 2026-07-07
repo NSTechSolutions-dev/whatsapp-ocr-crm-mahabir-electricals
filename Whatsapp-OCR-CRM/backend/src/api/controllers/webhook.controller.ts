@@ -8,6 +8,7 @@ import { createOcrJobState } from "../../lib/ocr-job-state";
 import { verifyMsg91Signature } from "../../lib/msg91";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
+import { normalizePhone } from "../../utils/phone";
 
 async function upsertInboundMessage(
   phone: string,
@@ -17,11 +18,31 @@ async function upsertInboundMessage(
   mediaUrl: string | null,
   waMessageId: string | null
 ) {
+  const normalizedPhone = normalizePhone(phone);
+
+  if (waMessageId) {
+    const existing = await prisma.whatsappMessage.findFirst({
+      where: { waMessageId, direction: "INBOUND" },
+      include: {
+        conversation: { include: { customer: true } },
+      },
+    });
+    if (existing) {
+      logger.info(`Skipping duplicate inbound webhook (waMessageId=${waMessageId})`);
+      return {
+        customer: existing.conversation.customer,
+        conversation: existing.conversation,
+        message: existing,
+        duplicate: true as const,
+      };
+    }
+  }
+
   // 1. Upsert Customer
-  let customer = await prisma.customer.findUnique({ where: { phone } });
+  let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
   if (!customer) {
     customer = await prisma.customer.create({
-      data: { phone, name },
+      data: { phone: normalizedPhone, name },
     });
   } else if (name && !customer.name) {
     customer = await prisma.customer.update({
@@ -63,7 +84,7 @@ async function upsertInboundMessage(
     data: { lastMessageAt: new Date() },
   });
 
-  return { customer, conversation, message };
+  return { customer, conversation, message, duplicate: false as const };
 }
 
 export async function msg91Webhook(req: Request, res: Response) {
@@ -87,7 +108,13 @@ export async function msg91Webhook(req: Request, res: Response) {
   const name = payload.customerName || payload.name || null;
   const content = payload.text || payload.content || null;
   let mediaUrl = payload.url || payload.mediaUrl || null;
-  const waMessageId = payload.uuid || payload.messageId || null;
+  const waMessageId =
+    payload.uuid ||
+    payload.messageId ||
+    payload.message_id ||
+    payload.messages?.[0]?.id ||
+    payload.messages?.[0]?.uuid ||
+    null;
 
   if (!phone) {
     logger.warn("Webhook request rejected: phone/customerNumber is missing");
@@ -111,7 +138,7 @@ export async function msg91Webhook(req: Request, res: Response) {
       }
     }
 
-    const { conversation, message, customer } = await upsertInboundMessage(
+    const { conversation, message, customer, duplicate } = await upsertInboundMessage(
       phone,
       name,
       msgType,
@@ -119,6 +146,15 @@ export async function msg91Webhook(req: Request, res: Response) {
       mediaUrl,
       waMessageId
     );
+
+    if (duplicate) {
+      return res.json({
+        ok: true,
+        duplicate: true,
+        conversationId: conversation.id,
+        messageId: message.id,
+      });
+    }
 
     const jobId = await createOcrJobState({
       conversationId: conversation.id,
