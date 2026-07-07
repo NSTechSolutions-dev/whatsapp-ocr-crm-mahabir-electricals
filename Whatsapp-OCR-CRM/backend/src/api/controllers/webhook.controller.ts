@@ -10,8 +10,9 @@ import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { normalizePhone } from "../../utils/phone";
 import {
-  buildInboundWebhookDedupeKey,
-  claimInboundWebhook,
+  claimInboundDedup,
+  collectInboundDedupeKeys,
+  normalizeMessageContent,
   parseMsg91Inbound,
 } from "../../utils/webhook-dedup";
 
@@ -22,19 +23,21 @@ async function findRecentDuplicateMessage(
   sourceMediaUrl: string | null
 ) {
   const since = new Date(Date.now() - 120_000);
-  const trimmed = content?.trim();
+  const trimmed = normalizeMessageContent(content);
 
   if (trimmed) {
-    return prisma.whatsappMessage.findFirst({
+    const recent = await prisma.whatsappMessage.findMany({
       where: {
         conversationId,
         direction: "INBOUND",
         type: msgType,
-        content: trimmed,
         createdAt: { gte: since },
       },
       orderBy: { createdAt: "desc" },
+      take: 10,
     });
+    const dup = recent.find((m) => normalizeMessageContent(m.content) === trimmed);
+    if (dup) return dup;
   }
 
   if (sourceMediaUrl) {
@@ -167,17 +170,25 @@ export async function msg91Webhook(req: Request, res: Response) {
     return res.status(400).json({ detail: "Missing phone" });
   }
 
-  const dedupeKey = buildInboundWebhookDedupeKey({
+  const hasContent = Boolean(normalizeMessageContent(content));
+  const hasMedia = Boolean(sourceMediaUrl);
+  if (!hasContent && !hasMedia) {
+    logger.info(`Ignoring empty inbound webhook from ${phone} (no text or media)`);
+    return res.json({ ok: true, ignored: true, reason: "empty_payload" });
+  }
+
+  const dedupeKeys = collectInboundDedupeKeys({
     waMessageId,
     phone,
     msgType,
     content,
     sourceMediaUrl,
+    rawBody: (req as { rawBody?: Buffer }).rawBody,
   });
 
-  if (!(await claimInboundWebhook(dedupeKey))) {
-    logger.info(`Duplicate inbound webhook suppressed before processing (key=${dedupeKey})`);
-    return res.json({ ok: true, duplicate: true, dedupeKey });
+  if (!(await claimInboundDedup(dedupeKeys))) {
+    logger.info(`Duplicate inbound webhook suppressed (keys=${dedupeKeys.join(",")})`);
+    return res.json({ ok: true, duplicate: true, dedupeKeys });
   }
 
   let mediaUrl = sourceMediaUrl;

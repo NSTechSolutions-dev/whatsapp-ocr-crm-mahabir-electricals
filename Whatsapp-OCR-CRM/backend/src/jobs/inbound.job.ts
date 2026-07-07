@@ -26,16 +26,24 @@ export const inboundWorker = new Worker(
       }
 
       // Route to ocrQueue for OCR processing
-      await ocrQueue.add("processMessage", {
-        messageId,
-        msgType,
-        content,
-        mediaUrl,
-        customerId,
-        conversationId,
-        jobId,
-        source: sourceLabel,
-      });
+      await ocrQueue.add(
+        "processMessage",
+        {
+          messageId,
+          msgType,
+          content,
+          mediaUrl,
+          customerId,
+          conversationId,
+          jobId,
+          source: sourceLabel,
+        },
+        {
+          jobId: jobId ? `ocr-${jobId}` : `ocr-msg-${messageId}`,
+          removeOnComplete: true,
+          removeOnFail: 100,
+        }
+      );
 
       logger.info(`[${sourceLabel}] Successfully routed to ocrQueue`);
     } catch (error) {

@@ -4,6 +4,7 @@ import { logger } from "./logger";
 import { normalizePhone } from "./phone";
 
 const DEDUP_TTL_SECONDS = 180;
+const BURST_TTL_SECONDS = 4;
 
 export interface ParsedMsg91Inbound {
   phone: string | null;
@@ -12,6 +13,11 @@ export interface ParsedMsg91Inbound {
   content: string | null;
   sourceMediaUrl: string | null;
   waMessageId: string | null;
+}
+
+export function normalizeMessageContent(content: string | null): string {
+  if (!content) return "";
+  return content.replace(/\s+/g, " ").trim();
 }
 
 export function parseMsg91Inbound(payload: Record<string, unknown>): ParsedMsg91Inbound {
@@ -63,40 +69,72 @@ export function parseMsg91Inbound(payload: Record<string, unknown>): ParsedMsg91
   return { phone, msgType, name, content, sourceMediaUrl, waMessageId };
 }
 
-export function buildInboundWebhookDedupeKey(input: {
-  waMessageId: string | null;
+export function buildInboundFingerprint(input: {
   phone: string;
   msgType: string;
   content: string | null;
   sourceMediaUrl: string | null;
 }): string {
-  const phone = normalizePhone(input.phone);
-
-  if (input.waMessageId) {
-    return `wa:${input.waMessageId}`;
-  }
-
-  const normalizedContent = input.content?.trim();
-  if (normalizedContent) {
-    const hash = crypto.createHash("sha256").update(normalizedContent).digest("hex").slice(0, 20);
-    return `text:${phone}:${input.msgType}:${hash}`;
-  }
-
-  if (input.sourceMediaUrl) {
-    const hash = crypto.createHash("sha256").update(input.sourceMediaUrl).digest("hex").slice(0, 20);
-    return `media:${phone}:${input.msgType}:${hash}`;
-  }
-
-  return `unknown:${phone}:${input.msgType}:${crypto.randomUUID()}`;
+  const parts = [
+    normalizePhone(input.phone),
+    input.msgType.toLowerCase(),
+    normalizeMessageContent(input.content),
+    input.sourceMediaUrl?.trim() || "",
+  ];
+  return crypto.createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 24);
 }
 
-export async function claimInboundWebhook(dedupeKey: string): Promise<boolean> {
-  const redisKey = `inbound:dedup:${dedupeKey}`;
+export function collectInboundDedupeKeys(input: {
+  waMessageId: string | null;
+  phone: string;
+  msgType: string;
+  content: string | null;
+  sourceMediaUrl: string | null;
+  rawBody?: Buffer | string;
+}): string[] {
+  const keys: string[] = [];
+  if (input.waMessageId) {
+    keys.push(`wa:${input.waMessageId}`);
+  }
+  keys.push(`fp:${buildInboundFingerprint(input)}`);
+  keys.push(`burst:${normalizePhone(input.phone)}`);
+  if (input.rawBody) {
+    const raw =
+      typeof input.rawBody === "string" ? input.rawBody : input.rawBody.toString("utf8");
+    const rawHash = crypto.createHash("sha256").update(raw).digest("hex").slice(0, 24);
+    keys.push(`raw:${rawHash}`);
+  }
+  return keys;
+}
+
+export async function claimInboundDedup(keys: string[]): Promise<boolean> {
   try {
-    const result = await redisConnection.set(redisKey, "1", "EX", DEDUP_TTL_SECONDS, "NX");
-    return result === "OK";
+    for (const key of keys) {
+      const exists = await redisConnection.get(`inbound:dedup:${key}`);
+      if (exists) {
+        logger.info(`Inbound dedup hit existing key: ${key}`);
+        return false;
+      }
+    }
+
+    const pipeline = redisConnection.pipeline();
+    for (const key of keys) {
+      const ttl = key.startsWith("burst:") ? BURST_TTL_SECONDS : DEDUP_TTL_SECONDS;
+      pipeline.set(`inbound:dedup:${key}`, "1", "EX", ttl, "NX");
+    }
+    const results = await pipeline.exec();
+
+    for (const entry of results || []) {
+      const err = entry[0];
+      const result = entry[1];
+      if (err || result !== "OK") {
+        logger.info(`Inbound dedup lost race on key set`);
+        return false;
+      }
+    }
+    return true;
   } catch (error) {
-    logger.error(`Redis dedup claim failed for ${dedupeKey}: ${error}`);
+    logger.error(`Redis dedup claim failed: ${error}`);
     return true;
   }
 }
