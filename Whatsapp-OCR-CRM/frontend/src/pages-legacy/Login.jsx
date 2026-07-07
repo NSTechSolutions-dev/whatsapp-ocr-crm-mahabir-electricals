@@ -14,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [fieldsReady, setFieldsReady] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -51,28 +52,34 @@ export default function Login() {
           <h1 className="font-display text-4xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-ink-muted mt-2 text-sm">Sign in to manage WhatsApp enquiries.</p>
 
-          <form onSubmit={onSubmit} className="mt-10 space-y-5">
+          <form onSubmit={onSubmit} className="mt-10 space-y-5" autoComplete="off">
             <div>
-              <Label htmlFor="email" className="text-xs uppercase tracking-wider text-ink-muted">Email</Label>
+              <Label htmlFor="login-email" className="text-xs uppercase tracking-wider text-ink-muted">Email</Label>
               <Input
-                id="email"
+                id="login-email"
+                name="crm-login-email"
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setFieldsReady(true)}
+                readOnly={!fieldsReady}
                 required
                 className="mt-2 bg-surface border-line"
                 data-testid="login-email-input"
               />
             </div>
             <div>
-              <Label htmlFor="password" className="text-xs uppercase tracking-wider text-ink-muted">Password</Label>
+              <Label htmlFor="login-password" className="text-xs uppercase tracking-wider text-ink-muted">Password</Label>
               <Input
-                id="password"
+                id="login-password"
+                name="crm-login-password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFieldsReady(true)}
+                readOnly={!fieldsReady}
                 required
                 className="mt-2 bg-surface border-line"
                 data-testid="login-password-input"
