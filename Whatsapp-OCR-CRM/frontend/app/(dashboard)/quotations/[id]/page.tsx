@@ -336,21 +336,14 @@ export default function QuotationPreviewPage() {
             </Button>
 
             {q.presignedUrl && (
-              <a
-                href={q.presignedUrl}
-                download={`Quotation-${q.number}.pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mt-2"
+              <Button
+                variant="outline"
+                className="w-full border-line hover:bg-surface-hover text-ink mt-2"
+                onClick={() => window.open(`/api/public/quotations/${id}/pdf?download=1`, "_blank")}
               >
-                <Button
-                  variant="outline"
-                  className="w-full border-line hover:bg-surface-hover text-ink"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-              </a>
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
             )}
             
             {customMode && selectedCustomer && (

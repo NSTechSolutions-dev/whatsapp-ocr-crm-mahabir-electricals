@@ -2,11 +2,36 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getPresignedUrl } from "../../lib/s3";
 import { sendTemplateMessage } from "../../services/whatsapp.service";
-import { regenerateQuotationPdf, ensureQuotationPdf, isQuotationPdfReady } from "../../services/quotation.service";
+import {
+  regenerateQuotationPdf,
+  ensureQuotationPdf,
+  isQuotationPdfReady,
+  calculateGstTotals,
+  type GstMode,
+} from "../../services/quotation.service";
 import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
+
+function resolveBillCustomer(enquiry: {
+  billCustomerName?: string | null;
+  billCustomerPhone?: string | null;
+  billCustomerCompany?: string | null;
+  customer: {
+    id: string;
+    name: string | null;
+    phone: string;
+    company?: string | null;
+  };
+}) {
+  return {
+    id: enquiry.customer.id,
+    name: enquiry.billCustomerName ?? enquiry.customer.name,
+    phone: enquiry.billCustomerPhone ?? enquiry.customer.phone,
+    company: enquiry.billCustomerCompany ?? enquiry.customer.company ?? null,
+  };
+}
 
 export async function getQuotation(req: Request, res: Response) {
   const { id } = req.params;
@@ -36,7 +61,7 @@ export async function getQuotation(req: Request, res: Response) {
     const sendHistoryRaw = await prisma.whatsappMessage.findMany({
       where: {
         direction: "OUTBOUND",
-        type: { in: ["image", "template", "text"] },
+        type: { in: ["image", "template", "text", "document"] },
         content: { contains: q.number },
       },
       orderBy: { createdAt: "desc" },
@@ -68,13 +93,14 @@ export async function getQuotation(req: Request, res: Response) {
       deliveryStatus = "sent";
     }
 
-    let subtotal = 0;
-    for (const item of q.enquiry.items) {
-      subtotal += item.qty * (item.rate || 0);
-    }
-    const gstPercent = 18.0;
-    const gstAmount = subtotal * (gstPercent / 100);
-    const grandTotal = subtotal + gstAmount;
+    const gstPercent = q.enquiry.gstPercent ?? 18;
+    const gstMode = (q.enquiry.gstMode ?? "exclusive") as GstMode;
+    const lineItems = q.enquiry.items.map((item) => ({
+      qty: item.qty,
+      rate: item.rate || 0,
+    }));
+    const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, gstPercent, gstMode);
+    const billCustomer = resolveBillCustomer(q.enquiry);
 
     return res.json({
       id: q.id,
@@ -87,7 +113,9 @@ export async function getQuotation(req: Request, res: Response) {
       presignedUrl,
       pdfReady,
       enquiry: q.enquiry,
-      customer: q.enquiry.customer,
+      customer: billCustomer,
+      billCustomer,
+      gstMode,
       items: q.enquiry.items,
       subtotal,
       gstPercent,
@@ -104,10 +132,55 @@ export async function getQuotation(req: Request, res: Response) {
 
 export async function regenerateQuotation(req: Request, res: Response) {
   const { id } = req.params;
-  const gstPercent = Number(req.body?.gstPercent) || 18;
+    const gstPercent = Number(req.body?.gstPercent) || undefined;
+    const gstMode =
+      req.body?.gstMode === "inclusive"
+        ? "inclusive"
+        : req.body?.gstMode === "exclusive"
+          ? "exclusive"
+          : undefined;
+  const {
+    billCustomerName,
+    billCustomerPhone,
+    billCustomerCompany,
+  } = req.body ?? {};
 
   try {
-    const quotation = await ensureQuotationPdf(id, gstPercent);
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      select: { enquiryId: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ detail: "Quotation not found" });
+    }
+
+    const enquiryUpdate: Record<string, unknown> = {};
+    if (gstPercent !== undefined) {
+      enquiryUpdate.gstPercent = gstPercent;
+    }
+    if (gstMode !== undefined) {
+      enquiryUpdate.gstMode = gstMode;
+    }
+    if (billCustomerName !== undefined) {
+      enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
+    }
+    if (billCustomerPhone !== undefined) {
+      enquiryUpdate.billCustomerPhone = billCustomerPhone?.trim() || null;
+    }
+    if (billCustomerCompany !== undefined) {
+      enquiryUpdate.billCustomerCompany = billCustomerCompany?.trim() || null;
+    }
+
+    const enquiry = await prisma.enquiry.update({
+      where: { id: existing.enquiryId },
+      data: enquiryUpdate,
+    });
+
+    const quotation = await regenerateQuotationPdf(
+      id,
+      enquiry.gstPercent ?? 18,
+      (enquiry.gstMode ?? "exclusive") as GstMode
+    );
     const presignedUrl = await getPresignedUrl(quotation.s3Key, 3600);
     const pdfReady = await isQuotationPdfReady(quotation.s3Key);
 
@@ -131,10 +204,22 @@ export async function regenerateQuotation(req: Request, res: Response) {
 
 export async function sendQuotation(req: Request, res: Response) {
   const { id } = req.params;
-  const { customerId, newCustomer, gstPercent: bodyGst } = req.body as {
+  const {
+    customerId,
+    newCustomer,
+    gstPercent: bodyGst,
+    gstMode: bodyGstMode,
+    billCustomerName,
+    billCustomerPhone,
+    billCustomerCompany,
+  } = req.body as {
     customerId?: string;
     newCustomer?: { name: string; phone: string };
     gstPercent?: number;
+    gstMode?: string;
+    billCustomerName?: string;
+    billCustomerPhone?: string;
+    billCustomerCompany?: string;
   };
 
   try {
@@ -142,7 +227,7 @@ export async function sendQuotation(req: Request, res: Response) {
       where: { id },
       include: {
         enquiry: {
-          include: { customer: true },
+          include: { customer: true, items: true },
         },
       },
     });
@@ -151,46 +236,30 @@ export async function sendQuotation(req: Request, res: Response) {
       return res.status(404).json({ detail: "Quotation not found" });
     }
 
-    if (!(await isQuotationPdfReady(q.s3Key))) {
-      let pdfError: string | null = null;
-      try {
-        logger.info(`sendQuotation: ensuring PDF for quotation ${id}`);
-        await ensureQuotationPdf(id, Number(bodyGst) || 18);
-        q = await prisma.quotation.findUnique({
-          where: { id },
-          include: {
-            enquiry: {
-              include: { customer: true },
-            },
-          },
-        });
-      } catch (error: any) {
-        pdfError = error?.message || String(error);
-        logger.error(`sendQuotation: PDF preparation failed for ${id}: ${pdfError}`);
-      }
-
-      if (!q || !(await isQuotationPdfReady(q.s3Key))) {
-        return res.status(400).json({
-          detail:
-            pdfError ||
-            "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
-        });
-      }
-    }
-
-    // Determine target customer
     let targetCustomer = q.enquiry.customer;
     let targetConversationId = q.enquiry.conversationId;
+    const enquiryUpdate: Record<string, unknown> = {};
 
-    // Priority 1: Create new customer if newCustomer is provided
+    if (bodyGst !== undefined) {
+      enquiryUpdate.gstPercent = Number(bodyGst) || 18;
+    }
+    if (bodyGstMode !== undefined) {
+      enquiryUpdate.gstMode = bodyGstMode === "inclusive" ? "inclusive" : "exclusive";
+    }
+    if (billCustomerName !== undefined) {
+      enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
+    }
+    if (billCustomerPhone !== undefined) {
+      enquiryUpdate.billCustomerPhone = billCustomerPhone?.trim() || null;
+    }
+    if (billCustomerCompany !== undefined) {
+      enquiryUpdate.billCustomerCompany = billCustomerCompany?.trim() || null;
+    }
+
     if (newCustomer?.phone) {
-      // Normalize phone number
       const phone = newCustomer.phone.trim();
-
-      // Check if customer already exists
       let existing = await prisma.customer.findUnique({ where: { phone } });
       if (existing) {
-        // Update name if provided and different
         if (newCustomer.name && existing.name !== newCustomer.name) {
           existing = await prisma.customer.update({
             where: { id: existing.id },
@@ -199,7 +268,6 @@ export async function sendQuotation(req: Request, res: Response) {
         }
         targetCustomer = existing;
       } else {
-        // Create new customer
         targetCustomer = await prisma.customer.create({
           data: {
             phone,
@@ -207,16 +275,63 @@ export async function sendQuotation(req: Request, res: Response) {
           },
         });
       }
+      enquiryUpdate.billCustomerName = newCustomer.name?.trim() || targetCustomer.name;
+      enquiryUpdate.billCustomerPhone = phone;
       logger.info(`sendQuotation: Created/used new customer ${targetCustomer.id} (${phone})`);
-    }
-    // Priority 2: Use provided customerId to look up existing customer
-    else if (customerId) {
+    } else if (customerId) {
       const existing = await prisma.customer.findUnique({ where: { id: customerId } });
       if (!existing) {
         return res.status(400).json({ detail: "Customer not found" });
       }
       targetCustomer = existing;
+      enquiryUpdate.billCustomerName = existing.name;
+      enquiryUpdate.billCustomerPhone = existing.phone;
       logger.info(`sendQuotation: Using existing customer ${targetCustomer.id}`);
+    }
+
+    if (Object.keys(enquiryUpdate).length > 0) {
+      await prisma.enquiry.update({
+        where: { id: q.enquiryId },
+        data: enquiryUpdate,
+      });
+      q = await prisma.quotation.findUnique({
+        where: { id },
+        include: {
+          enquiry: {
+            include: { customer: true, items: true },
+          },
+        },
+      });
+    }
+
+    if (!q) {
+      return res.status(404).json({ detail: "Quotation not found" });
+    }
+
+    const gstPercent = q.enquiry.gstPercent ?? 18;
+    const gstMode = (q.enquiry.gstMode ?? "exclusive") as GstMode;
+
+    try {
+      await regenerateQuotationPdf(q.id, gstPercent, gstMode);
+      q = await prisma.quotation.findUnique({
+        where: { id },
+        include: {
+          enquiry: {
+            include: { customer: true, items: true },
+          },
+        },
+      });
+    } catch (error: any) {
+      logger.error(`sendQuotation: PDF regeneration failed for ${id}: ${error?.message || error}`);
+      return res.status(400).json({
+        detail: error?.message || "Failed to regenerate quotation PDF before sending",
+      });
+    }
+
+    if (!q || !(await isQuotationPdfReady(q.s3Key))) {
+      return res.status(400).json({
+        detail: "Quotation PDF is not ready. Regenerate the quotation before sending on WhatsApp.",
+      });
     }
 
     if (!targetCustomer) {
@@ -224,15 +339,11 @@ export async function sendQuotation(req: Request, res: Response) {
     }
 
     const pdfProxyUrl = getQuotationPdfPublicUrl(q.id);
-
-    // Calculate Grand Total for template caption in CRM history
-    const items = await prisma.enquiryItem.findMany({ where: { enquiryId: q.enquiryId } });
-    let subtotal = 0;
-    for (const item of items) {
-      subtotal += item.qty * (item.rate || 0);
-    }
-    const gstPercent = Number(bodyGst) || 18;
-    const grandTotal = subtotal * (1 + gstPercent / 100);
+    const lineItems = q.enquiry.items.map((item) => ({
+      qty: item.qty,
+      rate: item.rate || 0,
+    }));
+    const { grandTotal } = calculateGstTotals(lineItems, gstPercent, gstMode);
 
     const caption = `Quotation ${q.number} — Grand Total Rs ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 

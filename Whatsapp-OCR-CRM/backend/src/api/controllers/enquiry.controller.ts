@@ -261,7 +261,14 @@ async function ensureInventoryForNewItems(enquiryId: string) {
 
 export async function updateEnquiry(req: Request, res: Response) {
   const { id } = req.params;
-  const { items } = req.body;
+  const {
+    items,
+    gstPercent,
+    gstMode,
+    billCustomerName,
+    billCustomerPhone,
+    billCustomerCompany,
+  } = req.body;
 
   try {
     const e = await prisma.enquiry.findUnique({ where: { id } });
@@ -269,18 +276,46 @@ export async function updateEnquiry(req: Request, res: Response) {
       return res.status(404).json({ detail: "Enquiry not found" });
     }
 
-    if (e.status === "FINALIZED" || e.status === "SENT") {
-      return res.status(400).json({ detail: "Cannot edit a finalized enquiry" });
+    if (e.status === "IGNORED") {
+      return res.status(400).json({ detail: "Cannot edit an ignored enquiry" });
     }
 
-    const oldItems = await prisma.enquiryItem.findMany({ where: { enquiryId: id } });
-    await replaceEnquiryItems(id, items);
-    await learnFromCorrections(id, oldItems, items || []);
+    if (Array.isArray(items)) {
+      const oldItems = await prisma.enquiryItem.findMany({ where: { enquiryId: id } });
+      await replaceEnquiryItems(id, items);
+      if (e.status !== "FINALIZED" && e.status !== "SENT") {
+        await learnFromCorrections(id, oldItems, items);
+      }
+    }
 
-    await prisma.enquiry.update({
-      where: { id },
-      data: { status: "REVIEW" },
-    });
+    const updateData: Record<string, unknown> = {};
+    if (gstPercent !== undefined) {
+      updateData.gstPercent = parseFloat(String(gstPercent)) || 18;
+    }
+    if (gstMode !== undefined) {
+      updateData.gstMode = gstMode === "inclusive" ? "inclusive" : "exclusive";
+    }
+    if (billCustomerName !== undefined) {
+      updateData.billCustomerName = billCustomerName?.trim() || null;
+    }
+    if (billCustomerPhone !== undefined) {
+      updateData.billCustomerPhone = billCustomerPhone?.trim() || null;
+    }
+    if (billCustomerCompany !== undefined) {
+      updateData.billCustomerCompany = billCustomerCompany?.trim() || null;
+    }
+
+    if (Object.keys(updateData).length > 0 || Array.isArray(items)) {
+      const nextStatus =
+        e.status === "FINALIZED" || e.status === "SENT" ? e.status : "REVIEW";
+      await prisma.enquiry.update({
+        where: { id },
+        data: {
+          ...updateData,
+          status: nextStatus,
+        },
+      });
+    }
 
     await logActivity(req.user!.id, "update", "enquiry", id);
     const enriched = await enrichEnquiry(id);
@@ -294,7 +329,13 @@ export async function updateEnquiry(req: Request, res: Response) {
 export async function finalizeEnquiry(req: Request, res: Response) {
   const { id } = req.params;
   const gstPercent = parseFloat(String(req.body?.gstPercent ?? req.query.gstPercent ?? 18)) || 18;
-  const items = req.body?.items;
+  const gstMode = req.body?.gstMode === "inclusive" ? "inclusive" : "exclusive";
+  const {
+    items,
+    billCustomerName,
+    billCustomerPhone,
+    billCustomerCompany,
+  } = req.body ?? {};
 
   try {
     const e = await prisma.enquiry.findUnique({
@@ -363,6 +404,11 @@ export async function finalizeEnquiry(req: Request, res: Response) {
         data: {
           status: "FINALIZED",
           finalizedAt: new Date(),
+          gstPercent,
+          gstMode,
+          billCustomerName: billCustomerName?.trim() || undefined,
+          billCustomerPhone: billCustomerPhone?.trim() || undefined,
+          billCustomerCompany: billCustomerCompany?.trim() || undefined,
         },
       });
     });
@@ -384,7 +430,7 @@ export async function finalizeEnquiry(req: Request, res: Response) {
 
     await quotationQueue.add(
       "generate",
-      { enquiryId: id, gstPercent },
+      { enquiryId: id, gstPercent, gstMode },
       { jobId: bullJobId, removeOnComplete: true }
     );
 

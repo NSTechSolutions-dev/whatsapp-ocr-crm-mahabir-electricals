@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { env } from "../config/env";
+import { displayUnitRate, type GstMode } from "../utils/gst-calculation";
 
 type PdfDoc = InstanceType<typeof PDFDocument>;
 
@@ -8,6 +9,15 @@ export interface QuotationPdfItem {
   qty: number;
   unit?: string | null;
   rate?: number | null;
+}
+
+export interface QuotationPdfBankDetails {
+  bankName?: string | null;
+  accountName?: string | null;
+  accountNumber?: string | null;
+  ifsc?: string | null;
+  branch?: string | null;
+  upiId?: string | null;
 }
 
 export interface QuotationPdfInput {
@@ -21,8 +31,11 @@ export interface QuotationPdfInput {
   items: QuotationPdfItem[];
   subtotal: number;
   gstPercent: number;
+  gstMode?: GstMode;
   gstAmount: number;
   grandTotal: number;
+  bank?: QuotationPdfBankDetails | null;
+  qrImage?: Buffer | null;
 }
 
 const BRAND = "#7F1D1D";
@@ -50,6 +63,18 @@ function formatUsdDate(date: Date): string {
 
 function formatInr(amount: number): string {
   return `₹${amount.toFixed(2)}`;
+}
+
+function hasBankDetails(bank?: QuotationPdfBankDetails | null): boolean {
+  if (!bank) return false;
+  return Boolean(
+    bank.bankName ||
+      bank.accountName ||
+      bank.accountNumber ||
+      bank.ifsc ||
+      bank.branch ||
+      bank.upiId
+  );
 }
 
 function drawLightningLogo(doc: PdfDoc, x: number, y: number, size = 48) {
@@ -116,6 +141,70 @@ function drawTableRow(
   return rowHeight;
 }
 
+function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number {
+  const bank = input.bank;
+  const showBank = hasBankDetails(bank);
+  const showQr = Boolean(input.qrImage);
+
+  if (!showBank && !showQr) {
+    return y;
+  }
+
+  if (y > PAGE_HEIGHT - 220) {
+    doc.addPage();
+    y = MARGIN_TOP;
+  }
+
+  doc
+    .moveTo(MARGIN_LEFT, y)
+    .lineTo(CONTENT_RIGHT, y)
+    .lineWidth(2)
+    .strokeColor(BRAND)
+    .stroke();
+  y += 14;
+
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text("PAYMENT DETAILS", MARGIN_LEFT, y);
+  y = doc.y + 8;
+
+  const qrSize = 88;
+  const qrX = CONTENT_RIGHT - qrSize;
+  const textWidth = showQr ? CONTENT_WIDTH - qrSize - 16 : CONTENT_WIDTH;
+
+  if (showBank && bank) {
+    doc.font("Helvetica").fontSize(9).fillColor(MUTED);
+    const lines: Array<[string, string]> = [];
+    if (bank.bankName) lines.push(["Bank:", bank.bankName]);
+    if (bank.accountName) lines.push(["Account Name:", bank.accountName]);
+    if (bank.accountNumber) lines.push(["Account No:", bank.accountNumber]);
+    if (bank.ifsc) lines.push(["IFSC:", bank.ifsc]);
+    if (bank.branch) lines.push(["Branch:", bank.branch]);
+    if (bank.upiId) lines.push(["UPI ID:", bank.upiId]);
+
+    for (const [label, value] of lines) {
+      doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, y, { width: 88, continued: true });
+      doc.font("Helvetica").text(value, { width: textWidth - 88 });
+      y += 14;
+    }
+  }
+
+  if (showQr && input.qrImage) {
+    const qrY = Math.max(doc.y - (showBank ? 14 * 4 : 0), y - 20);
+    try {
+      doc.image(input.qrImage, qrX, qrY, { fit: [qrSize, qrSize] });
+      doc
+        .fillColor(LIGHT_MUTED)
+        .font("Helvetica")
+        .fontSize(8)
+        .text("Scan to pay", qrX, qrY + qrSize + 4, { width: qrSize, align: "center" });
+      y = Math.max(y, qrY + qrSize + 18);
+    } catch {
+      // Skip QR if image cannot be embedded
+    }
+  }
+
+  return y + 8;
+}
+
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -123,6 +212,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       margins: { top: MARGIN_TOP, bottom: MARGIN_TOP, left: MARGIN_LEFT, right: MARGIN_RIGHT },
     });
     const chunks: Buffer[] = [];
+    const gstMode = input.gstMode || "exclusive";
 
     doc.on("data", (chunk) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -137,7 +227,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       CONTENT_WIDTH * 0.2,
     ];
 
-    // Header
     drawLightningLogo(doc, MARGIN_LEFT, MARGIN_TOP, 48);
     doc
       .fillColor(BRAND)
@@ -157,7 +246,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .text(`PHONE: ${env.COMPANY_PHONE}`, contactX, doc.y, { width: contactWidth, align: "right" })
       .text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, doc.y, { width: contactWidth, align: "right" });
 
-    // Title
     let y = MARGIN_TOP + 108;
     doc
       .fillColor(BRAND)
@@ -165,7 +253,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .fontSize(28)
       .text("QUOTATION", MARGIN_LEFT, y, { width: CONTENT_WIDTH, align: "center", characterSpacing: 2 });
 
-    // Info grid
     y = doc.y + 24;
     const leftColWidth = CONTENT_WIDTH * 0.58;
     const rightColX = MARGIN_LEFT + leftColWidth + 24;
@@ -204,7 +291,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     drawDivider(doc, y);
     y += 18;
 
-    // Project description
     doc
       .fillColor(INK)
       .font("Helvetica-Bold")
@@ -222,12 +308,13 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     y += 24;
 
     for (const item of input.items) {
-      if (y > PAGE_HEIGHT - 220) {
+      if (y > PAGE_HEIGHT - 260) {
         doc.addPage();
         y = MARGIN_TOP;
       }
 
-      const lineTotal = item.qty * (item.rate || 0);
+      const unitRate = displayUnitRate(item.rate || 0, input.gstPercent, gstMode);
+      const lineTotal = item.qty * unitRate;
       const rowHeight = drawTableRow(
         doc,
         y,
@@ -235,7 +322,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
         [
           item.productName,
           `${item.qty} ${item.unit || "pcs"}`,
-          formatInr(item.rate || 0),
+          formatInr(unitRate),
           formatInr(lineTotal),
         ],
         ["left", "center", "right", "right"]
@@ -243,13 +330,12 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       y += rowHeight + 2;
     }
 
-    // Totals
     y += 8;
     const totalsWidth = 230;
     const totalsX = CONTENT_RIGHT - totalsWidth;
-    const totalsRows: Array<{ label: string; value: string; grand?: boolean }> = [
+    const totalsRows: Array<{ label: string; value: string }> = [
       { label: "Subtotal", value: formatInr(input.subtotal) },
-      { label: `Value-Added Tax (${input.gstPercent}%)`, value: formatInr(input.gstAmount) },
+      { label: `GST (${input.gstPercent}%)`, value: formatInr(input.gstAmount) },
       { label: "Others", value: formatInr(0) },
     ];
 
@@ -270,8 +356,8 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     doc.text(formatInr(input.grandTotal), totalsX, y + 8, { width: totalsWidth - 10, align: "right" });
 
     y += 44;
+    y = drawBankAndQr(doc, y, input);
 
-    // Terms
     if (y > PAGE_HEIGHT - 150) {
       doc.addPage();
       y = MARGIN_TOP;

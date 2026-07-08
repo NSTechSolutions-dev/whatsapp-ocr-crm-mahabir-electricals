@@ -5,13 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { formatINR, timeAgo, formatDate } from "../../../../lib/format";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
+import { calculateGstTotals, displayLineAmount, displayUnitRate, type GstMode } from "../../../../lib/gst-calculation";
 
 interface RowData {
   id?: string;
@@ -72,6 +73,10 @@ export default function UnifiedEnquiryPage() {
   const [data, setData] = useState<any>(null);
   const [rows, setRows] = useState<RowData[]>([]);
   const [gst, setGst] = useState<number | string>(18);
+  const [gstMode, setGstMode] = useState<GstMode>("exclusive");
+  const [billCustomerName, setBillCustomerName] = useState("");
+  const [billCustomerPhone, setBillCustomerPhone] = useState("");
+  const [billCustomerCompany, setBillCustomerCompany] = useState("");
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -138,19 +143,32 @@ export default function UnifiedEnquiryPage() {
   const isIgnored = data?.status === "IGNORED";
   const isSent = data?.status === "SENT";
   const isFinalized = data?.status === "FINALIZED" || isSent;
-  const isLocked = isFinalized || isIgnored;
+  const isLocked = isIgnored;
   const quotationId = quotation?.id ?? data?.quotation?.id ?? null;
   const hasQuotation = isFinalized && !!quotationId;
   const hasItems = rows.length > 0;
   const readyToSend = !isFinalized && !isIgnored && hasItems;
 
-  // Live quotation calculations
-  const subtotal = useMemo(
-    () => rows.reduce((s, r) => s + Number(r.qty || 0) * Number(r.rate || 0), 0),
+  const lineItems = useMemo(
+    () =>
+      rows.map((r) => ({
+        qty: Number(r.qty || 0),
+        rate: Number(r.rate || 0),
+      })),
     [rows]
   );
-  const gstAmount = useMemo(() => (subtotal * (Number(gst) || 0)) / 100, [subtotal, gst]);
-  const grandTotal = subtotal + gstAmount;
+  const { subtotal, gstAmount, grandTotal } = useMemo(
+    () => calculateGstTotals(lineItems, Number(gst) || 0, gstMode),
+    [lineItems, gst, gstMode]
+  );
+
+  const billPayload = () => ({
+    gstPercent: Number(gst) || 18,
+    gstMode,
+    billCustomerName: billCustomerName.trim() || null,
+    billCustomerPhone: billCustomerPhone.trim() || null,
+    billCustomerCompany: billCustomerCompany.trim() || null,
+  });
 
   const loadQuotation = async (quotationId: string) => {
     try {
@@ -168,6 +186,10 @@ export default function UnifiedEnquiryPage() {
       const r = await api.get(`/enquiries/${id}`);
       setData(r.data);
       setGst(r.data.gstPercent ?? 18);
+      setGstMode(r.data.gstMode === "inclusive" ? "inclusive" : "exclusive");
+      setBillCustomerName(r.data.billCustomerName ?? r.data.customer?.name ?? "");
+      setBillCustomerPhone(r.data.billCustomerPhone ?? r.data.customer?.phone ?? "");
+      setBillCustomerCompany(r.data.billCustomerCompany ?? r.data.customer?.company ?? "");
       setRows(
         (r.data.items || []).map((i: any) => ({
           id: i.id,
@@ -263,6 +285,16 @@ export default function UnifiedEnquiryPage() {
     setGst(value);
     setHasUnsavedChanges(true);
   };
+  const updateGstMode = (mode: GstMode) => {
+    setGstMode(mode);
+    setHasUnsavedChanges(true);
+  };
+  const updateBillCustomer = (patch: Partial<{ name: string; phone: string; company: string }>) => {
+    if (patch.name !== undefined) setBillCustomerName(patch.name);
+    if (patch.phone !== undefined) setBillCustomerPhone(patch.phone);
+    if (patch.company !== undefined) setBillCustomerCompany(patch.company);
+    setHasUnsavedChanges(true);
+  };
 
   const serializeRows = () =>
     rows
@@ -280,7 +312,10 @@ export default function UnifiedEnquiryPage() {
   const save = async () => {
     setSaving(true);
     try {
-      await api.put(`/enquiries/${id}`, { items: serializeRows() });
+      await api.put(`/enquiries/${id}`, {
+        items: serializeRows(),
+        ...billPayload(),
+      });
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
       toast.success("Saved");
@@ -304,7 +339,7 @@ export default function UnifiedEnquiryPage() {
 
     setRegenerating(true);
     try {
-      await api.post(`/quotations/${quotationId}/regenerate`, { gstPercent: Number(gst) || 18 }, { timeout: 120000 });
+      await api.post(`/quotations/${quotationId}/regenerate`, billPayload(), { timeout: 120000 });
       toast.success("Quotation PDF generated");
       await loadQuotation(quotationId);
     } catch (e: any) {
@@ -323,7 +358,7 @@ export default function UnifiedEnquiryPage() {
 
     setSending(true);
     try {
-      const payload: any = { gstPercent: Number(gst) || 18 };
+      const payload: any = { ...billPayload() };
 
       if (customMode) {
         if (showNewCustomer && newCustomerPhone) {
@@ -392,7 +427,7 @@ export default function UnifiedEnquiryPage() {
     try {
       const r = await api.post(`/enquiries/${id}/finalize`, {
         items: payload,
-        gstPercent: Number(gst) || 18,
+        ...billPayload(),
       });
 
       if (r.data.quotationPending) {
@@ -436,9 +471,13 @@ export default function UnifiedEnquiryPage() {
 
   const selectCustomer = (customer: CustomerSearchResult) => {
     setSelectedCustomer(customer);
+    setBillCustomerName(customer.name || "");
+    setBillCustomerPhone(customer.phone);
+    setBillCustomerCompany("");
     setSearchQuery("");
     setSearchResults([]);
     setShowNewCustomer(false);
+    setHasUnsavedChanges(true);
   };
 
   const clearSelection = () => {
@@ -458,8 +497,19 @@ export default function UnifiedEnquiryPage() {
     return `QT-${year}-${month}-XXXX`;
   }, [quotation]);
 
-  // Use actual customer or fallback
-  const displayCustomer = quotation?.customer || data?.customer || { name: "Customer", phone: "" };
+  const displayCustomer = {
+    name: billCustomerName || quotation?.customer?.name || data?.customer?.name || "Customer",
+    phone: billCustomerPhone || quotation?.customer?.phone || data?.customer?.phone || "",
+    company: billCustomerCompany || data?.customer?.company || "",
+  };
+
+  const downloadQuotation = () => {
+    if (!quotationId) {
+      toast.error("Quotation not available yet");
+      return;
+    }
+    window.open(`/api/public/quotations/${quotationId}/pdf?download=1`, "_blank");
+  };
 
   if (!data) return <div className="p-8 text-ink-muted">Loading…</div>;
 
@@ -517,11 +567,30 @@ export default function UnifiedEnquiryPage() {
             <Button variant="outline" size="sm" onClick={save} disabled={saving} className="h-7 px-2.5 text-xs border-line" data-testid="save-enquiry-button">
               {saving ? "…" : "Save"}
             </Button>
-            <Button size="sm" onClick={finalize} disabled={finalizing || !hasItems} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white" data-testid="finalize-enquiry-button">
-              <Send className="h-3 w-3 mr-1" />
-              {finalizing ? "…" : "Send"}
-            </Button>
-            {hasUnsavedChanges && (
+            {hasQuotation && (
+              <>
+                <Button variant="outline" size="sm" onClick={regeneratePdf} disabled={regenerating} className="h-7 px-2.5 text-xs border-line">
+                  <RefreshCw className={`h-3 w-3 mr-1 ${regenerating ? "animate-spin" : ""}`} />
+                  {regenerating ? "…" : "Regenerate"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadQuotation} className="h-7 px-2.5 text-xs border-line">
+                  <Download className="h-3 w-3 mr-1" />
+                  Download
+                </Button>
+              </>
+            )}
+            {!isFinalized ? (
+              <Button size="sm" onClick={finalize} disabled={finalizing || !hasItems} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white" data-testid="finalize-enquiry-button">
+                <Send className="h-3 w-3 mr-1" />
+                {finalizing ? "…" : "Send"}
+              </Button>
+            ) : hasQuotation ? (
+              <Button size="sm" onClick={() => sendQuotation()} disabled={sending} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white">
+                <Send className="h-3 w-3 mr-1" />
+                {sending ? "…" : isSent ? "Resend" : "Send"}
+              </Button>
+            ) : null}
+            {hasUnsavedChanges && !isFinalized && (
               <span className="text-[9px] text-amber-600 hidden sm:inline">unsaved edits will be saved</span>
             )}
           </div>
@@ -573,7 +642,12 @@ export default function UnifiedEnquiryPage() {
               </thead>
               <tbody data-testid="enquiry-items-table">
                 {rows.map((r, i) => {
-                  const amount = Number(r.qty || 0) * Number(r.rate || 0);
+                  const amount = displayLineAmount(
+                    Number(r.qty || 0),
+                    Number(r.rate || 0),
+                    Number(gst) || 0,
+                    gstMode
+                  );
                   const lowConf = (r.confidence ?? 1) < 0.75;
                   const rowBg = lowConf ? "bg-amber-500/5" : "bg-surface";
                   return (
@@ -710,7 +784,23 @@ export default function UnifiedEnquiryPage() {
                 </tr>
                 <tr>
                   <td colSpan={4} className="px-2 py-1 text-[10px] text-ink-muted text-right">
-                    <span className="inline-flex items-center gap-1 justify-end">
+                    <span className="inline-flex items-center gap-1 justify-end flex-wrap">
+                      <span className="inline-flex rounded border border-line overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => updateGstMode("exclusive")}
+                          className={`px-1.5 py-0.5 text-[9px] ${gstMode === "exclusive" ? "bg-brand text-white" : "bg-surface text-ink-muted"}`}
+                        >
+                          GST
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateGstMode("inclusive")}
+                          className={`px-1.5 py-0.5 text-[9px] ${gstMode === "inclusive" ? "bg-brand text-white" : "bg-surface text-ink-muted"}`}
+                        >
+                          Pre-GST
+                        </button>
+                      </span>
                       GST
                       {!isLocked ? (
                         <Input
@@ -762,7 +852,7 @@ export default function UnifiedEnquiryPage() {
               sourceData={data.sourceData}
               enquiryId={id}
               onUpdate={load}
-              isFinalized={isLocked}
+              isFinalized={isFinalized || isIgnored}
             />
           )}
         </div>
@@ -771,12 +861,45 @@ export default function UnifiedEnquiryPage() {
         {!isIgnored && (
         <div className="space-y-2">
           <div className="border border-line rounded-md bg-white p-4 lg:p-5">
+            <div className="mb-3 rounded-md border border-line bg-canvas/40 p-2.5 space-y-2">
+              <div className="text-[10px] uppercase tracking-wide text-ink-muted">Bill customer</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-[9px] text-ink-muted">Name</Label>
+                  <Input
+                    value={billCustomerName}
+                    onChange={(e) => updateBillCustomer({ name: e.target.value })}
+                    className="mt-1 h-7 text-xs border-line"
+                    disabled={isLocked}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[9px] text-ink-muted">Phone</Label>
+                  <Input
+                    value={billCustomerPhone}
+                    onChange={(e) => updateBillCustomer({ phone: e.target.value })}
+                    className="mt-1 h-7 text-xs border-line"
+                    disabled={isLocked}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[9px] text-ink-muted">Company</Label>
+                  <Input
+                    value={billCustomerCompany}
+                    onChange={(e) => updateBillCustomer({ company: e.target.value })}
+                    className="mt-1 h-7 text-xs border-line"
+                    disabled={isLocked}
+                  />
+                </div>
+              </div>
+            </div>
             <QuotationPreview
             quotationNumber={quotationNumber}
             customer={displayCustomer}
             rows={rows}
             subtotal={subtotal}
             gst={gst}
+            gstMode={gstMode}
             gstAmount={gstAmount}
             grandTotal={grandTotal}
           />
@@ -848,8 +971,8 @@ export default function UnifiedEnquiryPage() {
                     </div>
                   ) : showNewCustomer ? (
                     <div className="space-y-1.5">
-                      <Input placeholder="Name" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-7 text-xs" />
-                      <Input placeholder="Phone *" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-7 text-xs" />
+                      <Input placeholder="Name" value={newCustomerName} onChange={(e) => { setNewCustomerName(e.target.value); setBillCustomerName(e.target.value); setHasUnsavedChanges(true); }} className="h-7 text-xs" />
+                      <Input placeholder="Phone *" value={newCustomerPhone} onChange={(e) => { setNewCustomerPhone(e.target.value); setBillCustomerPhone(e.target.value); setHasUnsavedChanges(true); }} className="h-7 text-xs" />
                       <button onClick={() => setShowNewCustomer(false)} className="text-[10px] text-ink-muted">Cancel</button>
                     </div>
                   ) : (
@@ -896,10 +1019,20 @@ export default function UnifiedEnquiryPage() {
               <div className="flex gap-2">
                 <Button
                   type="button"
+                  variant="outline"
+                  onClick={downloadQuotation}
+                  size="sm"
+                  className="h-7 text-xs border-line"
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  Download
+                </Button>
+                <Button
+                  type="button"
                   onClick={() => sendQuotation()}
                   disabled={sending || (customMode && showNewCustomer && !newCustomerPhone)}
                   size="sm"
-                  className="w-full h-7 text-xs bg-brand hover:bg-brand-hover text-white"
+                  className="flex-1 h-7 text-xs bg-brand hover:bg-brand-hover text-white"
                   data-testid="send-quotation-button"
                 >
                   <Send className="h-3 w-3 mr-1" />
@@ -965,19 +1098,22 @@ function QuotationPreview({
   rows,
   subtotal,
   gst,
+  gstMode,
   gstAmount,
   grandTotal,
 }: {
   quotationNumber: string;
-  customer: { name?: string | null; phone?: string };
+  customer: { name?: string | null; phone?: string; company?: string | null };
   rows: RowData[];
   subtotal: number;
   gst: number | string;
+  gstMode: GstMode;
   gstAmount: number;
   grandTotal: number;
 }) {
   const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   const items = rows.filter((r) => r.productName);
+  const gstPercent = Number(gst) || 0;
 
   return (
     <div className="bg-white text-gray-900 text-sm leading-snug" data-testid="quotation-preview">
@@ -994,6 +1130,7 @@ function QuotationPreview({
       <div className="mb-3 text-[11px]">
         <div className="text-gray-400 uppercase tracking-wide text-[9px]">Bill To</div>
         <div className="font-semibold">{customer.name || "Customer"}</div>
+        {customer.company ? <div className="text-gray-600">{customer.company}</div> : null}
         <div className="text-gray-600">{customer.phone}</div>
       </div>
 
@@ -1008,7 +1145,8 @@ function QuotationPreview({
         </thead>
         <tbody>
           {items.map((r, i) => {
-            const amount = Number(r.qty || 0) * Number(r.rate || 0);
+            const unitRate = displayUnitRate(Number(r.rate || 0), gstPercent, gstMode);
+            const amount = displayLineAmount(Number(r.qty || 0), Number(r.rate || 0), gstPercent, gstMode);
             return (
               <tr key={i} className="border-b border-gray-100">
                 <td className="py-1 pr-2">{r.productName}</td>
@@ -1016,7 +1154,7 @@ function QuotationPreview({
                   {r.qty}{r.unit ? ` ${r.unit}` : ""}
                 </td>
                 <td className="py-1 text-right text-gray-600 tabular">
-                  {Number(r.rate || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  {unitRate.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                 </td>
                 <td className="py-1 text-right font-medium tabular">
                   {amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}

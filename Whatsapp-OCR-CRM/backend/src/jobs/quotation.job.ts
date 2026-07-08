@@ -6,10 +6,10 @@ import { logger } from "../utils/logger";
 export const quotationWorker = new Worker(
   "quotationQueue",
   async (job) => {
-    const { enquiryId, gstPercent = 18 } = job.data;
+    const { enquiryId, gstPercent, gstMode } = job.data;
     logger.info(`Worker starting quotation generation for enquiry ${enquiryId}`);
     try {
-      const quotation = await generateQuotation(enquiryId, gstPercent);
+      const quotation = await generateQuotation(enquiryId, gstPercent, { gstMode });
       logger.info(`Worker completed quotation ${quotation.id} for enquiry ${enquiryId}`);
       return quotation;
     } catch (error) {

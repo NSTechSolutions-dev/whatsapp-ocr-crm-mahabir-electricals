@@ -19,8 +19,12 @@ export async function downloadQuotationPdf(req: Request, res: Response) {
     else if (ext === "html") contentType = "text/html";
 
     const filename = `${quotation.number}.${ext || "pdf"}`;
+    const download = req.query.download === "1" || req.query.download === "true";
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader(
+      "Content-Disposition",
+      download ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`
+    );
     return res.send(buffer);
   } catch (error) {
     logger.error(`Failed to serve quotation PDF ${id}: ${error}`);

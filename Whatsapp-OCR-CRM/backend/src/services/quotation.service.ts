@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { upload, getPresignedUrl, getBuffer } from "../lib/s3";
 import { buildQuotationPdfBuffer } from "../lib/quotation-pdf";
 import { logger } from "../utils/logger";
+import { calculateGstTotals, type GstMode } from "../utils/gst-calculation";
 
 function isPdfBuffer(buffer: Buffer): boolean {
   return buffer.length >= 5 && buffer.subarray(0, 5).toString("ascii") === "%PDF-";
@@ -9,6 +10,11 @@ function isPdfBuffer(buffer: Buffer): boolean {
 
 type EnquiryWithRelations = {
   id: string;
+  gstPercent?: number;
+  gstMode?: string;
+  billCustomerName?: string | null;
+  billCustomerPhone?: string | null;
+  billCustomerCompany?: string | null;
   customer: {
     id: string;
     name: string | null;
@@ -23,26 +29,69 @@ type EnquiryWithRelations = {
   }>;
 };
 
+function resolveBillCustomer(enquiry: EnquiryWithRelations) {
+  return {
+    id: enquiry.customer.id,
+    name: enquiry.billCustomerName ?? enquiry.customer.name,
+    phone: enquiry.billCustomerPhone ?? enquiry.customer.phone,
+    company: enquiry.billCustomerCompany ?? enquiry.customer.company,
+  };
+}
+
+async function loadCompanyBillSettings() {
+  const settings = await prisma.companySetting.findUnique({ where: { id: "default" } });
+  if (!settings) {
+    return { bank: null, qrImage: null as Buffer | null };
+  }
+
+  let qrImage: Buffer | null = null;
+  if (settings.qrS3Key) {
+    try {
+      qrImage = await getBuffer(settings.qrS3Key);
+    } catch (error) {
+      logger.warn(`Could not load payment QR from ${settings.qrS3Key}: ${error}`);
+    }
+  }
+
+  return {
+    bank: {
+      bankName: settings.bankName,
+      accountName: settings.accountName,
+      accountNumber: settings.accountNumber,
+      ifsc: settings.ifsc,
+      branch: settings.branch,
+      upiId: settings.upiId,
+    },
+    qrImage,
+  };
+}
+
 async function saveQuotationPdfForEnquiry(
   enquiry: EnquiryWithRelations,
   quotationNumber: string,
-  gstPercent: number
+  gstPercent?: number,
+  gstMode?: GstMode
 ) {
-  let subtotal = 0;
-  for (const item of enquiry.items) {
-    subtotal += item.qty * (item.rate || 0);
-  }
-  const gstAmount = subtotal * (gstPercent / 100);
-  const grandTotal = subtotal + gstAmount;
+  const percent = gstPercent ?? enquiry.gstPercent ?? 18;
+  const mode = (gstMode ?? enquiry.gstMode ?? "exclusive") as GstMode;
+  const lineItems = enquiry.items.map((item) => ({
+    qty: item.qty,
+    rate: item.rate || 0,
+  }));
+  const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, percent, mode);
+  const { bank, qrImage } = await loadCompanyBillSettings();
 
   const buffer = await buildQuotationPdfBuffer({
     quotationNumber,
-    customer: enquiry.customer,
+    customer: resolveBillCustomer(enquiry),
     items: enquiry.items,
     subtotal,
-    gstPercent,
+    gstPercent: percent,
+    gstMode: mode,
     gstAmount,
     grandTotal,
+    bank,
+    qrImage,
   });
 
   const now = new Date();
@@ -77,7 +126,7 @@ export async function isQuotationPdfReady(s3Key: string): Promise<boolean> {
   }
 }
 
-export async function ensureQuotationPdf(quotationId: string, gstPercent = 18.0): Promise<any> {
+export async function ensureQuotationPdf(quotationId: string, gstPercent?: number, gstMode?: GstMode): Promise<any> {
   const existing = await prisma.quotation.findUnique({
     where: { id: quotationId },
     include: {
@@ -103,15 +152,22 @@ export async function ensureQuotationPdf(quotationId: string, gstPercent = 18.0)
     logger.warn(`Could not read quotation file ${existing.s3Key}: ${error}`);
   }
 
+  const percent = gstPercent ?? existing.enquiry.gstPercent ?? 18;
+  const mode = (gstMode ?? existing.enquiry.gstMode ?? "exclusive") as GstMode;
   logger.info(`Rebuilding PDF for quotation ${quotationId} using PdfKit`);
-  return saveQuotationPdfForEnquiry(existing.enquiry, existing.number, gstPercent);
+  return saveQuotationPdfForEnquiry(existing.enquiry, existing.number, percent, mode);
 }
 
 interface GenerateQuotationOptions {
   existingNumber?: string;
+  gstMode?: GstMode;
 }
 
-export async function regenerateQuotationPdf(quotationId: string, gstPercent = 18.0): Promise<any> {
+export async function regenerateQuotationPdf(
+  quotationId: string,
+  gstPercent?: number,
+  gstMode?: GstMode
+): Promise<any> {
   const existing = await prisma.quotation.findUnique({
     where: { id: quotationId },
     select: { enquiryId: true, number: true },
@@ -123,12 +179,13 @@ export async function regenerateQuotationPdf(quotationId: string, gstPercent = 1
 
   return generateQuotation(existing.enquiryId, gstPercent, {
     existingNumber: existing.number,
+    gstMode,
   });
 }
 
 export async function generateQuotation(
   enquiryId: string,
-  gstPercent = 18.0,
+  gstPercent?: number,
   options: GenerateQuotationOptions = {}
 ): Promise<any> {
   const enquiry = await prisma.enquiry.findUnique({
@@ -142,6 +199,9 @@ export async function generateQuotation(
   if (!enquiry) {
     throw new Error("Enquiry not found");
   }
+
+  const percent = gstPercent ?? enquiry.gstPercent ?? 18;
+  const mode = (options.gstMode ?? enquiry.gstMode ?? "exclusive") as GstMode;
 
   const now = new Date();
   const year = now.getFullYear();
@@ -174,5 +234,7 @@ export async function generateQuotation(
   }
 
   logger.info(`Generating quotation PDF ${quotationNumber} for enquiry ${enquiryId}`);
-  return saveQuotationPdfForEnquiry(enquiry, quotationNumber, gstPercent);
+  return saveQuotationPdfForEnquiry(enquiry, quotationNumber, percent, mode);
 }
+
+export { calculateGstTotals, type GstMode };

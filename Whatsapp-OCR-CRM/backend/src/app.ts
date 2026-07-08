@@ -19,6 +19,7 @@ import fileRouter from "./api/routes/file.routes";
 import publicRouter from "./api/routes/public.routes";
 import notificationRouter from "./api/routes/notification.routes";
 import learningRouter from "./api/routes/learning.routes";
+import settingsRouter from "./api/routes/settings.routes";
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use("/api/webhooks", webhookRouter);
 app.use("/api/public", publicRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/learning", learningRouter);
+app.use("/api/settings", settingsRouter);
 app.use("/api", fileRouter);
 
 app.get("/api/health", (req, res) => {
