@@ -53,6 +53,9 @@ const PAGE_HEIGHT = 841.89;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 const CONTENT_RIGHT = PAGE_WIDTH - MARGIN_RIGHT;
 
+const CELL_PAD_LEFT = 8;
+const CELL_PAD_RIGHT = 10;
+
 function formatUsdDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
     month: "2-digit",
@@ -62,7 +65,7 @@ function formatUsdDate(date: Date): string {
 }
 
 function formatInr(amount: number): string {
-  return `₹${amount.toFixed(2)}`;
+  return `Rs ${amount.toFixed(2)}`;
 }
 
 function hasBankDetails(bank?: QuotationPdfBankDetails | null): boolean {
@@ -95,6 +98,12 @@ function drawDivider(doc: PdfDoc, y: number) {
     .stroke();
 }
 
+function cellTextWidth(colWidth: number, align: "left" | "center" | "right"): number {
+  if (align === "left") return colWidth - CELL_PAD_LEFT * 2;
+  if (align === "right") return colWidth - CELL_PAD_RIGHT;
+  return colWidth;
+}
+
 function drawTableHeader(doc: PdfDoc, y: number, colWidths: number[]) {
   const headers = ["Description", "Quantity", "Price", "Total"];
   const aligns: Array<"left" | "center" | "right"> = ["left", "center", "right", "right"];
@@ -104,12 +113,12 @@ function drawTableHeader(doc: PdfDoc, y: number, colWidths: number[]) {
 
   doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(10);
   for (let i = 0; i < headers.length; i += 1) {
-    const padding = 8;
     const width = colWidths[i];
-    const textX = aligns[i] === "left" ? x + padding : x;
+    const align = aligns[i];
+    const textX = align === "left" ? x + CELL_PAD_LEFT : x;
     doc.text(headers[i], textX, y + 7, {
-      width: aligns[i] === "left" ? width - padding * 2 : width,
-      align: aligns[i],
+      width: cellTextWidth(width, align),
+      align,
     });
     x += width;
   }
@@ -128,12 +137,13 @@ function drawTableRow(
   doc.fillColor(MUTED).font("Helvetica").fontSize(10);
   let x = MARGIN_LEFT;
   for (let i = 0; i < values.length; i += 1) {
-    const padding = 8;
     const width = colWidths[i];
-    const textX = aligns[i] === "left" ? x + padding : x;
+    const align = aligns[i];
+    const textX = align === "left" ? x + CELL_PAD_LEFT : x;
     doc.text(values[i], textX, y + 9, {
-      width: aligns[i] === "left" ? width - padding * 2 : width,
-      align: aligns[i],
+      width: cellTextWidth(width, align),
+      align,
+      lineBreak: false,
     });
     x += width;
   }
@@ -164,11 +174,14 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
   y += 14;
 
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text("PAYMENT DETAILS", MARGIN_LEFT, y);
-  y = doc.y + 8;
+  const contentStartY = doc.y + 10;
 
   const qrSize = 88;
   const qrX = CONTENT_RIGHT - qrSize;
-  const textWidth = showQr ? CONTENT_WIDTH - qrSize - 16 : CONTENT_WIDTH;
+  const bankLabelWidth = 88;
+  const bankTextWidth = showQr ? CONTENT_WIDTH - qrSize - 24 : CONTENT_WIDTH;
+
+  let bankBottomY = contentStartY;
 
   if (showBank && bank) {
     doc.font("Helvetica").fontSize(9).fillColor(MUTED);
@@ -180,29 +193,72 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
     if (bank.branch) lines.push(["Branch:", bank.branch]);
     if (bank.upiId) lines.push(["UPI ID:", bank.upiId]);
 
+    let lineY = contentStartY;
     for (const [label, value] of lines) {
-      doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, y, { width: 88, continued: true });
-      doc.font("Helvetica").text(value, { width: textWidth - 88 });
-      y += 14;
+      doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, lineY, { width: bankLabelWidth, continued: true });
+      doc.font("Helvetica").text(value, { width: bankTextWidth - bankLabelWidth });
+      lineY += 14;
     }
+    bankBottomY = lineY;
   }
 
+  let qrBottomY = contentStartY;
   if (showQr && input.qrImage) {
-    const qrY = Math.max(doc.y - (showBank ? 14 * 4 : 0), y - 20);
     try {
-      doc.image(input.qrImage, qrX, qrY, { fit: [qrSize, qrSize] });
+      doc.image(input.qrImage, qrX, contentStartY, { fit: [qrSize, qrSize] });
       doc
         .fillColor(LIGHT_MUTED)
         .font("Helvetica")
         .fontSize(8)
-        .text("Scan to pay", qrX, qrY + qrSize + 4, { width: qrSize, align: "center" });
-      y = Math.max(y, qrY + qrSize + 18);
+        .text("Scan to pay", qrX, contentStartY + qrSize + 4, { width: qrSize, align: "center" });
+      qrBottomY = contentStartY + qrSize + 18;
     } catch {
       // Skip QR if image cannot be embedded
     }
   }
 
-  return y + 8;
+  return Math.max(bankBottomY, qrBottomY) + 8;
+}
+
+function drawHeader(doc: PdfDoc) {
+  const logoSize = 48;
+  const headerTop = MARGIN_TOP;
+  const contactWidth = 200;
+  const contactX = CONTENT_RIGHT - contactWidth;
+  const identityX = MARGIN_LEFT + logoSize + 12;
+
+  drawLightningLogo(doc, MARGIN_LEFT, headerTop, logoSize);
+
+  doc
+    .fillColor(BRAND)
+    .font("Helvetica-Bold")
+    .fontSize(11)
+    .text(env.COMPANY_NAME.toUpperCase(), identityX, headerTop + 6, {
+      width: contactX - identityX - 16,
+      lineGap: 1,
+    })
+    .fontSize(10)
+    .text("ELECTRICAL SUPPLIES", identityX, doc.y + 2);
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor(BRAND)
+    .text(env.COMPANY_ADDRESS.toUpperCase(), contactX, headerTop, {
+      width: contactWidth,
+      align: "right",
+      lineGap: 2,
+    });
+
+  const contactLineY = headerTop + 28;
+  doc.text(`PHONE: ${env.COMPANY_PHONE}`, contactX, contactLineY, {
+    width: contactWidth,
+    align: "right",
+  });
+  doc.text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, contactLineY + 12, {
+    width: contactWidth,
+    align: "right",
+  });
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
@@ -221,32 +277,15 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     const now = new Date();
     const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const colWidths = [
-      CONTENT_WIDTH * 0.5,
-      CONTENT_WIDTH * 0.15,
-      CONTENT_WIDTH * 0.15,
-      CONTENT_WIDTH * 0.2,
+      CONTENT_WIDTH * 0.46,
+      CONTENT_WIDTH * 0.14,
+      CONTENT_WIDTH * 0.18,
+      CONTENT_WIDTH * 0.22,
     ];
 
-    drawLightningLogo(doc, MARGIN_LEFT, MARGIN_TOP, 48);
-    doc
-      .fillColor(BRAND)
-      .font("Helvetica-Bold")
-      .fontSize(11)
-      .text(`${env.COMPANY_NAME.toUpperCase()}`, MARGIN_LEFT, MARGIN_TOP + 54, { lineGap: 1 })
-      .fontSize(10)
-      .text("ELECTRICAL SUPPLIES");
+    drawHeader(doc);
 
-    const contactWidth = 190;
-    const contactX = CONTENT_RIGHT - contactWidth;
-    doc
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor(BRAND)
-      .text(env.COMPANY_ADDRESS.toUpperCase(), contactX, MARGIN_TOP, { width: contactWidth, align: "right" })
-      .text(`PHONE: ${env.COMPANY_PHONE}`, contactX, doc.y, { width: contactWidth, align: "right" })
-      .text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, doc.y, { width: contactWidth, align: "right" });
-
-    let y = MARGIN_TOP + 108;
+    let y = MARGIN_TOP + 96;
     doc
       .fillColor(BRAND)
       .font("Helvetica-Bold")
@@ -331,8 +370,10 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     }
 
     y += 8;
-    const totalsWidth = 230;
+    const totalsWidth = 240;
     const totalsX = CONTENT_RIGHT - totalsWidth;
+    const totalsLabelWidth = totalsWidth * 0.55;
+    const totalsValueWidth = totalsWidth - 14;
     const totalsRows: Array<{ label: string; value: string }> = [
       { label: "Subtotal", value: formatInr(input.subtotal) },
       { label: `GST (${input.gstPercent}%)`, value: formatInr(input.gstAmount) },
@@ -341,8 +382,8 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
 
     doc.font("Helvetica").fontSize(10).fillColor(MUTED);
     for (const row of totalsRows) {
-      doc.text(row.label, totalsX, y, { width: totalsWidth * 0.62, align: "left" });
-      doc.text(row.value, totalsX, y, { width: totalsWidth, align: "right" });
+      doc.text(row.label, totalsX, y, { width: totalsLabelWidth, align: "left" });
+      doc.text(row.value, totalsX, y, { width: totalsValueWidth, align: "right", lineBreak: false });
       y += 18;
     }
 
@@ -352,8 +393,12 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .fillColor(WHITE)
       .font("Helvetica-Bold")
       .fontSize(11)
-      .text("Total", totalsX + 10, y + 8, { width: totalsWidth * 0.5, align: "left" });
-    doc.text(formatInr(input.grandTotal), totalsX, y + 8, { width: totalsWidth - 10, align: "right" });
+      .text("Total", totalsX + 10, y + 8, { width: totalsLabelWidth, align: "left" });
+    doc.text(formatInr(input.grandTotal), totalsX, y + 8, {
+      width: totalsValueWidth,
+      align: "right",
+      lineBreak: false,
+    });
 
     y += 44;
     y = drawBankAndQr(doc, y, input);

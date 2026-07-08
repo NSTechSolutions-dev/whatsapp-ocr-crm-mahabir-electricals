@@ -338,7 +338,7 @@ export async function sendQuotation(req: Request, res: Response) {
       return res.status(400).json({ detail: "Customer missing" });
     }
 
-    const pdfProxyUrl = getQuotationPdfPublicUrl(q.id);
+    const pdfProxyUrl = `${getQuotationPdfPublicUrl(q.id)}?v=${Date.now()}`;
     const lineItems = q.enquiry.items.map((item) => ({
       qty: item.qty,
       rate: item.rate || 0,

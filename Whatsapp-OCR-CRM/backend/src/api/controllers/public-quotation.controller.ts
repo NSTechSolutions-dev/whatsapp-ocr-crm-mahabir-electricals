@@ -21,6 +21,8 @@ export async function downloadQuotationPdf(req: Request, res: Response) {
     const filename = `${quotation.number}.${ext || "pdf"}`;
     const download = req.query.download === "1" || req.query.download === "true";
     res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
     res.setHeader(
       "Content-Disposition",
       download ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`
