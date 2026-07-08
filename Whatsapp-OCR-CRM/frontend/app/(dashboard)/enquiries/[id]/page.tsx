@@ -330,21 +330,30 @@ export default function UnifiedEnquiryPage() {
   const resolveQuotationId = (overrideId?: string) =>
     overrideId ?? quotation?.id ?? data?.quotation?.id ?? null;
 
-  const regeneratePdf = async () => {
+  const saveAndRegenerate = async () => {
     const quotationId = resolveQuotationId();
-    if (!quotationId) {
-      toast.error("Quotation not loaded yet");
-      return;
-    }
-
-    setRegenerating(true);
+    setSaving(true);
+    if (quotationId) setRegenerating(true);
     try {
-      await api.post(`/quotations/${quotationId}/regenerate`, billPayload(), { timeout: 120000 });
-      toast.success("Quotation PDF generated");
-      await loadQuotation(quotationId);
+      await api.put(`/enquiries/${id}`, {
+        items: serializeRows(),
+        ...billPayload(),
+      });
+      setLastSaved(new Date());
+      setHasUnsavedChanges(false);
+
+      if (quotationId) {
+        await api.post(`/quotations/${quotationId}/regenerate`, billPayload(), { timeout: 120000 });
+        await loadQuotation(quotationId);
+        toast.success("Saved and PDF regenerated");
+      } else {
+        toast.success("Saved");
+      }
+      await load();
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "PDF generation failed");
+      toast.error(e?.response?.data?.detail || "Save & regenerate failed");
     } finally {
+      setSaving(false);
       setRegenerating(false);
     }
   };
@@ -562,22 +571,32 @@ export default function UnifiedEnquiryPage() {
         {!isLocked ? (
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[10px] text-ink-muted hidden sm:inline">
-              {saving ? "Saving…" : hasUnsavedChanges ? "Unsaved" : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+              {saving || regenerating ? "Saving…" : hasUnsavedChanges ? "Unsaved" : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
             </span>
-            <Button variant="outline" size="sm" onClick={save} disabled={saving} className="h-7 px-2.5 text-xs border-line" data-testid="save-enquiry-button">
-              {saving ? "…" : "Save"}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={hasQuotation ? saveAndRegenerate : save}
+              disabled={saving || regenerating}
+              className="h-7 px-2.5 text-xs border-line"
+              data-testid="save-enquiry-button"
+            >
+              {saving || regenerating ? (
+                "…"
+              ) : hasQuotation ? (
+                <>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Save & Regenerate
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
             {hasQuotation && (
-              <>
-                <Button variant="outline" size="sm" onClick={regeneratePdf} disabled={regenerating} className="h-7 px-2.5 text-xs border-line">
-                  <RefreshCw className={`h-3 w-3 mr-1 ${regenerating ? "animate-spin" : ""}`} />
-                  {regenerating ? "…" : "Regenerate"}
-                </Button>
-                <Button variant="outline" size="sm" onClick={downloadQuotation} className="h-7 px-2.5 text-xs border-line">
-                  <Download className="h-3 w-3 mr-1" />
-                  Download
-                </Button>
-              </>
+              <Button variant="outline" size="sm" onClick={downloadQuotation} className="h-7 px-2.5 text-xs border-line">
+                <Download className="h-3 w-3 mr-1" />
+                Download
+              </Button>
             )}
             {!isFinalized ? (
               <Button size="sm" onClick={finalize} disabled={finalizing || !hasItems} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white" data-testid="finalize-enquiry-button">
@@ -1001,17 +1020,17 @@ export default function UnifiedEnquiryPage() {
 
               {quotation && quotation.pdfReady === false && (
                 <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900 flex items-center justify-between gap-2">
-                  <span>PDF file missing. Generate before sending on WhatsApp.</span>
+                  <span>PDF file missing. Save and generate before sending on WhatsApp.</span>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     className="h-7 text-[10px] border-amber-300 shrink-0"
-                    onClick={regeneratePdf}
-                    disabled={regenerating}
+                    onClick={saveAndRegenerate}
+                    disabled={saving || regenerating}
                   >
-                    <RefreshCw className={`h-3 w-3 mr-1 ${regenerating ? "animate-spin" : ""}`} />
-                    {regenerating ? "Generating…" : "Generate PDF"}
+                    <RefreshCw className={`h-3 w-3 mr-1 ${saving || regenerating ? "animate-spin" : ""}`} />
+                    {saving || regenerating ? "Generating…" : "Save & Generate PDF"}
                   </Button>
                 </div>
               )}
