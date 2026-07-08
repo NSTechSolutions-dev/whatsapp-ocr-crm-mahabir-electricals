@@ -195,8 +195,15 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
 
     let lineY = contentStartY;
     for (const [label, value] of lines) {
-      doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, lineY, { width: bankLabelWidth, continued: true });
-      doc.font("Helvetica").text(value, { width: bankTextWidth - bankLabelWidth });
+      doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, lineY, {
+        width: bankLabelWidth,
+        lineBreak: false,
+      });
+      doc.font("Helvetica").text(value, MARGIN_LEFT + bankLabelWidth, lineY, {
+        width: bankTextWidth - bankLabelWidth,
+        lineBreak: false,
+        ellipsis: true,
+      });
       lineY += 14;
     }
     bankBottomY = lineY;
