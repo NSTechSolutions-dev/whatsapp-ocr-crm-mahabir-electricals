@@ -1199,10 +1199,12 @@ function QuotationPreview({
           <span>Subtotal</span>
           <span className="tabular">₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
         </div>
-        <div className="flex justify-between text-gray-600">
-          <span>GST ({gst}%)</span>
-          <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-        </div>
+        {Number(gst) > 0 && (
+          <div className="flex justify-between text-gray-600">
+            <span>GST ({gst}%)</span>
+            <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+          </div>
+        )}
         <div className="flex justify-between pt-1 border-t border-gray-200 font-bold text-sm">
           <span>Total</span>
           <span className="tabular">₹{grandTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>

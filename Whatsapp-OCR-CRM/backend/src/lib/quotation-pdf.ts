@@ -227,7 +227,7 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
   return Math.max(bankBottomY, qrBottomY) + 8;
 }
 
-function drawHeader(doc: PdfDoc) {
+function drawHeader(doc: PdfDoc, gstPercent: number) {
   const logoSize = 48;
   const headerTop = MARGIN_TOP;
   const contactWidth = 200;
@@ -262,10 +262,12 @@ function drawHeader(doc: PdfDoc) {
     width: contactWidth,
     align: "right",
   });
-  doc.text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, contactLineY + 12, {
-    width: contactWidth,
-    align: "right",
-  });
+  if (gstPercent > 0) {
+    doc.text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, contactLineY + 12, {
+      width: contactWidth,
+      align: "right",
+    });
+  }
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
@@ -290,7 +292,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       CONTENT_WIDTH * 0.22,
     ];
 
-    drawHeader(doc);
+    drawHeader(doc, input.gstPercent);
 
     let y = MARGIN_TOP + 96;
     doc
@@ -337,19 +339,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     drawDivider(doc, y);
     y += 18;
 
-    doc
-      .fillColor(INK)
-      .font("Helvetica-Bold")
-      .fontSize(10)
-      .text("PROJECT DESCRIPTION", MARGIN_LEFT, y, { width: 130, continued: true })
-      .font("Helvetica")
-      .fillColor(MUTED)
-      .text(
-        "Add a brief and concise description of the project, item, or service here.",
-        { width: CONTENT_WIDTH - 140 }
-      );
-
-    y = doc.y + 18;
     drawTableHeader(doc, y, colWidths);
     y += 24;
 
@@ -383,7 +372,9 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     const totalsValueWidth = totalsWidth - 14;
     const totalsRows: Array<{ label: string; value: string }> = [
       { label: "Subtotal", value: formatInr(input.subtotal) },
-      { label: `GST (${input.gstPercent}%)`, value: formatInr(input.gstAmount) },
+      ...(input.gstPercent > 0
+        ? [{ label: `GST (${input.gstPercent}%)`, value: formatInr(input.gstAmount) }]
+        : []),
       { label: "Others", value: formatInr(0) },
     ];
 

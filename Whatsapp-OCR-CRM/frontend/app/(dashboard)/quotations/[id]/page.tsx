@@ -366,7 +366,9 @@ export default function QuotationPreviewPage() {
             <h3 className="font-display font-semibold text-base mb-3 text-ink">Summary</h3>
             <div className="text-sm space-y-1.5 text-ink">
               <Row label="Subtotal" value={formatINR(q.subtotal)} />
-              <Row label={`GST (${q.gstPercent}%)`} value={formatINR(q.gstAmount)} />
+              {q.gstPercent > 0 && (
+                <Row label={`GST (${q.gstPercent}%)`} value={formatINR(q.gstAmount)} />
+              )}
               <div className="border-t border-line my-2" />
               <Row label="Grand total" value={formatINR(q.grandTotal)} bold />
               <Row label="Items" value={q.items?.length || 0} />
