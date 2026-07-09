@@ -90,7 +90,7 @@ export default function QuotationPreviewPage() {
   const regenerate = async () => {
     setRegenerating(true);
     try {
-      await api.post(`/quotations/${id}/regenerate`, { gstPercent: q?.gstPercent || 18 }, { timeout: 120000 });
+      await api.post(`/quotations/${id}/regenerate`, { gstPercent: q?.gstPercent ?? 18 }, { timeout: 120000 });
       toast.success("Quotation PDF regenerated");
       await load();
     } catch (e: any) {

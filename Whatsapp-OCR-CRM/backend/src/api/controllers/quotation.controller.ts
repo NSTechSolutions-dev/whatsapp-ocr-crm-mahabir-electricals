@@ -132,7 +132,14 @@ export async function getQuotation(req: Request, res: Response) {
 
 export async function regenerateQuotation(req: Request, res: Response) {
   const { id } = req.params;
-    const gstPercent = Number(req.body?.gstPercent) || undefined;
+    const bodyGstPercent = req.body?.gstPercent;
+    const gstPercent =
+      bodyGstPercent !== undefined && bodyGstPercent !== null
+        ? (() => {
+            const n = Number(bodyGstPercent);
+            return Number.isFinite(n) ? n : undefined;
+          })()
+        : undefined;
     const gstMode =
       req.body?.gstMode === "inclusive"
         ? "inclusive"
@@ -240,8 +247,9 @@ export async function sendQuotation(req: Request, res: Response) {
     let targetConversationId = q.enquiry.conversationId;
     const enquiryUpdate: Record<string, unknown> = {};
 
-    if (bodyGst !== undefined) {
-      enquiryUpdate.gstPercent = Number(bodyGst) || 18;
+    if (bodyGst !== undefined && bodyGst !== null) {
+      const n = Number(bodyGst);
+      enquiryUpdate.gstPercent = Number.isFinite(n) ? n : 18;
     }
     if (bodyGstMode !== undefined) {
       enquiryUpdate.gstMode = bodyGstMode === "inclusive" ? "inclusive" : "exclusive";

@@ -290,7 +290,8 @@ export async function updateEnquiry(req: Request, res: Response) {
 
     const updateData: Record<string, unknown> = {};
     if (gstPercent !== undefined) {
-      updateData.gstPercent = parseFloat(String(gstPercent)) || 18;
+      const parsed = parseFloat(String(gstPercent));
+      updateData.gstPercent = Number.isFinite(parsed) ? parsed : 18;
     }
     if (gstMode !== undefined) {
       updateData.gstMode = gstMode === "inclusive" ? "inclusive" : "exclusive";
@@ -328,7 +329,8 @@ export async function updateEnquiry(req: Request, res: Response) {
 
 export async function finalizeEnquiry(req: Request, res: Response) {
   const { id } = req.params;
-  const gstPercent = parseFloat(String(req.body?.gstPercent ?? req.query.gstPercent ?? 18)) || 18;
+  const parsedGst = parseFloat(String(req.body?.gstPercent ?? req.query.gstPercent ?? 18));
+  const gstPercent = Number.isFinite(parsedGst) ? parsedGst : 18;
   const gstMode = req.body?.gstMode === "inclusive" ? "inclusive" : "exclusive";
   const {
     items,

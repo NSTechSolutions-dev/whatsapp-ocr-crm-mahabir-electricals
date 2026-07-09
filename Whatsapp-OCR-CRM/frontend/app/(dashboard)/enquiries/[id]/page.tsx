@@ -162,13 +162,16 @@ export default function UnifiedEnquiryPage() {
     [lineItems, gst, gstMode]
   );
 
-  const billPayload = () => ({
-    gstPercent: Number(gst) || 18,
-    gstMode,
-    billCustomerName: billCustomerName.trim() || null,
-    billCustomerPhone: billCustomerPhone.trim() || null,
-    billCustomerCompany: billCustomerCompany.trim() || null,
-  });
+  const billPayload = () => {
+    const gstNum = Number(gst);
+    return {
+      gstPercent: Number.isFinite(gstNum) ? gstNum : 18,
+      gstMode,
+      billCustomerName: billCustomerName.trim() || null,
+      billCustomerPhone: billCustomerPhone.trim() || null,
+      billCustomerCompany: billCustomerCompany.trim() || null,
+    };
+  };
 
   const loadQuotation = async (quotationId: string) => {
     try {
@@ -397,7 +400,7 @@ export default function UnifiedEnquiryPage() {
               number: data?.quotation?.number || "",
               grandTotal,
               subtotal,
-              gstPercent: Number(gst) || 18,
+              gstPercent: Number.isFinite(Number(gst)) ? Number(gst) : 18,
               gstAmount,
               presignedUrl: "",
               sentAt: r.data.sentAt,
@@ -1196,12 +1199,10 @@ function QuotationPreview({
           <span>Subtotal</span>
           <span className="tabular">₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
         </div>
-        {Number(gst) > 0 && (
-          <div className="flex justify-between text-gray-600">
-            <span>GST ({gst}%)</span>
-            <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-          </div>
-        )}
+        <div className="flex justify-between text-gray-600">
+          <span>GST ({gst}%)</span>
+          <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+        </div>
         <div className="flex justify-between pt-1 border-t border-gray-200 font-bold text-sm">
           <span>Total</span>
           <span className="tabular">₹{grandTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
