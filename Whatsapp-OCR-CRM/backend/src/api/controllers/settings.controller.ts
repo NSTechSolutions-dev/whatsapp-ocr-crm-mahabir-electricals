@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { upload, getPresignedUrl } from "../../lib/s3";
 import { logger } from "../../utils/logger";
+import { env } from "../../config/env";
 
 async function getOrCreateCompanySetting() {
   const existing = await prisma.companySetting.findUnique({ where: { id: "default" } });
@@ -9,11 +10,16 @@ async function getOrCreateCompanySetting() {
   return prisma.companySetting.create({ data: { id: "default" } });
 }
 
+function orEnv(value: string | null | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
 function serializeSettings(settings: Awaited<ReturnType<typeof getOrCreateCompanySetting>>, qrUrl: string | null) {
   return {
-    companyName: settings.companyName,
-    companyPhone: settings.companyPhone,
-    companyGstin: settings.companyGstin,
+    companyName: orEnv(settings.companyName, env.COMPANY_NAME),
+    companyPhone: orEnv(settings.companyPhone, env.COMPANY_PHONE),
+    companyGstin: orEnv(settings.companyGstin, env.COMPANY_GSTIN),
     bankName: settings.bankName,
     accountName: settings.accountName,
     accountNumber: settings.accountNumber,

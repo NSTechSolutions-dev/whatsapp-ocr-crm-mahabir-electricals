@@ -72,9 +72,9 @@ async function loadCompanyBillSettings() {
     },
     qrImage,
     companyProfile: {
-      name: settings.companyName,
-      phone: settings.companyPhone,
-      gstin: settings.companyGstin,
+      name: settings.companyName?.trim() || null,
+      phone: settings.companyPhone?.trim() || null,
+      gstin: settings.companyGstin?.trim() || null,
     },
   };
 }

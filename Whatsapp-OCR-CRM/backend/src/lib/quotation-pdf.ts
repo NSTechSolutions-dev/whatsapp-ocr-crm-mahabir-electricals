@@ -73,6 +73,11 @@ function formatInr(amount: number): string {
   return `Rs ${amount.toFixed(2)}`;
 }
 
+function orFallback(value: string | null | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
 function hasBankDetails(bank?: QuotationPdfBankDetails | null): boolean {
   if (!bank) return false;
   return Boolean(
@@ -165,7 +170,7 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
     return y;
   }
 
-  if (y > PAGE_HEIGHT - 220) {
+  if (y > PAGE_HEIGHT - 280) {
     doc.addPage();
     y = MARGIN_TOP;
   }
@@ -181,7 +186,7 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text("PAYMENT DETAILS", MARGIN_LEFT, y);
   const contentStartY = doc.y + 10;
 
-  const qrSize = 88;
+  const qrSize = 130;
   const qrX = CONTENT_RIGHT - qrSize;
   const bankLabelWidth = 88;
   const bankTextWidth = showQr ? CONTENT_WIDTH - qrSize - 24 : CONTENT_WIDTH;
@@ -242,9 +247,9 @@ function drawHeader(
   const contactWidth = 200;
   const contactX = CONTENT_RIGHT - contactWidth;
   const identityX = MARGIN_LEFT + logoSize + 12;
-  const companyName = (companyProfile?.name || env.COMPANY_NAME).trim() || env.COMPANY_NAME;
-  const companyPhone = (companyProfile?.phone || env.COMPANY_PHONE).trim() || env.COMPANY_PHONE;
-  const companyGstin = (companyProfile?.gstin || env.COMPANY_GSTIN).trim() || env.COMPANY_GSTIN;
+  const companyName = orFallback(companyProfile?.name, env.COMPANY_NAME);
+  const companyPhone = orFallback(companyProfile?.phone, env.COMPANY_PHONE);
+  const companyGstin = orFallback(companyProfile?.gstin, env.COMPANY_GSTIN);
 
   drawLightningLogo(doc, MARGIN_LEFT, headerTop, logoSize);
 
