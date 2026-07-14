@@ -36,6 +36,11 @@ export interface QuotationPdfInput {
   grandTotal: number;
   bank?: QuotationPdfBankDetails | null;
   qrImage?: Buffer | null;
+  companyProfile?: {
+    name?: string | null;
+    phone?: string | null;
+    gstin?: string | null;
+  } | null;
 }
 
 const BRAND = "#7F1D1D";
@@ -227,12 +232,19 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
   return Math.max(bankBottomY, qrBottomY) + 8;
 }
 
-function drawHeader(doc: PdfDoc, gstPercent: number) {
+function drawHeader(
+  doc: PdfDoc,
+  gstPercent: number,
+  companyProfile?: { name?: string | null; phone?: string | null; gstin?: string | null } | null
+) {
   const logoSize = 48;
   const headerTop = MARGIN_TOP;
   const contactWidth = 200;
   const contactX = CONTENT_RIGHT - contactWidth;
   const identityX = MARGIN_LEFT + logoSize + 12;
+  const companyName = (companyProfile?.name || env.COMPANY_NAME).trim() || env.COMPANY_NAME;
+  const companyPhone = (companyProfile?.phone || env.COMPANY_PHONE).trim() || env.COMPANY_PHONE;
+  const companyGstin = (companyProfile?.gstin || env.COMPANY_GSTIN).trim() || env.COMPANY_GSTIN;
 
   drawLightningLogo(doc, MARGIN_LEFT, headerTop, logoSize);
 
@@ -240,7 +252,7 @@ function drawHeader(doc: PdfDoc, gstPercent: number) {
     .fillColor(BRAND)
     .font("Helvetica-Bold")
     .fontSize(11)
-    .text(env.COMPANY_NAME.toUpperCase(), identityX, headerTop + 6, {
+    .text(companyName.toUpperCase(), identityX, headerTop + 6, {
       width: contactX - identityX - 16,
       lineGap: 1,
     })
@@ -258,12 +270,12 @@ function drawHeader(doc: PdfDoc, gstPercent: number) {
     });
 
   const contactLineY = headerTop + 28;
-  doc.text(`PHONE: ${env.COMPANY_PHONE}`, contactX, contactLineY, {
+  doc.text(`PHONE: ${companyPhone}`, contactX, contactLineY, {
     width: contactWidth,
     align: "right",
   });
   if (gstPercent > 0) {
-    doc.text(`GSTIN: ${env.COMPANY_GSTIN}`, contactX, contactLineY + 12, {
+    doc.text(`GSTIN: ${companyGstin}`, contactX, contactLineY + 12, {
       width: contactWidth,
       align: "right",
     });
@@ -292,7 +304,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       CONTENT_WIDTH * 0.22,
     ];
 
-    drawHeader(doc, input.gstPercent);
+    drawHeader(doc, input.gstPercent, input.companyProfile);
 
     let y = MARGIN_TOP + 96;
     doc

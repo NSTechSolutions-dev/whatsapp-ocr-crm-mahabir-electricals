@@ -8,6 +8,7 @@ import { socket } from "../../../../lib/socket";
 import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
+import { formatWhatsappMessageContent } from "../../../../lib/whatsapp-templates";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -698,7 +699,7 @@ function MessageBubble({ m }: { m: Message }) {
             />
           </div>
         )}
-        {m.content && <MessageContent content={m.content} type={m.type} />}
+        {m.content && <MessageContent content={m.content} />}
         <div className="text-[10px] text-ink-muted mt-1.5 flex gap-2">
           <span>{timeAgo(m.createdAt)}</span>
           {isOut && <span className="text-emerald-700/80">Sent</span>}
@@ -708,29 +709,12 @@ function MessageBubble({ m }: { m: Message }) {
   );
 }
 
-function MessageContent({ content, type }: { content: string; type: string }) {
-  if (content.startsWith("Quotation ")) {
-    return <div className="text-sm font-medium text-ink break-words">{content}</div>;
-  }
-
-  if (type === "template" && content.includes("|")) {
-    const parts = content.split("|").map((part) => part.trim()).filter(Boolean);
-    const [title, ...rest] = parts;
-    return (
-      <div className="text-sm space-y-1 min-w-0 break-words [overflow-wrap:anywhere]">
-        <div className="font-medium text-ink">{title}</div>
-        {rest.map((part, index) => (
-          <div key={index} className="text-xs text-ink-muted leading-relaxed">
-            {part}
-          </div>
-        ))}
-      </div>
-    );
-  }
+function MessageContent({ content }: { content: string }) {
+  const display = formatWhatsappMessageContent(content);
 
   return (
     <div className="text-sm whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere] min-w-0">
-      {content}
+      {display}
     </div>
   );
 }

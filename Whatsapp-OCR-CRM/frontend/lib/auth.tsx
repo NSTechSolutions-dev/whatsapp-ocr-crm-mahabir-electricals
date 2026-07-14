@@ -40,6 +40,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchMe();
   }, []);
 
+  // Proactively refresh access token every 10 minutes while logged in
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshSession = async () => {
+      try {
+        const r = await api.post("/auth/refresh");
+        if (r.data?.accessToken) {
+          localStorage.setItem("accessToken", r.data.accessToken);
+        }
+      } catch {
+        // Interceptor handles hard logout on authentic 401
+      }
+    };
+
+    const intervalId = window.setInterval(refreshSession, 10 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [user]);
+
   const login = async (email: string, password: string) => {
     const r = await api.post("/auth/login", { email, password });
     if (r.data?.accessToken) {

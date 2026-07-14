@@ -9,6 +9,23 @@ async function getOrCreateCompanySetting() {
   return prisma.companySetting.create({ data: { id: "default" } });
 }
 
+function serializeSettings(settings: Awaited<ReturnType<typeof getOrCreateCompanySetting>>, qrUrl: string | null) {
+  return {
+    companyName: settings.companyName,
+    companyPhone: settings.companyPhone,
+    companyGstin: settings.companyGstin,
+    bankName: settings.bankName,
+    accountName: settings.accountName,
+    accountNumber: settings.accountNumber,
+    ifsc: settings.ifsc,
+    branch: settings.branch,
+    upiId: settings.upiId,
+    qrS3Key: settings.qrS3Key,
+    qrUrl,
+    updatedAt: settings.updatedAt.toISOString(),
+  };
+}
+
 export async function getCompanySettings(req: Request, res: Response) {
   try {
     const settings = await getOrCreateCompanySetting();
@@ -21,17 +38,7 @@ export async function getCompanySettings(req: Request, res: Response) {
       }
     }
 
-    return res.json({
-      bankName: settings.bankName,
-      accountName: settings.accountName,
-      accountNumber: settings.accountNumber,
-      ifsc: settings.ifsc,
-      branch: settings.branch,
-      upiId: settings.upiId,
-      qrS3Key: settings.qrS3Key,
-      qrUrl,
-      updatedAt: settings.updatedAt.toISOString(),
-    });
+    return res.json(serializeSettings(settings, qrUrl));
   } catch (error) {
     logger.error("Error loading company settings: " + error);
     return res.status(500).json({ detail: "Internal server error" });
@@ -40,6 +47,9 @@ export async function getCompanySettings(req: Request, res: Response) {
 
 export async function updateCompanySettings(req: Request, res: Response) {
   const {
+    companyName,
+    companyPhone,
+    companyGstin,
     bankName,
     accountName,
     accountNumber,
@@ -49,25 +59,22 @@ export async function updateCompanySettings(req: Request, res: Response) {
   } = req.body ?? {};
 
   try {
+    const data = {
+      companyName: companyName?.trim() || null,
+      companyPhone: companyPhone?.trim() || null,
+      companyGstin: companyGstin?.trim() || null,
+      bankName: bankName?.trim() || null,
+      accountName: accountName?.trim() || null,
+      accountNumber: accountNumber?.trim() || null,
+      ifsc: ifsc?.trim() || null,
+      branch: branch?.trim() || null,
+      upiId: upiId?.trim() || null,
+    };
+
     const settings = await prisma.companySetting.upsert({
       where: { id: "default" },
-      update: {
-        bankName: bankName?.trim() || null,
-        accountName: accountName?.trim() || null,
-        accountNumber: accountNumber?.trim() || null,
-        ifsc: ifsc?.trim() || null,
-        branch: branch?.trim() || null,
-        upiId: upiId?.trim() || null,
-      },
-      create: {
-        id: "default",
-        bankName: bankName?.trim() || null,
-        accountName: accountName?.trim() || null,
-        accountNumber: accountNumber?.trim() || null,
-        ifsc: ifsc?.trim() || null,
-        branch: branch?.trim() || null,
-        upiId: upiId?.trim() || null,
-      },
+      update: data,
+      create: { id: "default", ...data },
     });
 
     let qrUrl: string | null = null;
@@ -77,15 +84,7 @@ export async function updateCompanySettings(req: Request, res: Response) {
 
     return res.json({
       ok: true,
-      bankName: settings.bankName,
-      accountName: settings.accountName,
-      accountNumber: settings.accountNumber,
-      ifsc: settings.ifsc,
-      branch: settings.branch,
-      upiId: settings.upiId,
-      qrS3Key: settings.qrS3Key,
-      qrUrl,
-      updatedAt: settings.updatedAt.toISOString(),
+      ...serializeSettings(settings, qrUrl),
     });
   } catch (error) {
     logger.error("Error updating company settings: " + error);

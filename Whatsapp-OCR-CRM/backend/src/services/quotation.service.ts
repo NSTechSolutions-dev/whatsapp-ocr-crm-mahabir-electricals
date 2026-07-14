@@ -41,7 +41,15 @@ function resolveBillCustomer(enquiry: EnquiryWithRelations) {
 async function loadCompanyBillSettings() {
   const settings = await prisma.companySetting.findUnique({ where: { id: "default" } });
   if (!settings) {
-    return { bank: null, qrImage: null as Buffer | null };
+    return {
+      bank: null,
+      qrImage: null as Buffer | null,
+      companyProfile: null as {
+        name?: string | null;
+        phone?: string | null;
+        gstin?: string | null;
+      } | null,
+    };
   }
 
   let qrImage: Buffer | null = null;
@@ -63,6 +71,11 @@ async function loadCompanyBillSettings() {
       upiId: settings.upiId,
     },
     qrImage,
+    companyProfile: {
+      name: settings.companyName,
+      phone: settings.companyPhone,
+      gstin: settings.companyGstin,
+    },
   };
 }
 
@@ -79,7 +92,7 @@ async function saveQuotationPdfForEnquiry(
     rate: item.rate || 0,
   }));
   const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, percent, mode);
-  const { bank, qrImage } = await loadCompanyBillSettings();
+  const { bank, qrImage, companyProfile } = await loadCompanyBillSettings();
 
   const buffer = await buildQuotationPdfBuffer({
     quotationNumber,
@@ -92,6 +105,7 @@ async function saveQuotationPdfForEnquiry(
     grandTotal,
     bank,
     qrImage,
+    companyProfile,
   });
 
   const now = new Date();

@@ -164,10 +164,9 @@ function SimulateInboundDialog({ onCreated }: { onCreated: () => void }) {
       </DialogTrigger>
       <DialogContent className="bg-surface border-line text-ink">
         <DialogHeader>
-          <DialogTitle className="font-display text-ink">Simulate incoming WhatsApp</DialogTitle>
+          <DialogTitle className="font-display text-ink">New Quote</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-ink-muted">MSG91 is MOCKED in this preview. Use this form to simulate a customer message.</p>
           <div>
             <Label className="text-xs uppercase tracking-wider text-ink-muted">Phone</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1.5" data-testid="simulate-phone-input" />

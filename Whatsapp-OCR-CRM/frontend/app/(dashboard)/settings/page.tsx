@@ -35,6 +35,9 @@ interface UserItem {
 }
 
 interface CompanySettings {
+  companyName?: string | null;
+  companyPhone?: string | null;
+  companyGstin?: string | null;
   bankName?: string | null;
   accountName?: string | null;
   accountNumber?: string | null;
@@ -48,6 +51,9 @@ interface CompanySettings {
 export default function SettingsPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [company, setCompany] = useState<CompanySettings>({});
+  const [companyName, setCompanyName] = useState("");
+  const [companyPhone, setCompanyPhone] = useState("");
+  const [companyGstin, setCompanyGstin] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -75,6 +81,9 @@ export default function SettingsPage() {
     try {
       const r = await api.get("/settings/company");
       setCompany(r.data);
+      setCompanyName(r.data.companyName || "");
+      setCompanyPhone(r.data.companyPhone || "");
+      setCompanyGstin(r.data.companyGstin || "");
       setBankName(r.data.bankName || "");
       setAccountName(r.data.accountName || "");
       setAccountNumber(r.data.accountNumber || "");
@@ -104,6 +113,9 @@ export default function SettingsPage() {
     setSavingCompany(true);
     try {
       const r = await api.put("/settings/company", {
+        companyName,
+        companyPhone,
+        companyGstin,
         bankName,
         accountName,
         accountNumber,
@@ -112,9 +124,9 @@ export default function SettingsPage() {
         upiId,
       });
       setCompany(r.data);
-      toast.success("Bank details saved");
+      toast.success("Company details saved");
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Failed to save bank details");
+      toast.error(e?.response?.data?.detail || "Failed to save company details");
     } finally {
       setSavingCompany(false);
     }
@@ -144,12 +156,29 @@ export default function SettingsPage() {
           <div className="text-xs uppercase tracking-wider text-ink-muted">Settings</div>
           <h1 className="font-display text-3xl font-semibold mt-1 text-ink font-medium">Bill / Company details</h1>
           <p className="text-sm text-ink-muted mt-2">
-            Bank details and payment QR appear on generated quotation PDFs.
+            Company name, contact, GSTIN, bank details and payment QR appear on generated quotation PDFs.
           </p>
         </div>
 
         <div className="rounded-lg border border-line bg-surface shadow-card p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-ink-muted">Company name</Label>
+              <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="mt-1.5 border-line text-ink" disabled={!isAdmin} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-ink-muted">Contact number</Label>
+              <Input value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} className="mt-1.5 border-line text-ink" disabled={!isAdmin} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-ink-muted">GSTIN</Label>
+              <Input value={companyGstin} onChange={(e) => setCompanyGstin(e.target.value)} className="mt-1.5 border-line text-ink" disabled={!isAdmin} />
+            </div>
+          </div>
+
+          <div className="border-t border-line pt-4">
+            <div className="text-xs uppercase tracking-wider text-ink-muted mb-3">Bank / payment</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs uppercase tracking-wider text-ink-muted">Bank name</Label>
               <Input value={bankName} onChange={(e) => setBankName(e.target.value)} className="mt-1.5 border-line text-ink" disabled={!isAdmin} />
@@ -173,6 +202,7 @@ export default function SettingsPage() {
             <div>
               <Label className="text-xs uppercase tracking-wider text-ink-muted">UPI ID</Label>
               <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="mt-1.5 border-line text-ink" disabled={!isAdmin} />
+            </div>
             </div>
           </div>
 
@@ -216,7 +246,7 @@ export default function SettingsPage() {
             </div>
             {isAdmin && (
               <Button onClick={saveCompany} disabled={savingCompany} className="bg-brand hover:bg-brand-hover text-white shrink-0">
-                {savingCompany ? "Saving…" : "Save bank details"}
+                {savingCompany ? "Saving…" : "Save company details"}
               </Button>
             )}
           </div>

@@ -3,12 +3,10 @@ import { whatsappQueue } from "../jobs/queues";
 import { logger } from "../utils/logger";
 import type { Msg91DocumentHeader } from "../lib/msg91";
 import { normalizePhone } from "../utils/phone";
+import { buildStoredTemplateContent } from "../utils/whatsapp-templates";
 
 function buildTemplateContent(templateName: string, variables: string[], hasDocument: boolean): string {
-  if (hasDocument && variables[0]) {
-    return `Quotation ${variables[0]}`;
-  }
-  return [templateName, ...variables].join(" | ");
+  return buildStoredTemplateContent(templateName, variables, hasDocument);
 }
 
 export interface TemplateMessageOptions {

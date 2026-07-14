@@ -32,7 +32,7 @@ export function signAccessToken(userId: string, role: string): string {
   return jwt.sign(
     { sub: userId, role, type: "access" },
     env.JWT_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "8h" }
   );
 }
 
@@ -60,7 +60,7 @@ export function setAuthCookies(res: Response, access: string, refresh: string) {
     sameSite: "none" as const,
     path: "/",
   };
-  res.cookie("access_token", access, { ...common, maxAge: 15 * 60 * 1000 });
+  res.cookie("access_token", access, { ...common, maxAge: 8 * 60 * 60 * 1000 });
   res.cookie("refresh_token", refresh, { ...common, maxAge: 7 * 24 * 60 * 60 * 1000 });
 }
 

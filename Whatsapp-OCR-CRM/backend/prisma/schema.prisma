@@ -261,6 +261,9 @@ model Sequence {
 
 model CompanySetting {
   id            String   @id @default("default")
+  companyName   String?
+  companyPhone  String?
+  companyGstin  String?
   bankName      String?
   accountName   String?
   accountNumber String?
