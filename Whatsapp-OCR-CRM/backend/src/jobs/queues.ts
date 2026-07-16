@@ -86,3 +86,16 @@ export const embedProductQueue = new Queue("embedProductQueue", {
     },
   },
 });
+
+export const inquiryBatchQueue = new Queue("inquiryBatchQueue", {
+  ...queueOptions,
+  defaultJobOptions: {
+    attempts: 2,
+    backoff: {
+      type: "fixed",
+      delay: 3000,
+    },
+    removeOnComplete: true,
+    removeOnFail: 50,
+  },
+});

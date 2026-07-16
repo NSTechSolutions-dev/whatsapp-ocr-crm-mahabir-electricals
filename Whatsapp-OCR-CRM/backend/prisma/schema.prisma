@@ -19,11 +19,14 @@ enum LearnedMappingSource {
 }
 
 enum EnquiryStatus {
+  WAITING
+  PROCESSING
   DRAFT
   REVIEW
   FINALIZED
   SENT
   IGNORED
+  FAILED
 }
 
 enum MessageDirection {
@@ -53,13 +56,14 @@ model User {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  phone     String   @unique
-  name      String?
-  company   String?
-  stage     String   @default("Lead")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  phone              String   @unique
+  name               String?
+  company            String?
+  stage              String   @default("Lead")
+  hiddenFromPipeline Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   conversations Conversation[]
   enquiries     Enquiry[]
@@ -89,7 +93,8 @@ model WhatsappMessage {
   waMessageId    String?
   createdAt      DateTime         @default(now())
 
-  conversation Conversation @relation(fields: [conversationId], references: [id])
+  conversation  Conversation   @relation(fields: [conversationId], references: [id])
+  enquiryImages EnquiryImage[]
 }
 
 model Enquiry {
@@ -104,15 +109,34 @@ model Enquiry {
   billCustomerName    String?
   billCustomerPhone   String?
   billCustomerCompany String?
-  finalizedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  finalizedAt       DateTime?
+  processAt         DateTime?
+  processingError   String?       @db.Text
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   conversation Conversation  @relation(fields: [conversationId], references: [id])
   customer     Customer      @relation(fields: [customerId], references: [id])
   createdBy    User          @relation(fields: [createdById], references: [id])
   items        EnquiryItem[]
+  images       EnquiryImage[]
   quotation    Quotation?
+
+  @@index([customerId, status, processAt])
+}
+
+model EnquiryImage {
+  id         String   @id @default(cuid())
+  enquiryId  String
+  messageId  String   @unique
+  imageUrl   String
+  pageNumber Int
+  uploadedAt DateTime @default(now())
+
+  enquiry Enquiry         @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  message WhatsappMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([enquiryId])
 }
 
 model EnquiryItem {
@@ -260,18 +284,27 @@ model Sequence {
 }
 
 model CompanySetting {
-  id            String   @id @default("default")
-  companyName   String?
-  companyPhone  String?
-  companyGstin  String?
-  bankName      String?
-  accountName   String?
-  accountNumber String?
-  ifsc          String?
-  branch        String?
-  upiId         String?
-  qrS3Key       String?
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default("default")
+  companyName    String?
+  companyAddress String?
+  companyPhone   String?
+  companyGstin   String?
+  bankName       String?
+  accountName    String?
+  accountNumber  String?
+  ifsc           String?
+  branch         String?
+  upiId          String?
+  qrS3Key        String?
+  updatedAt      DateTime @updatedAt
+}
+
+model BrandLogo {
+  id        String   @id @default(cuid())
+  name      String?
+  s3Key     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model LearnedMapping {

@@ -46,9 +46,11 @@ async function loadCompanyBillSettings() {
       qrImage: null as Buffer | null,
       companyProfile: null as {
         name?: string | null;
+        address?: string | null;
         phone?: string | null;
         gstin?: string | null;
       } | null,
+      brandLogos: [] as Buffer[],
     };
   }
 
@@ -58,6 +60,18 @@ async function loadCompanyBillSettings() {
       qrImage = await getBuffer(settings.qrS3Key);
     } catch (error) {
       logger.warn(`Could not load payment QR from ${settings.qrS3Key}: ${error}`);
+    }
+  }
+
+  const brandLogoRecords = await prisma.brandLogo.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+  const brandLogos: Buffer[] = [];
+  for (const logo of brandLogoRecords) {
+    try {
+      brandLogos.push(await getBuffer(logo.s3Key));
+    } catch (error) {
+      logger.warn(`Could not load brand logo from ${logo.s3Key}: ${error}`);
     }
   }
 
@@ -73,9 +87,11 @@ async function loadCompanyBillSettings() {
     qrImage,
     companyProfile: {
       name: settings.companyName?.trim() || null,
+      address: settings.companyAddress?.trim() || null,
       phone: settings.companyPhone?.trim() || null,
       gstin: settings.companyGstin?.trim() || null,
     },
+    brandLogos,
   };
 }
 
@@ -92,7 +108,7 @@ async function saveQuotationPdfForEnquiry(
     rate: item.rate || 0,
   }));
   const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, percent, mode);
-  const { bank, qrImage, companyProfile } = await loadCompanyBillSettings();
+  const { bank, qrImage, companyProfile, brandLogos } = await loadCompanyBillSettings();
 
   const buffer = await buildQuotationPdfBuffer({
     quotationNumber,
@@ -106,6 +122,7 @@ async function saveQuotationPdfForEnquiry(
     bank,
     qrImage,
     companyProfile,
+    brandLogos,
   });
 
   const now = new Date();

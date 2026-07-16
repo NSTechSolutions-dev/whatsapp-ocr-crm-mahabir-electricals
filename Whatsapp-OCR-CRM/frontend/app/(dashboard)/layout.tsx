@@ -65,8 +65,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen flex bg-canvas">
-      <aside className="w-[240px] shrink-0 border-r border-line bg-surface flex flex-col" data-testid="sidebar">
+    <div className="h-screen flex overflow-hidden bg-canvas">
+      <aside
+        className="w-[240px] shrink-0 h-screen sticky top-0 border-r border-line bg-surface flex flex-col overflow-hidden"
+        data-testid="sidebar"
+      >
         <div className="px-6 py-6 border-b border-line">
           <BrandLogo size="md" />
         </div>
@@ -131,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">{children}</main>
     </div>
   );
 }

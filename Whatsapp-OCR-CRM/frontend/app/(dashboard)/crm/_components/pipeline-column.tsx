@@ -19,6 +19,7 @@ interface PipelineColumnProps {
   colors: StageColors;
   loading?: boolean;
   onStageChange: (customerId: string, stage: string) => void;
+  onRemoveFromPipeline?: (customerId: string) => void;
 }
 
 export function PipelineColumn({
@@ -27,6 +28,7 @@ export function PipelineColumn({
   colors,
   loading = false,
   onStageChange,
+  onRemoveFromPipeline,
 }: PipelineColumnProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -100,7 +102,12 @@ export function PipelineColumn({
         ) : (
           <>
             {visibleItems.map((customer) => (
-              <CustomerCard key={customer.id} customer={customer} onStageChange={onStageChange} />
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                onStageChange={onStageChange}
+                onRemoveFromPipeline={onRemoveFromPipeline}
+              />
             ))}
 
             {hasMore ? (

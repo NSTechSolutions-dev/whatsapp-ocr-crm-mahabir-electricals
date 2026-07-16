@@ -5,6 +5,7 @@ import { syncInventorySearchText } from "../../services/inventory.service";
 import { extractAndMatchProducts } from "../../services/matching.service";
 import { matchProductViaPipeline } from "../../services/quotation-pipeline.service";
 import { quotationQueue } from "../../jobs/queues";
+import { retryFailedBatch } from "../../services/inquiry-grouping.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
 import { createSystemNotification } from "../../utils/notification";
@@ -13,6 +14,7 @@ import { learnFromCorrections, learnFromEnquiry } from "../../services/learning.
 import { GeminiApiError } from "../../lib/gemini-retry";
 import { ProductExtractionError } from "../../services/product-extraction.service";
 import { formatUserErrorMessage } from "../../utils/user-error-message";
+import { normalizePhoneOrNull } from "../../utils/phone";
 
 async function enrichEnquiry(enquiryId: string) {
   const e = await prisma.enquiry.findUnique({
@@ -34,16 +36,35 @@ async function enrichEnquiry(enquiryId: string) {
       },
       quotation: true,
       conversation: true,
+      images: { orderBy: [{ pageNumber: "asc" }, { uploadedAt: "asc" }] },
     },
   });
 
   // Add matchType to items based on inventory mapping
   if (e && e.items) {
-    (e as any).items = e.items.map((item: any) => ({
-      ...item,
-      matchType: item.inventoryId ? (item.confidence >= 0.95 ? "exact" : "fuzzy") : "new",
-      matchScore: item.inventoryId ? item.confidence : 0,
-    }));
+    const remainingSeconds = e.processAt
+      ? Math.max(0, Math.ceil((e.processAt.getTime() - Date.now()) / 1000))
+      : null;
+
+    const enriched = {
+      ...e,
+      processAt: e.processAt?.toISOString() || null,
+      remainingSeconds,
+      imageCount: e.images.length,
+      images: e.images.map((img) => ({
+        id: img.id,
+        pageNumber: img.pageNumber,
+        imageUrl: img.imageUrl,
+        uploadedAt: img.uploadedAt.toISOString(),
+      })),
+      items: e.items.map((item: any) => ({
+        ...item,
+        matchType: item.inventoryId ? (item.confidence >= 0.95 ? "exact" : "fuzzy") : "new",
+        matchScore: item.inventoryId ? item.confidence : 0,
+      })),
+    };
+
+    return enriched;
   }
 
   return e;
@@ -135,11 +156,12 @@ export async function listEnquiries(req: Request, res: Response) {
       include: {
         customer: true,
         _count: {
-          select: { items: true },
+          select: { items: true, images: true },
         },
       },
     });
 
+    const now = Date.now();
     const result = enquiries.map((e) => ({
       id: e.id,
       conversationId: e.conversationId,
@@ -147,10 +169,16 @@ export async function listEnquiries(req: Request, res: Response) {
       status: e.status,
       createdById: e.createdById,
       finalizedAt: e.finalizedAt?.toISOString() || null,
+      processAt: e.processAt?.toISOString() || null,
+      remainingSeconds: e.processAt
+        ? Math.max(0, Math.ceil((e.processAt.getTime() - now) / 1000))
+        : null,
+      processingError: e.processingError || null,
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
       customer: e.customer,
       itemsCount: e._count.items,
+      imageCount: e._count.images,
     }));
 
     return res.json({ items: result });
@@ -280,6 +308,14 @@ export async function updateEnquiry(req: Request, res: Response) {
       return res.status(400).json({ detail: "Cannot edit an ignored enquiry" });
     }
 
+    if (e.status === "WAITING" || e.status === "PROCESSING") {
+      return res.status(400).json({ detail: "Cannot edit an enquiry while images are being collected or processed" });
+    }
+
+    if (e.status === "FAILED") {
+      return res.status(400).json({ detail: "Retry processing before editing a failed enquiry" });
+    }
+
     if (Array.isArray(items)) {
       const oldItems = await prisma.enquiryItem.findMany({ where: { enquiryId: id } });
       await replaceEnquiryItems(id, items);
@@ -300,7 +336,7 @@ export async function updateEnquiry(req: Request, res: Response) {
       updateData.billCustomerName = billCustomerName?.trim() || null;
     }
     if (billCustomerPhone !== undefined) {
-      updateData.billCustomerPhone = billCustomerPhone?.trim() || null;
+      updateData.billCustomerPhone = normalizePhoneOrNull(billCustomerPhone);
     }
     if (billCustomerCompany !== undefined) {
       updateData.billCustomerCompany = billCustomerCompany?.trim() || null;
@@ -350,6 +386,14 @@ export async function finalizeEnquiry(req: Request, res: Response) {
 
     if (e.status === "IGNORED") {
       return res.status(400).json({ detail: "Ignored enquiries cannot be finalized" });
+    }
+
+    if (e.status === "WAITING" || e.status === "PROCESSING") {
+      return res.status(400).json({ detail: "Cannot finalize while images are being collected or processed" });
+    }
+
+    if (e.status === "FAILED") {
+      return res.status(400).json({ detail: "Retry processing before finalizing a failed enquiry" });
     }
 
     if (e.status === "FINALIZED" || e.status === "SENT") {
@@ -409,7 +453,7 @@ export async function finalizeEnquiry(req: Request, res: Response) {
           gstPercent,
           gstMode,
           billCustomerName: billCustomerName?.trim() || undefined,
-          billCustomerPhone: billCustomerPhone?.trim() || undefined,
+          billCustomerPhone: normalizePhoneOrNull(billCustomerPhone) || undefined,
           billCustomerCompany: billCustomerCompany?.trim() || undefined,
         },
       });
@@ -529,5 +573,18 @@ export async function reparseSourceData(req: Request, res: Response) {
       detail: formatUserErrorMessage(error, "Gemini processing failed. Please try again."),
       retryable,
     });
+  }
+}
+
+export async function retryEnquiryBatch(req: Request, res: Response) {
+  const { id } = req.params;
+
+  try {
+    await retryFailedBatch(id);
+    const enriched = await enrichEnquiry(id);
+    return res.json(enriched);
+  } catch (error: any) {
+    logger.error(`Error retrying enquiry batch ${id}: ${error}`);
+    return res.status(400).json({ detail: error?.message || "Failed to retry batch processing" });
   }
 }

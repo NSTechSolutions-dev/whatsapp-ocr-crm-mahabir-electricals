@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createEnquiry, listEnquiries, getEnquiry, updateEnquiry, finalizeEnquiry, reparseSourceData } from "../controllers/enquiry.controller";
+import { createEnquiry, listEnquiries, getEnquiry, updateEnquiry, finalizeEnquiry, reparseSourceData, retryEnquiryBatch } from "../controllers/enquiry.controller";
 import { authenticate } from "../middlewares/auth";
 
 const router = Router();
@@ -10,5 +10,6 @@ router.get("/:id", authenticate, getEnquiry);
 router.put("/:id", authenticate, updateEnquiry);
 router.post("/:id/finalize", authenticate, finalizeEnquiry);
 router.post("/:id/reparse", authenticate, reparseSourceData);
+router.post("/:id/retry-batch", authenticate, retryEnquiryBatch);
 
 export default router;

@@ -43,7 +43,19 @@ export const automationWorker = new Worker(
           : null;
 
         const sentAt = enquiry?.quotation?.sentAt;
-        if (sentAt && (await hasInboundSince(customerId, sentAt))) {
+        // Only follow up after the quotation was actually sent to the customer.
+        if (!sentAt || enquiry?.status !== "SENT") {
+          await finishExecution({
+            scheduledJobId,
+            ruleId,
+            customerId,
+            messageContent: "(skipped — quotation not sent)",
+            metadata: { skipped: true, reason: "quotation_not_sent" },
+          });
+          return;
+        }
+
+        if (await hasInboundSince(customerId, sentAt)) {
           await finishExecution({
             scheduledJobId,
             ruleId,

@@ -4,6 +4,9 @@ import {
   getCompanySettings,
   updateCompanySettings,
   uploadPaymentQr,
+  listBrandLogos,
+  uploadBrandLogo,
+  deleteBrandLogo,
 } from "../controllers/settings.controller";
 import { authenticate, requireRole } from "../middlewares/auth";
 
@@ -19,5 +22,15 @@ router.post(
   upload.single("file"),
   uploadPaymentQr
 );
+
+router.get("/brand-logos", authenticate, listBrandLogos);
+router.post(
+  "/brand-logos",
+  authenticate,
+  requireRole("ADMIN"),
+  upload.single("file"),
+  uploadBrandLogo
+);
+router.delete("/brand-logos/:id", authenticate, requireRole("ADMIN"), deleteBrandLogo);
 
 export default router;

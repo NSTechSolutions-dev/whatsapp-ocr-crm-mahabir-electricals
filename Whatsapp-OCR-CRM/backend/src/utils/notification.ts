@@ -8,6 +8,10 @@ export function setIo(io: Server) {
   ioInstance = io;
 }
 
+export function getIo(): Server | null {
+  return ioInstance;
+}
+
 export async function createSystemNotification(title: string, message: string, type: string = "low_stock") {
   try {
     const notification = await prisma.notification.create({

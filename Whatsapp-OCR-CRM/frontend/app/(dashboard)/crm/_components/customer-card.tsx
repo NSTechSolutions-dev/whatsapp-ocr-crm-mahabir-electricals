@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Building2, ChevronRight, FileText, Phone } from "lucide-react";
+import { Building2, ChevronRight, FileText, Phone, Trash2 } from "lucide-react";
 import { timeAgo } from "../../../../lib/format";
 import {
   Select,
@@ -35,9 +35,10 @@ function getInitials(name: string | null, phone: string): string {
 interface CustomerCardProps {
   customer: CustomerItem;
   onStageChange: (customerId: string, stage: string) => void;
+  onRemoveFromPipeline?: (customerId: string) => void;
 }
 
-export function CustomerCard({ customer, onStageChange }: CustomerCardProps) {
+export function CustomerCard({ customer, onStageChange, onRemoveFromPipeline }: CustomerCardProps) {
   const router = useRouter();
   const colors = STAGE_CARD_COLORS[customer.stage || "Lead"] || STAGE_CARD_COLORS.Lead;
   const displayName = customer.name?.trim() || "Unknown";
@@ -107,7 +108,19 @@ export function CustomerCard({ customer, onStageChange }: CustomerCardProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-[9px] uppercase tracking-wider text-ink-muted">Stage</span>
-        <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
+        <div className="flex items-center gap-1">
+          {onRemoveFromPipeline && (
+            <button
+              type="button"
+              onClick={() => onRemoveFromPipeline(customer.id)}
+              className="rounded p-1 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+              title="Remove from pipeline"
+              data-testid={`remove-pipeline-${customer.id}`}
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          )}
+          <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
           <SelectTrigger className="h-6 w-[7.5rem] text-[11px] bg-surface border-line/80 text-ink px-2">
             <SelectValue />
           </SelectTrigger>
@@ -119,6 +132,7 @@ export function CustomerCard({ customer, onStageChange }: CustomerCardProps) {
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
     </article>
   );

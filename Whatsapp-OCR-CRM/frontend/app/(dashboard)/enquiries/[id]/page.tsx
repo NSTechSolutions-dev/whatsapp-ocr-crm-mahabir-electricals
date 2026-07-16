@@ -110,6 +110,8 @@ export default function UnifiedEnquiryPage() {
   const [addingUnitForRow, setAddingUnitForRow] = useState<any>(null);
   const [newUnitName, setNewUnitName] = useState("");
   const [newUnitRate, setNewUnitRate] = useState("");
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [retryingBatch, setRetryingBatch] = useState(false);
 
   const handleAddUnit = async () => {
     if (!newUnitName.trim() || !newUnitRate.trim() || addingUnitForRow === null) return;
@@ -141,9 +143,12 @@ export default function UnifiedEnquiryPage() {
   };
 
   const isIgnored = data?.status === "IGNORED";
+  const isWaiting = data?.status === "WAITING";
+  const isProcessing = data?.status === "PROCESSING";
+  const isFailed = data?.status === "FAILED";
   const isSent = data?.status === "SENT";
   const isFinalized = data?.status === "FINALIZED" || isSent;
-  const isLocked = isIgnored;
+  const isLocked = isIgnored || isWaiting || isProcessing;
   const quotationId = quotation?.id ?? data?.quotation?.id ?? null;
   const hasQuotation = isFinalized && !!quotationId;
   const hasItems = rows.length > 0;
@@ -230,6 +235,51 @@ export default function UnifiedEnquiryPage() {
     setSearchQuery("");
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (!data || data.status !== "WAITING") {
+      setCountdown(null);
+      return;
+    }
+
+    const tick = () => {
+      const remaining =
+        data.remainingSeconds ??
+        (data.processAt
+          ? Math.max(0, Math.ceil((new Date(data.processAt).getTime() - Date.now()) / 1000))
+          : 0);
+      setCountdown(remaining);
+    };
+
+    tick();
+    const interval = setInterval(() => {
+      tick();
+      if (data.status === "WAITING") {
+        void load();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [data?.status, data?.processAt, data?.remainingSeconds, data?.imageCount]);
+
+  useEffect(() => {
+    if (!data || data.status !== "PROCESSING") return;
+    const interval = setInterval(() => void load(), 3000);
+    return () => clearInterval(interval);
+  }, [data?.status]);
+
+  const retryBatch = async () => {
+    setRetryingBatch(true);
+    try {
+      await api.post(`/enquiries/${id}/retry-batch`);
+      toast.success("Retrying batch OCR…");
+      await load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to retry");
+    } finally {
+      setRetryingBatch(false);
+    }
+  };
  
   // Debounced customer search
   useEffect(() => {
@@ -529,6 +579,18 @@ export default function UnifiedEnquiryPage() {
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
       Ignored
     </span>
+  ) : isWaiting ? (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">
+      <Clock className="h-2.5 w-2.5" /> Waiting for more images
+    </span>
+  ) : isProcessing ? (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+      <RefreshCw className="h-2.5 w-2.5 animate-spin" /> Processing OCR…
+    </span>
+  ) : isFailed ? (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-800">
+      Failed
+    </span>
   ) : isSent ? (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800">
       <CheckCircle2 className="h-2.5 w-2.5" /> Sent
@@ -616,18 +678,80 @@ export default function UnifiedEnquiryPage() {
               <span className="text-[9px] text-amber-600 hidden sm:inline">unsaved edits will be saved</span>
             )}
           </div>
-        ) : (
+        ) : isFailed ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={retryBatch}
+              disabled={retryingBatch}
+              className="h-7 px-2.5 text-xs"
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${retryingBatch ? "animate-spin" : ""}`} />
+              {retryingBatch ? "Retrying…" : "Retry OCR"}
+            </Button>
+          </div>
+        ) : isIgnored ? (
           <div className="text-right shrink-0">
             <span className="text-lg font-semibold text-brand tabular">{formatINR(quotation?.grandTotal || grandTotal)}</span>
             {quotation?.sentAt && <div className="text-[10px] text-ink-muted">{timeAgo(quotation.sentAt)}</div>}
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 xl:gap-4">
         {isIgnored && (
           <div className="xl:col-span-2 rounded-md border border-line bg-canvas/60 px-3 py-2 text-xs text-ink-muted">
             This message was not recognized as an inventory or quotation request. It has been logged as an ignored enquiry.
+          </div>
+        )}
+        {(isWaiting || isProcessing) && (
+          <div className="xl:col-span-2 rounded-md border border-amber-200 bg-amber-50/80 px-4 py-3" data-testid="waiting-enquiry-panel">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-amber-900">
+                  {isWaiting ? "Waiting for more images" : "Processing OCR…"}
+                </div>
+                <div className="text-xs text-amber-800/80 mt-1">
+                  {isWaiting
+                    ? "Additional WhatsApp images within 60 seconds will be grouped into this enquiry."
+                    : "Merging all pages and extracting products."}
+                </div>
+                {isWaiting && countdown !== null && (
+                  <div className="text-lg font-semibold tabular text-amber-900 mt-2">
+                    {String(Math.floor(countdown / 60)).padStart(2, "0")}:
+                    {String(countdown % 60).padStart(2, "0")}
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-amber-800">
+                Pages received: {data.imageCount ?? data.images?.length ?? 0}
+              </div>
+            </div>
+            {(data.images?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {data.images.map((img: any) => {
+                  const url = img.imageUrl?.startsWith("http")
+                    ? img.imageUrl
+                    : `/api/files/${img.imageUrl}`;
+                  return (
+                    <div key={img.id} className="text-center">
+                      <img
+                        src={url}
+                        alt={`Page ${img.pageNumber}`}
+                        className="h-20 w-16 object-cover rounded border border-amber-200"
+                      />
+                      <div className="text-[10px] text-amber-800 mt-1">Page {img.pageNumber}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+        {isFailed && (
+          <div className="xl:col-span-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            Batch OCR failed: {data.processingError || "Unknown error"}
           </div>
         )}
         {/* Left — Editor */}

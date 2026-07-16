@@ -57,7 +57,7 @@ export default function Inbox() {
   }, [q]);
 
   return (
-    <div className="flex h-screen text-ink">
+    <div className="flex h-full min-h-0 text-ink">
       <div className="w-[360px] shrink-0 border-r border-line bg-surface flex flex-col">
         <div className="px-5 py-5 border-b border-line">
           <div className="flex items-center justify-between mb-4">

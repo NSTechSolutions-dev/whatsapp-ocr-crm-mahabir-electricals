@@ -2,7 +2,7 @@ import axios from "axios";
 import crypto from "crypto";
 import { env } from "../config/env";
 import { logger } from "../utils/logger";
-import { normalizePhone } from "../utils/phone";
+import { formatPhoneForWhatsApp } from "../utils/phone";
 
 const MSG91_BULK_URL = "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/";
 
@@ -35,7 +35,7 @@ export interface Msg91SendPayload {
 }
 
 function normalizePhoneForMsg91(phone: string): string {
-  return normalizePhone(phone);
+  return formatPhoneForWhatsApp(phone);
 }
 
 function buildTemplateComponents(

@@ -10,6 +10,7 @@ interface EnquiryItem {
   id: string;
   status: string;
   itemsCount: number;
+  imageCount?: number;
   createdAt: string;
   quotation: {
     number: string;
@@ -130,6 +131,22 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function enquiryStatusLabel(status: string): string {
+  switch (status) {
+    case "WAITING":
+      return "Waiting for images";
+    case "PROCESSING":
+      return "Processing OCR";
+    case "FAILED":
+      return "Failed";
+    case "DRAFT":
+    case "REVIEW":
+      return "Ready for review";
+    default:
+      return status;
+  }
+}
+
 function EnquiryCard({ e }: { e: EnquiryItem }) {
   return (
     <Link
@@ -140,7 +157,11 @@ function EnquiryCard({ e }: { e: EnquiryItem }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xs uppercase tracking-wider text-ink-muted">Enquiry</div>
-          <div className="font-medium mt-0.5">{e.itemsCount} items</div>
+          <div className="font-medium mt-0.5">
+            {e.status === "WAITING" || e.status === "PROCESSING"
+              ? `${e.imageCount ?? 0} page(s)`
+              : `${e.itemsCount} items`}
+          </div>
           {e.quotation && (
             <div className="text-xs text-ink-muted mt-1 tabular">
               {e.quotation.number} · {formatINR(e.quotation.grandTotal)}
@@ -149,7 +170,7 @@ function EnquiryCard({ e }: { e: EnquiryItem }) {
         </div>
         <div className="text-right">
           <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-50 text-brand">
-            {e.status}
+            {enquiryStatusLabel(e.status)}
           </span>
           <div className="text-[11px] text-ink-muted mt-1">{timeAgo(e.createdAt)}</div>
         </div>

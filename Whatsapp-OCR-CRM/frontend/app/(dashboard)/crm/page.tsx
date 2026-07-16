@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../lib/api";
 import { Input } from "@/components/ui/input";
-import { Search, List, Kanban } from "lucide-react";
+import { Search, List, Kanban, Trash2 } from "lucide-react";
 import { timeAgo } from "../../../lib/format";
 import {
   Select,
@@ -16,6 +16,7 @@ import {
 import { PipelineColumn } from "./_components/pipeline-column";
 import { STAGES, type CustomerItem } from "./_components/customer-card";
 import { STAGE_LIST_COLORS, STAGE_COLUMN_COLORS } from "../../../lib/crm-stages";
+import { toast } from "sonner";
 
 const LIST_STAGE_COLORS = STAGE_LIST_COLORS;
 const COLUMN_HEADER = STAGE_COLUMN_COLORS;
@@ -55,6 +56,20 @@ export default function CRMPage() {
       );
     } catch (error) {
       console.error("Failed to update customer stage:", error);
+    }
+  };
+
+  const handleRemoveFromPipeline = async (customerId: string) => {
+    if (!confirm("Remove this customer from the pipeline? They will remain in inbox and enquiries.")) {
+      return;
+    }
+    try {
+      await api.delete(`/customers/${customerId}/pipeline`);
+      setItems((prev) => prev.filter((item) => item.id !== customerId));
+      toast.success("Customer removed from pipeline");
+    } catch (error) {
+      console.error("Failed to remove customer from pipeline:", error);
+      toast.error("Could not remove customer from pipeline");
     }
   };
 
@@ -129,6 +144,7 @@ export default function CRMPage() {
               colors={COLUMN_HEADER[stage] || COLUMN_HEADER.Lead}
               loading={loading}
               onStageChange={handleStageChange}
+              onRemoveFromPipeline={handleRemoveFromPipeline}
             />
           ))}
         </div>
@@ -148,12 +164,13 @@ export default function CRMPage() {
                   <th className="text-left px-4 py-3">Stage</th>
                   <th className="text-right px-4 py-3">Enquiries</th>
                   <th className="text-right px-4 py-3">Last activity</th>
+                  <th className="text-right px-4 py-3 w-12"></th>
                 </tr>
               </thead>
               <tbody data-testid="customers-table">
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-ink-muted">
+                    <td colSpan={7} className="px-4 py-10 text-center text-ink-muted">
                       No customers found.
                     </td>
                   </tr>
@@ -214,6 +231,17 @@ export default function CRMPage() {
                         onClick={() => router.push(`/crm/${c.id}`)}
                       >
                         {timeAgo(c.lastActivity)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromPipeline(c.id)}
+                          className="rounded p-1.5 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Remove from pipeline"
+                          data-testid={`remove-pipeline-${c.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </td>
                     </tr>
                   );

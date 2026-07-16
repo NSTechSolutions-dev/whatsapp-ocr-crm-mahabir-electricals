@@ -4,6 +4,7 @@ import { sendTemplateMessage } from "./whatsapp.service";
 import { finishExecution } from "./automation-execution.service";
 import { AutomationRuleType } from "../config/automation-rules";
 import { logger } from "../utils/logger";
+import { normalizePhone } from "../utils/phone";
 
 async function resolveTestCustomer(customerId?: string) {
   if (customerId) {
@@ -16,7 +17,7 @@ async function resolveTestCustomer(customerId?: string) {
 
   return prisma.customer.create({
     data: {
-      phone: `9198765${String(Date.now()).slice(-4)}`,
+      phone: normalizePhone(`9198765${String(Date.now()).slice(-4)}`),
       name: "Dev Test Customer",
       stage: "Lead",
     },

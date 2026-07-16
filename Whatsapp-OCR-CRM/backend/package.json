@@ -12,7 +12,9 @@
     "prisma:migrate": "prisma migrate dev",
     "reseed": "ts-node scripts/reseed-and-embed.ts",
     "test:embeddings": "ts-node scripts/test-embeddings.ts",
-    "clean:aliases": "ts-node scripts/clean-inventory-aliases.ts"
+    "clean:aliases": "ts-node scripts/clean-inventory-aliases.ts",
+    "normalize:phones": "ts-node scripts/normalize-phone-numbers.ts",
+    "normalize:phones:dry": "ts-node scripts/normalize-phone-numbers.ts --dry-run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",

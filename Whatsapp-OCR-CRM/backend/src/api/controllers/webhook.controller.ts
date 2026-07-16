@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma";
 import { upload } from "../../lib/s3";
 import { inboundQueue } from "../../jobs/queues";
 import { createOcrJobState, findActiveJobForMessage } from "../../lib/ocr-job-state";
+import { attachWhatsappImage } from "../../services/inquiry-grouping.service";
 import { verifyMsg91Signature } from "../../lib/msg91";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
@@ -148,6 +149,150 @@ async function upsertInboundMessage(
   return { customer, conversation, message, duplicate: false as const };
 }
 
+async function loadWaitingEnquiryPayload(enquiryId: string) {
+  const enquiry = await prisma.enquiry.findUnique({
+    where: { id: enquiryId },
+    include: {
+      images: { orderBy: [{ pageNumber: "asc" }, { uploadedAt: "asc" }] },
+    },
+  });
+  if (!enquiry) return null;
+
+  const remainingSeconds = enquiry.processAt
+    ? Math.max(0, Math.ceil((enquiry.processAt.getTime() - Date.now()) / 1000))
+    : 0;
+
+  return {
+    enquiryId: enquiry.id,
+    status: enquiry.status,
+    processAt: enquiry.processAt?.toISOString() || null,
+    remainingSeconds,
+    imageCount: enquiry.images.length,
+    images: enquiry.images.map((img) => ({
+      id: img.id,
+      pageNumber: img.pageNumber,
+      imageUrl: img.imageUrl,
+      uploadedAt: img.uploadedAt.toISOString(),
+    })),
+    conversationId: enquiry.conversationId,
+    customerId: enquiry.customerId,
+  };
+}
+
+async function routeInboundProcessing(opts: {
+  io: any;
+  conversation: { id: string };
+  customer: { id: string };
+  message: { id: string };
+  msgType: string;
+  content: string | null;
+  mediaUrl: string | null;
+  preview: string;
+}) {
+  const { io, conversation, customer, message, msgType, content, mediaUrl, preview } = opts;
+
+  if (msgType === "image" && mediaUrl) {
+    const admin = await prisma.user.findFirst({
+      where: { role: "ADMIN", isActive: true },
+      select: { id: true },
+    });
+
+    const result = await attachWhatsappImage({
+      customerId: customer.id,
+      conversationId: conversation.id,
+      messageId: message.id,
+      imageUrl: mediaUrl,
+      createdById: admin?.id || "",
+    });
+
+    const payload = await loadWaitingEnquiryPayload(result.enquiryId);
+
+    if (io) {
+      io.to(`conversation:${conversation.id}`).emit("new_message", message);
+      if (payload) {
+        if (result.isNewEnquiry) {
+          io.to(`conversation:${conversation.id}`).emit("enquiry_waiting", payload);
+        } else {
+          io.to(`conversation:${conversation.id}`).emit("enquiry_image_added", payload);
+        }
+      }
+      io.emit("inbox_update", {
+        conversationId: conversation.id,
+        customerId: customer.id,
+        lastMessagePreview: preview,
+      });
+    }
+
+    return {
+      ok: true,
+      conversationId: conversation.id,
+      messageId: message.id,
+      enquiryId: result.enquiryId,
+      grouped: true,
+    };
+  }
+
+  const existingJobId = await findActiveJobForMessage(message.id);
+  if (existingJobId) {
+    logger.info(`Skipping duplicate OCR job for message ${message.id} (existing job ${existingJobId})`);
+    return {
+      ok: true,
+      conversationId: conversation.id,
+      messageId: message.id,
+      jobId: existingJobId,
+      deduped: true,
+    };
+  }
+
+  const jobId = await createOcrJobState({
+    conversationId: conversation.id,
+    customerId: customer.id,
+    messageId: message.id,
+    msgType,
+    mediaUrl,
+    source: "webhook",
+  });
+
+  await inboundQueue.add(
+    "processMessage",
+    {
+      jobId,
+      messageId: message.id,
+      msgType,
+      content,
+      mediaUrl,
+      customerId: customer.id,
+      conversationId: conversation.id,
+      source: "webhook",
+    },
+    {
+      jobId: `inbound-msg-${message.id}`,
+      removeOnComplete: true,
+      removeOnFail: 100,
+    }
+  );
+
+  if (io) {
+    io.to(`conversation:${conversation.id}`).emit("new_message", message);
+    io.to(`conversation:${conversation.id}`).emit("ocr_job_started", {
+      jobId,
+      conversationId: conversation.id,
+    });
+    io.emit("inbox_update", {
+      conversationId: conversation.id,
+      customerId: customer.id,
+      lastMessagePreview: preview,
+    });
+  }
+
+  return {
+    ok: true,
+    conversationId: conversation.id,
+    messageId: message.id,
+    jobId,
+  };
+}
+
 export async function msg91Webhook(req: Request, res: Response) {
   logger.info(`Received Webhook request: Headers=${JSON.stringify(req.headers)}, Body=${JSON.stringify(req.body)}`);
   const signature = req.headers["x-msg91-signature"] as string;
@@ -227,61 +372,19 @@ export async function msg91Webhook(req: Request, res: Response) {
       });
     }
 
-    const existingJobId = await findActiveJobForMessage(message.id);
-    if (existingJobId) {
-      logger.info(`Skipping duplicate OCR job for message ${message.id} (existing job ${existingJobId})`);
-      return res.json({
-        ok: true,
-        conversationId: conversation.id,
-        messageId: message.id,
-        jobId: existingJobId,
-        deduped: true,
-      });
-    }
-
-    const jobId = await createOcrJobState({
-      conversationId: conversation.id,
-      customerId: customer.id,
-      messageId: message.id,
+    const io = req.app.get("io");
+    const result = await routeInboundProcessing({
+      io,
+      conversation,
+      customer,
+      message,
       msgType,
+      content,
       mediaUrl,
-      source: "webhook",
+      preview: content || "[image]",
     });
 
-    await inboundQueue.add(
-      "processMessage",
-      {
-        jobId,
-        messageId: message.id,
-        msgType,
-        content,
-        mediaUrl,
-        customerId: customer.id,
-        conversationId: conversation.id,
-        source: "webhook",
-      },
-      {
-        jobId: `inbound-msg-${message.id}`,
-        removeOnComplete: true,
-        removeOnFail: 100,
-      }
-    );
-
-    const io = req.app.get("io");
-    if (io) {
-      io.to(`conversation:${conversation.id}`).emit("new_message", message);
-      io.to(`conversation:${conversation.id}`).emit("ocr_job_started", {
-        jobId,
-        conversationId: conversation.id,
-      });
-      io.emit("inbox_update", {
-        conversationId: conversation.id,
-        customerId: customer.id,
-        lastMessagePreview: content || "[image]",
-      });
-    }
-
-    return res.json({ ok: true, conversationId: conversation.id, messageId: message.id, jobId });
+    return res.json(result);
   } catch (error) {
     logger.error("MSG91 Webhook handler failed: " + error);
     return res.status(500).json({ detail: "Internal server error" });
@@ -327,61 +430,19 @@ export async function simulateInbound(req: Request, res: Response) {
       });
     }
 
-    const existingJobId = await findActiveJobForMessage(message.id);
-    if (existingJobId) {
-      logger.info(`Skipping duplicate OCR job for message ${message.id} (existing job ${existingJobId})`);
-      return res.json({
-        ok: true,
-        conversationId: conversation.id,
-        messageId: message.id,
-        jobId: existingJobId,
-        deduped: true,
-      });
-    }
-
-    const jobId = await createOcrJobState({
-      conversationId: conversation.id,
-      customerId: customer.id,
-      messageId: message.id,
+    const io = req.app.get("io");
+    const result = await routeInboundProcessing({
+      io,
+      conversation,
+      customer,
+      message,
       msgType,
+      content: content || null,
       mediaUrl: finalMediaUrl,
-      source: "webhook",
+      preview: content || "[image]",
     });
 
-    await inboundQueue.add(
-      "processMessage",
-      {
-        jobId,
-        messageId: message.id,
-        msgType,
-        content: content || null,
-        mediaUrl: finalMediaUrl,
-        customerId: customer.id,
-        conversationId: conversation.id,
-        source: "webhook",
-      },
-      {
-        jobId: `inbound-msg-${message.id}`,
-        removeOnComplete: true,
-        removeOnFail: 100,
-      }
-    );
-
-    const io = req.app.get("io");
-    if (io) {
-      io.to(`conversation:${conversation.id}`).emit("new_message", message);
-      io.to(`conversation:${conversation.id}`).emit("ocr_job_started", {
-        jobId,
-        conversationId: conversation.id,
-      });
-      io.emit("inbox_update", {
-        conversationId: conversation.id,
-        customerId: customer.id,
-        lastMessagePreview: content || "[image]",
-      });
-    }
-
-    return res.json({ ok: true, conversationId: conversation.id, messageId: message.id, jobId });
+    return res.json(result);
   } catch (error) {
     logger.error("Webhook simulation failed: " + error);
     return res.status(500).json({ detail: "Internal server error" });

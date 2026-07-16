@@ -58,6 +58,14 @@ export async function scheduleInquiryFollowup(
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
   if (!rule || !customer) throw new Error("Rule or customer not found");
 
+  const enquiry = await prisma.enquiry.findUnique({
+    where: { id: enquiryId },
+    include: { quotation: true },
+  });
+  if (!enquiry?.quotation?.sentAt || enquiry.status !== "SENT") {
+    throw new Error("Inquiry follow-up requires a sent quotation");
+  }
+
   const actionParams = rule.actionParams as Record<string, unknown>;
   const templateName = String(actionParams?.templateName || "mahabir_inquiry_followup");
 

@@ -13,6 +13,22 @@ import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
+import { normalizePhone, normalizePhoneOrNull } from "../../utils/phone";
+
+/** Find or create the WhatsApp inbox conversation for a customer. */
+async function ensureCustomerConversation(customerId: string): Promise<string> {
+  const existing = await prisma.conversation.findFirst({
+    where: { customerId },
+    orderBy: { lastMessageAt: "desc" },
+  });
+  if (existing) return existing.id;
+
+  const waConversationId = `wa-${customerId}`;
+  const conversation = await prisma.conversation.create({
+    data: { customerId, waConversationId },
+  });
+  return conversation.id;
+}
 
 function resolveBillCustomer(enquiry: {
   billCustomerName?: string | null;
@@ -172,7 +188,7 @@ export async function regenerateQuotation(req: Request, res: Response) {
       enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
     }
     if (billCustomerPhone !== undefined) {
-      enquiryUpdate.billCustomerPhone = billCustomerPhone?.trim() || null;
+      enquiryUpdate.billCustomerPhone = normalizePhoneOrNull(billCustomerPhone);
     }
     if (billCustomerCompany !== undefined) {
       enquiryUpdate.billCustomerCompany = billCustomerCompany?.trim() || null;
@@ -245,6 +261,7 @@ export async function sendQuotation(req: Request, res: Response) {
 
     let targetCustomer = q.enquiry.customer;
     let targetConversationId = q.enquiry.conversationId;
+    const originalCustomerId = q.enquiry.customerId;
     const enquiryUpdate: Record<string, unknown> = {};
 
     if (bodyGst !== undefined && bodyGst !== null) {
@@ -258,14 +275,14 @@ export async function sendQuotation(req: Request, res: Response) {
       enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
     }
     if (billCustomerPhone !== undefined) {
-      enquiryUpdate.billCustomerPhone = billCustomerPhone?.trim() || null;
+      enquiryUpdate.billCustomerPhone = normalizePhoneOrNull(billCustomerPhone);
     }
     if (billCustomerCompany !== undefined) {
       enquiryUpdate.billCustomerCompany = billCustomerCompany?.trim() || null;
     }
 
     if (newCustomer?.phone) {
-      const phone = newCustomer.phone.trim();
+      const phone = normalizePhone(newCustomer.phone.trim());
       let existing = await prisma.customer.findUnique({ where: { phone } });
       if (existing) {
         if (newCustomer.name && existing.name !== newCustomer.name) {
@@ -295,6 +312,13 @@ export async function sendQuotation(req: Request, res: Response) {
       enquiryUpdate.billCustomerName = existing.name;
       enquiryUpdate.billCustomerPhone = existing.phone;
       logger.info(`sendQuotation: Using existing customer ${targetCustomer.id}`);
+    }
+
+    // Always put the outbound quotation in the recipient's inbox (create if needed).
+    targetConversationId = await ensureCustomerConversation(targetCustomer.id);
+    if (targetCustomer.id !== originalCustomerId) {
+      enquiryUpdate.customerId = targetCustomer.id;
+      enquiryUpdate.conversationId = targetConversationId;
     }
 
     if (Object.keys(enquiryUpdate).length > 0) {
@@ -379,6 +403,11 @@ export async function sendQuotation(req: Request, res: Response) {
       data: { status: "SENT" },
     });
 
+    await prisma.customer.update({
+      where: { id: targetCustomer.id },
+      data: { updatedAt: now },
+    });
+
     const rules = await prisma.automationRule.findMany({
       where: {
         triggerType: { in: ["inquiry_followup", "inactivity_followup"] },
@@ -389,7 +418,13 @@ export async function sendQuotation(req: Request, res: Response) {
     for (const rule of rules) {
       const triggerParams = rule.triggerParams as Record<string, unknown>;
       const days = Number(triggerParams?.days ?? 3);
-      await scheduleInquiryFollowup(rule.id, targetCustomer.id, days, q.enquiryId, q.number);
+      try {
+        await scheduleInquiryFollowup(rule.id, targetCustomer.id, days, q.enquiryId, q.number);
+      } catch (err: any) {
+        logger.warn(
+          `sendQuotation: skipped inquiry follow-up for rule ${rule.id}: ${err?.message || err}`
+        );
+      }
     }
 
     await logActivity(req.user!.id, "send", "quotation", id);

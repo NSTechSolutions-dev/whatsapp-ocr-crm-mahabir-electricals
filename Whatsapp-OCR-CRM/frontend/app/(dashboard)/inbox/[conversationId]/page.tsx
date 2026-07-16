@@ -38,9 +38,13 @@ interface Customer {
 
 interface EnquirySummary {
   id: string;
-  status: "DRAFT" | "REVIEW" | "FINALIZED" | "SENT" | "IGNORED";
+  status: "WAITING" | "PROCESSING" | "FAILED" | "DRAFT" | "REVIEW" | "FINALIZED" | "SENT" | "IGNORED";
   createdAt: string;
   itemsCount: number;
+  imageCount?: number;
+  processAt?: string | null;
+  remainingSeconds?: number | null;
+  processingError?: string | null;
 }
 
 interface ProcessingJob {
@@ -72,7 +76,7 @@ interface ConversationData {
 
 function getEnquiryStatusLabel(
   status: string,
-  options?: { isProcessingJob?: boolean; jobStep?: string; itemsCount?: number }
+  options?: { isProcessingJob?: boolean; jobStep?: string; itemsCount?: number; remainingSeconds?: number | null }
 ): { label: string; color: string } {
   if (options?.isProcessingJob) {
     if (options.jobStep === "queued") return { label: "Processing", color: "bg-blue-400" };
@@ -82,6 +86,12 @@ function getEnquiryStatusLabel(
   }
 
   switch (status) {
+    case "WAITING":
+      return { label: "Waiting", color: "bg-amber-500" };
+    case "PROCESSING":
+      return { label: "Processing OCR", color: "bg-blue-500" };
+    case "FAILED":
+      return { label: "Failed", color: "bg-red-500" };
     case "IGNORED":
       return { label: "Ignored", color: "bg-gray-400" };
     case "SENT":
@@ -96,6 +106,12 @@ function getEnquiryStatusLabel(
     default:
       return { label: status, color: "bg-gray-500" };
   }
+}
+
+function formatCountdown(seconds: number | null | undefined): string {
+  if (seconds == null) return "--:--";
+  const s = Math.max(0, seconds);
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
 export default function ConversationPage() {
@@ -211,10 +227,21 @@ export default function ConversationPage() {
       }
     });
 
+    const refreshEnquiries = () => {
+      void loadEnquiries();
+    };
+
+    socket.on("enquiry_waiting", refreshEnquiries);
+    socket.on("enquiry_image_added", refreshEnquiries);
+    socket.on("enquiry_updated", refreshEnquiries);
+
     return () => {
       socket.emit("leave_conversation", conversationId);
       socket.off("new_message");
       socket.off("ocr_job_started");
+      socket.off("enquiry_waiting");
+      socket.off("enquiry_image_added");
+      socket.off("enquiry_updated");
       socket.disconnect();
     };
   }, [conversationId]);
@@ -305,7 +332,7 @@ export default function ConversationPage() {
   if (!data) return <div className="p-8 text-ink-muted">Loading…</div>;
 
   return (
-    <div className="flex h-screen text-ink">
+    <div className="flex h-full min-h-0 text-ink">
       {/* Thread */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-line">
         <header className="px-6 py-4 border-b border-line bg-surface flex items-center justify-between">
@@ -481,7 +508,10 @@ export default function ConversationPage() {
               
               {/* Completed Enquiries */}
               {enquiries.map((enq) => {
-                const status = getEnquiryStatusLabel(enq.status, { itemsCount: enq.itemsCount });
+                const status = getEnquiryStatusLabel(enq.status, {
+                  itemsCount: enq.itemsCount,
+                  remainingSeconds: enq.remainingSeconds,
+                });
                 return (
                   <button
                     key={enq.id}
@@ -490,7 +520,11 @@ export default function ConversationPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-ink-muted" />
+                        {enq.status === "WAITING" || enq.status === "PROCESSING" ? (
+                          <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-ink-muted" />
+                        )}
                         <span className="text-sm font-medium text-ink">
                           {enq.id.slice(0, 8).toUpperCase()}
                         </span>
@@ -503,7 +537,23 @@ export default function ConversationPage() {
                       </div>
                     </div>
                     <div className="text-[10px] text-ink-muted mt-1">
-                      {enq.status === "IGNORED" ? "Not an inventory enquiry" : `${enq.itemsCount} items`} · {timeAgo(enq.createdAt)}
+                      {enq.status === "WAITING" && (
+                        <>
+                          {enq.imageCount ?? 0} page(s) · {formatCountdown(enq.remainingSeconds)} remaining ·{" "}
+                        </>
+                      )}
+                      {enq.status === "PROCESSING" && (
+                        <>{enq.imageCount ?? 0} page(s) · Processing OCR… · </>
+                      )}
+                      {enq.status === "FAILED" && (
+                        <>{enq.processingError || "Batch failed"} · </>
+                      )}
+                      {enq.status === "IGNORED"
+                        ? "Not an inventory enquiry"
+                        : enq.status === "WAITING" || enq.status === "PROCESSING"
+                          ? ""
+                          : `${enq.itemsCount} items`}{" "}
+                      · {timeAgo(enq.createdAt)}
                     </div>
                   </button>
                 );
@@ -561,10 +611,15 @@ function SimulateMessagePanel({
       if (type === "image" && dataUrl) body.mediaDataUrl = dataUrl;
 
       const r = await api.post("/webhooks/simulate-inbound", body);
-      toast.success("Message simulated — AI processing started");
+      if (r.data.grouped) {
+        toast.success("Image added to inquiry batch — waiting for more pages");
+        onSent();
+      } else {
+        toast.success("Message simulated — AI processing started");
+        onSent(r.data.jobId);
+      }
       setContent(type === "text" ? "" : content);
       if (type === "image") setDataUrl("");
-      onSent(r.data.jobId);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to simulate");
     } finally {

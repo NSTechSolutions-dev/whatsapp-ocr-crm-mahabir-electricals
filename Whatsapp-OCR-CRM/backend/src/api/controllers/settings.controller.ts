@@ -18,6 +18,7 @@ function orEnv(value: string | null | undefined, fallback: string): string {
 function serializeSettings(settings: Awaited<ReturnType<typeof getOrCreateCompanySetting>>, qrUrl: string | null) {
   return {
     companyName: orEnv(settings.companyName, env.COMPANY_NAME),
+    companyAddress: orEnv(settings.companyAddress, env.COMPANY_ADDRESS),
     companyPhone: orEnv(settings.companyPhone, env.COMPANY_PHONE),
     companyGstin: orEnv(settings.companyGstin, env.COMPANY_GSTIN),
     bankName: settings.bankName,
@@ -54,6 +55,7 @@ export async function getCompanySettings(req: Request, res: Response) {
 export async function updateCompanySettings(req: Request, res: Response) {
   const {
     companyName,
+    companyAddress,
     companyPhone,
     companyGstin,
     bankName,
@@ -67,6 +69,7 @@ export async function updateCompanySettings(req: Request, res: Response) {
   try {
     const data = {
       companyName: companyName?.trim() || null,
+      companyAddress: companyAddress?.trim() || null,
       companyPhone: companyPhone?.trim() || null,
       companyGstin: companyGstin?.trim() || null,
       bankName: bankName?.trim() || null,
@@ -131,5 +134,100 @@ export async function uploadPaymentQr(req: Request, res: Response) {
   } catch (error) {
     logger.error("Error uploading payment QR: " + error);
     return res.status(500).json({ detail: "Failed to upload payment QR" });
+  }
+}
+
+export async function listBrandLogos(req: Request, res: Response) {
+  try {
+    const logos = await prisma.brandLogo.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
+    const items = await Promise.all(
+      logos.map(async (logo) => {
+        let url: string | null = null;
+        try {
+          url = await getPresignedUrl(logo.s3Key, 3600);
+        } catch (error) {
+          logger.warn(`Could not presign brand logo ${logo.id}: ${error}`);
+        }
+        return {
+          id: logo.id,
+          name: logo.name,
+          s3Key: logo.s3Key,
+          sortOrder: logo.sortOrder,
+          url,
+          createdAt: logo.createdAt.toISOString(),
+        };
+      })
+    );
+    return res.json({ items });
+  } catch (error) {
+    logger.error("Error listing brand logos: " + error);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+export async function uploadBrandLogo(req: Request, res: Response) {
+  const file = req.file;
+  const name = (req.body?.name as string | undefined)?.trim() || null;
+
+  if (!file) {
+    return res.status(400).json({ detail: "Logo image file is required" });
+  }
+
+  const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+  if (!allowed.includes(file.mimetype)) {
+    return res.status(400).json({ detail: "Only PNG, JPEG, WebP, or SVG images are allowed" });
+  }
+
+  try {
+    const ext =
+      file.mimetype === "image/png"
+        ? "png"
+        : file.mimetype === "image/webp"
+          ? "webp"
+          : file.mimetype === "image/svg+xml"
+            ? "svg"
+            : "jpg";
+    const key = `settings/brand-logos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    await upload(key, file.buffer, file.mimetype);
+
+    const count = await prisma.brandLogo.count();
+    const logo = await prisma.brandLogo.create({
+      data: { name, s3Key: key, sortOrder: count },
+    });
+
+    const url = await getPresignedUrl(logo.s3Key, 3600);
+
+    return res.json({
+      ok: true,
+      item: {
+        id: logo.id,
+        name: logo.name,
+        s3Key: logo.s3Key,
+        sortOrder: logo.sortOrder,
+        url,
+        createdAt: logo.createdAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error("Error uploading brand logo: " + error);
+    return res.status(500).json({ detail: "Failed to upload brand logo" });
+  }
+}
+
+export async function deleteBrandLogo(req: Request, res: Response) {
+  const { id } = req.params;
+
+  try {
+    const logo = await prisma.brandLogo.findUnique({ where: { id } });
+    if (!logo) {
+      return res.status(404).json({ detail: "Brand logo not found" });
+    }
+
+    await prisma.brandLogo.delete({ where: { id } });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    logger.error(`Error deleting brand logo ${id}: ` + error);
+    return res.status(500).json({ detail: "Failed to delete brand logo" });
   }
 }

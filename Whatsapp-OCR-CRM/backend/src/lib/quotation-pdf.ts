@@ -38,9 +38,11 @@ export interface QuotationPdfInput {
   qrImage?: Buffer | null;
   companyProfile?: {
     name?: string | null;
+    address?: string | null;
     phone?: string | null;
     gstin?: string | null;
   } | null;
+  brandLogos?: Buffer[];
 }
 
 const BRAND = "#7F1D1D";
@@ -240,14 +242,19 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
 function drawHeader(
   doc: PdfDoc,
   gstPercent: number,
-  companyProfile?: { name?: string | null; phone?: string | null; gstin?: string | null } | null
+  companyProfile?: {
+    name?: string | null;
+    address?: string | null;
+    phone?: string | null;
+    gstin?: string | null;
+  } | null
 ) {
   const logoSize = 48;
   const headerTop = MARGIN_TOP;
-  const contactWidth = 200;
+  const contactWidth = 220;
   const contactX = CONTENT_RIGHT - contactWidth;
-  const identityX = MARGIN_LEFT + logoSize + 12;
   const companyName = orFallback(companyProfile?.name, env.COMPANY_NAME);
+  const companyAddress = orFallback(companyProfile?.address, env.COMPANY_ADDRESS);
   const companyPhone = orFallback(companyProfile?.phone, env.COMPANY_PHONE);
   const companyGstin = orFallback(companyProfile?.gstin, env.COMPANY_GSTIN);
 
@@ -256,35 +263,50 @@ function drawHeader(
   doc
     .fillColor(BRAND)
     .font("Helvetica-Bold")
-    .fontSize(11)
-    .text(companyName.toUpperCase(), identityX, headerTop + 6, {
-      width: contactX - identityX - 16,
-      lineGap: 1,
-    })
     .fontSize(10)
-    .text("ELECTRICAL SUPPLIES", identityX, doc.y + 2);
+    .text(companyName.toUpperCase(), contactX, headerTop, {
+      width: contactWidth,
+      align: "right",
+      lineGap: 1,
+    });
 
   doc
     .font("Helvetica")
     .fontSize(9)
-    .fillColor(BRAND)
-    .text(env.COMPANY_ADDRESS.toUpperCase(), contactX, headerTop, {
+    .text(companyAddress.toUpperCase(), contactX, doc.y + 2, {
       width: contactWidth,
       align: "right",
       lineGap: 2,
     });
 
-  const contactLineY = headerTop + 28;
-  doc.text(`PHONE: ${companyPhone}`, contactX, contactLineY, {
+  doc.text(`PHONE: ${companyPhone}`, contactX, doc.y + 4, {
     width: contactWidth,
     align: "right",
   });
-  if (gstPercent > 0) {
-    doc.text(`GSTIN: ${companyGstin}`, contactX, contactLineY + 12, {
-      width: contactWidth,
-      align: "right",
-    });
+  doc.text(`GSTIN: ${companyGstin}`, contactX, doc.y + 2, {
+    width: contactWidth,
+    align: "right",
+  });
+}
+
+function drawBrandLogos(doc: PdfDoc, y: number, logos: Buffer[]): number {
+  if (!logos.length) return y;
+
+  const logoHeight = 28;
+  const gap = 12;
+  const totalWidth = logos.length * 72 + (logos.length - 1) * gap;
+  let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - totalWidth) / 2);
+
+  for (const logo of logos) {
+    try {
+      doc.image(logo, x, y, { fit: [72, logoHeight], align: "center", valign: "center" });
+    } catch {
+      // Skip logos that cannot be embedded
+    }
+    x += 72 + gap;
   }
+
+  return y + logoHeight + 12;
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
@@ -311,7 +333,11 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
 
     drawHeader(doc, input.gstPercent, input.companyProfile);
 
-    let y = MARGIN_TOP + 96;
+    let y = MARGIN_TOP + 88;
+    if (input.brandLogos?.length) {
+      y = drawBrandLogos(doc, y, input.brandLogos);
+    }
+
     doc
       .fillColor(BRAND)
       .font("Helvetica-Bold")

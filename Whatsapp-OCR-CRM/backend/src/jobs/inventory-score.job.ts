@@ -5,17 +5,35 @@ import { runQuotationPipeline } from "../services/quotation-pipeline.service";
 import { ProductExtractionError } from "../services/product-extraction.service";
 import { GeminiApiError } from "../lib/gemini-retry";
 import { isOcrJobCancelled } from "../lib/ocr-job-state";
+import { markEnquiryFailed } from "../services/inquiry-grouping.service";
 import { createSystemNotification } from "../utils/notification";
 import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
+import { getIo } from "../utils/notification";
+
+function emitEnquiryUpdate(conversationId: string, payload: Record<string, unknown>) {
+  const io = getIo();
+  if (!io) return;
+  io.to(`conversation:${conversationId}`).emit("enquiry_updated", payload);
+}
 
 export const inventoryScoreWorker = new Worker(
   "inventoryScoreQueue",
   async (job) => {
-    const { rawText, ocrConfidence, conversationId, customerId, jobId, source, messageId, msgType } = job.data;
+    const {
+      rawText,
+      ocrConfidence,
+      conversationId,
+      customerId,
+      jobId,
+      source,
+      messageId,
+      msgType,
+      enquiryId: existingEnquiryId,
+    } = job.data;
 
     const logPrefix = source ? `[${source}]` : "";
-    const id = jobId || messageId;
+    const id = jobId || messageId || existingEnquiryId;
     logger.info(`${logPrefix} inventoryScoreWorker starting job ${id} (${msgType || "unknown"})`);
 
     if (jobId && (await isOcrJobCancelled(jobId))) {
@@ -63,10 +81,30 @@ export const inventoryScoreWorker = new Worker(
             : pipelineError instanceof ProductExtractionError
               ? pipelineError.retryable
               : true;
+        const errorMsg = formatUserErrorMessage(
+          pipelineError,
+          "Gemini processing failed. Please try again."
+        );
+
+        if (existingEnquiryId) {
+          await markEnquiryFailed(existingEnquiryId, errorMsg);
+          const enq = await prisma.enquiry.findUnique({
+            where: { id: existingEnquiryId },
+            select: { conversationId: true },
+          });
+          if (enq) {
+            emitEnquiryUpdate(enq.conversationId, {
+              enquiryId: existingEnquiryId,
+              status: "FAILED",
+              processingError: errorMsg,
+            });
+          }
+        }
+
         await updateJobState("failed", {
           status: "failed",
           failedStep: "inventory_score",
-          error: formatUserErrorMessage(pipelineError, "Gemini processing failed. Please try again."),
+          error: errorMsg,
           retryable,
           rawText,
           ocrConfidence,
@@ -76,14 +114,12 @@ export const inventoryScoreWorker = new Worker(
       }
 
       const matchedItems = pipelineResult.matchedRows;
-
       const isInventoryRelated = matchedItems.length > 0;
 
       logger.info(
         `${logPrefix} Job ${id}: items=${matchedItems.length}, pipeline=${JSON.stringify(pipelineResult.stats)}`
       );
 
-      // Resolve customer
       let resolvedCustomerId = customerId;
       let resolvedConversationId = conversationId;
 
@@ -109,19 +145,49 @@ export const inventoryScoreWorker = new Worker(
         throw new Error("No active ADMIN user found to assign enquiry creation");
       }
 
-      // Not inventory-related or no products extracted → IGNORED enquiry
-      if (!isInventoryRelated || matchedItems.length === 0) {
-        const enquiry = await prisma.enquiry.create({
-          data: {
-            conversationId: resolvedConversationId,
-            customerId: resolvedCustomerId,
-            createdById: adminUser.id,
-            status: "IGNORED",
-            sourceData: rawText || textForPipeline || null,
-          },
-        });
+      const itemRows = matchedItems.map((item) => ({
+        inventoryId: item.inventoryId,
+        autoInventoryId: item.inventoryId,
+        productName: item.matchedName || item.product,
+        qty: item.qty,
+        unit: item.unit || "Pcs",
+        rate: item.rate,
+        confidence: item.confidence,
+        rawText: item.raw,
+      }));
 
-        logger.info(`${logPrefix} Created IGNORED enquiry ${enquiry.id} (not inventory-related)`);
+      if (!isInventoryRelated || matchedItems.length === 0) {
+        let enquiry: { id: string; conversationId: string };
+
+        if (existingEnquiryId) {
+          enquiry = await prisma.enquiry.update({
+            where: { id: existingEnquiryId },
+            data: {
+              status: "IGNORED",
+              sourceData: rawText || textForPipeline || null,
+              processingError: null,
+            },
+          });
+          await prisma.enquiryItem.deleteMany({ where: { enquiryId: existingEnquiryId } });
+        } else {
+          enquiry = await prisma.enquiry.create({
+            data: {
+              conversationId: resolvedConversationId,
+              customerId: resolvedCustomerId,
+              createdById: adminUser.id,
+              status: "IGNORED",
+              sourceData: rawText || textForPipeline || null,
+            },
+          });
+        }
+
+        logger.info(`${logPrefix} ${existingEnquiryId ? "Updated" : "Created"} IGNORED enquiry ${enquiry.id}`);
+
+        emitEnquiryUpdate(enquiry.conversationId, {
+          enquiryId: enquiry.id,
+          status: "IGNORED",
+          itemsCount: 0,
+        });
 
         await updateJobState("done", {
           enquiryId: enquiry.id,
@@ -140,32 +206,46 @@ export const inventoryScoreWorker = new Worker(
         return;
       }
 
-      // Create DRAFT Enquiry with matched items
-      const enquiry = await prisma.enquiry.create({
-        data: {
-          conversationId: resolvedConversationId,
-          customerId: resolvedCustomerId,
-          createdById: adminUser.id,
-          status: "DRAFT",
-          sourceData: rawText,
-        },
-      });
+      let enquiry: { id: string; conversationId: string };
 
-      await prisma.enquiryItem.createMany({
-        data: matchedItems.map((item) => ({
-          enquiryId: enquiry.id,
-          inventoryId: item.inventoryId,
-          autoInventoryId: item.inventoryId,
-          productName: item.matchedName || item.product,
-          qty: item.qty,
-          unit: item.unit || "Pcs",
-          rate: item.rate,
-          confidence: item.confidence,
-          rawText: item.raw,
-        })),
-      });
+      if (existingEnquiryId) {
+        enquiry = await prisma.enquiry.update({
+          where: { id: existingEnquiryId },
+          data: {
+            status: "DRAFT",
+            sourceData: rawText,
+            processingError: null,
+          },
+        });
+        await prisma.enquiryItem.deleteMany({ where: { enquiryId: existingEnquiryId } });
+        await prisma.enquiryItem.createMany({
+          data: itemRows.map((row) => ({ ...row, enquiryId: existingEnquiryId })),
+        });
+      } else {
+        enquiry = await prisma.enquiry.create({
+          data: {
+            conversationId: resolvedConversationId,
+            customerId: resolvedCustomerId,
+            createdById: adminUser.id,
+            status: "DRAFT",
+            sourceData: rawText,
+          },
+        });
 
-      logger.info(`${logPrefix} Created DRAFT enquiry ${enquiry.id} with ${matchedItems.length} items (subtotal=${pipelineResult.quotation.subtotal})`);
+        await prisma.enquiryItem.createMany({
+          data: itemRows.map((row) => ({ ...row, enquiryId: enquiry.id })),
+        });
+      }
+
+      logger.info(
+        `${logPrefix} ${existingEnquiryId ? "Updated" : "Created"} DRAFT enquiry ${enquiry.id} with ${matchedItems.length} items`
+      );
+
+      emitEnquiryUpdate(enquiry.conversationId, {
+        enquiryId: enquiry.id,
+        status: "DRAFT",
+        itemsCount: matchedItems.length,
+      });
 
       await updateJobState("done", {
         enquiryId: enquiry.id,
@@ -185,16 +265,32 @@ export const inventoryScoreWorker = new Worker(
       logger.info(`${logPrefix} Successfully completed inventory scoring for job ${id}, enquiry ${enquiry.id}`);
     } catch (error: any) {
       logger.error(`${logPrefix} inventoryScoreWorker failed job ${id}: ${error}`);
+      const errorMsg = formatUserErrorMessage(error, "Gemini processing failed. Please try again.");
+
+      if (existingEnquiryId) {
+        await markEnquiryFailed(existingEnquiryId, errorMsg);
+        const enq = await prisma.enquiry.findUnique({
+          where: { id: existingEnquiryId },
+          select: { conversationId: true },
+        });
+        if (enq) {
+          emitEnquiryUpdate(enq.conversationId, {
+            enquiryId: existingEnquiryId,
+            status: "FAILED",
+            processingError: errorMsg,
+          });
+        }
+      }
+
       const retryable = error instanceof GeminiApiError ? error.retryable : true;
       await updateJobState("failed", {
         status: "failed",
         failedStep: "inventory_score",
-        error: formatUserErrorMessage(error, "Gemini processing failed. Please try again."),
+        error: errorMsg,
         retryable,
         rawText,
         ocrConfidence,
       });
-      return;
     }
   },
   {

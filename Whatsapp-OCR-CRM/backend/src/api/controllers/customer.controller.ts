@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { logger } from "../../utils/logger";
+import { looksLikePhoneQuery, normalizePhoneForSearch } from "../../utils/phone";
 
 export async function listCustomers(req: Request, res: Response) {
   const q = (req.query.q as string || "").toLowerCase();
 
   try {
     const customers = await prisma.customer.findMany({
+      where: { hiddenFromPipeline: false },
       orderBy: { updatedAt: "desc" },
     });
 
@@ -31,8 +33,10 @@ export async function listCustomers(req: Request, res: Response) {
 
     let filtered = enriched;
     if (q) {
+      const normalizedPhoneQuery = looksLikePhoneQuery(q) ? normalizePhoneForSearch(q) : "";
       filtered = enriched.filter(
         (c) =>
+          (normalizedPhoneQuery && c.phone === normalizedPhoneQuery) ||
           c.phone.toLowerCase().includes(q) ||
           (c.name && c.name.toLowerCase().includes(q)) ||
           (c.company && c.company.toLowerCase().includes(q))
@@ -61,6 +65,7 @@ export async function getCustomer(req: Request, res: Response) {
       include: {
         quotation: true,
         items: true,
+        _count: { select: { images: true } },
       },
     });
 
@@ -76,9 +81,11 @@ export async function getCustomer(req: Request, res: Response) {
         status: e.status,
         createdById: e.createdById,
         finalizedAt: e.finalizedAt?.toISOString() || null,
+        processAt: e.processAt?.toISOString() || null,
         createdAt: e.createdAt.toISOString(),
         updatedAt: e.updatedAt.toISOString(),
         itemsCount: e.items.length,
+        imageCount: e._count.images,
         quotation: e.quotation,
       };
     });
@@ -91,7 +98,9 @@ export async function getCustomer(req: Request, res: Response) {
       orderBy: { createdAt: "asc" },
     });
 
-    const quotationCount = enrichedEnquiries.filter((e) => e.quotation).length;
+    const quotationCount = enrichedEnquiries.filter(
+      (e) => e.quotation && (e.quotation as { sentAt?: Date | string | null }).sentAt
+    ).length;
     const topProducts = Object.entries(productCounts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
@@ -146,6 +155,27 @@ export async function updateCustomerStage(req: Request, res: Response) {
     });
   } catch (error) {
     logger.error(`Error updating customer stage ${id}: ` + error);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+export async function hideCustomerFromPipeline(req: Request, res: Response) {
+  const { id } = req.params;
+
+  try {
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return res.status(404).json({ detail: "Customer not found" });
+    }
+
+    await prisma.customer.update({
+      where: { id },
+      data: { hiddenFromPipeline: true },
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    logger.error(`Error hiding customer ${id} from pipeline: ` + error);
     return res.status(500).json({ detail: "Internal server error" });
   }
 }

@@ -17,7 +17,9 @@ import { automationWorker } from "./jobs/automation.job";
 import { inboundWorker } from "./jobs/inbound.job";
 import { inventoryScoreWorker } from "./jobs/inventory-score.job";
 import { embedProductWorker } from "./jobs/embed-product.job";
+import { inquiryBatchWorker } from "./jobs/inquiry-batch.job";
 import { initAutomationCron, stopAllAutomationCron } from "./jobs/automation-cron";
+import { startInquiryBatchPoller, stopInquiryBatchPoller } from "./jobs/inquiry-batch-poller";
 import { ensureAutomationRules } from "./services/automation-rules.bootstrap";
 
 import { setIo } from "./utils/notification";
@@ -104,6 +106,7 @@ async function main() {
     await backfillInventorySearchText();
     await ensureAutomationRules();
     await initAutomationCron();
+    startInquiryBatchPoller();
     logger.info("Database connection established");
 
     server.listen(env.PORT, () => {
@@ -130,6 +133,8 @@ const shutdown = async (signal: string) => {
       await inboundWorker.close();
       await inventoryScoreWorker.close();
       await embedProductWorker.close();
+      await inquiryBatchWorker.close();
+      stopInquiryBatchPoller();
       stopAllAutomationCron();
       logger.info("BullMQ workers closed");
 
