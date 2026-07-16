@@ -249,7 +249,7 @@ function drawHeader(
     gstin?: string | null;
   } | null
 ) {
-  const logoSize = 48;
+  const logoSize = 72;
   const headerTop = MARGIN_TOP;
   const contactWidth = 220;
   const contactX = CONTENT_RIGHT - contactWidth;
@@ -292,21 +292,22 @@ function drawHeader(
 function drawBrandLogos(doc: PdfDoc, y: number, logos: Buffer[]): number {
   if (!logos.length) return y;
 
-  const logoHeight = 28;
-  const gap = 12;
-  const totalWidth = logos.length * 72 + (logos.length - 1) * gap;
+  const logoHeight = 52;
+  const logoWidth = 110;
+  const gap = 16;
+  const totalWidth = logos.length * logoWidth + (logos.length - 1) * gap;
   let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - totalWidth) / 2);
 
   for (const logo of logos) {
     try {
-      doc.image(logo, x, y, { fit: [72, logoHeight], align: "center", valign: "center" });
+      doc.image(logo, x, y, { fit: [logoWidth, logoHeight], align: "center", valign: "center" });
     } catch {
       // Skip logos that cannot be embedded
     }
-    x += 72 + gap;
+    x += logoWidth + gap;
   }
 
-  return y + logoHeight + 12;
+  return y + logoHeight + 16;
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
@@ -333,7 +334,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
 
     drawHeader(doc, input.gstPercent, input.companyProfile);
 
-    let y = MARGIN_TOP + 88;
+    let y = MARGIN_TOP + 100;
     if (input.brandLogos?.length) {
       y = drawBrandLogos(doc, y, input.brandLogos);
     }

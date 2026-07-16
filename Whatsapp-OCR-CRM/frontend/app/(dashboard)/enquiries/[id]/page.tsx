@@ -480,7 +480,7 @@ export default function UnifiedEnquiryPage() {
   const finalize = async () => {
     const payload = serializeRows();
     if (payload.length === 0) {
-      toast.error("Add at least one product before sending");
+      toast.error("Add at least one product before saving the quotation");
       return;
     }
 
@@ -516,18 +516,13 @@ export default function UnifiedEnquiryPage() {
 
       await loadQuotation(quotationId);
       await load();
-      toast.success("Quotation generated");
+      toast.success("Quotation saved — you can download or send it");
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       const offline = !e?.response ? " — is the backend running on port 4001?" : "";
-      toast.error(detail ? `${detail}${offline}` : `Finalize failed${offline}`);
-      return;
+      toast.error(detail ? `${detail}${offline}` : `Save quotation failed${offline}`);
     } finally {
       setFinalizing(false);
-    }
-
-    if (quotationId) {
-      await sendQuotation(quotationId);
     }
   };
 
@@ -665,13 +660,13 @@ export default function UnifiedEnquiryPage() {
             )}
             {!isFinalized ? (
               <Button size="sm" onClick={finalize} disabled={finalizing || !hasItems} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white" data-testid="finalize-enquiry-button">
-                <Send className="h-3 w-3 mr-1" />
-                {finalizing ? "…" : "Send"}
+                <Package className="h-3 w-3 mr-1" />
+                {finalizing ? "…" : "Save Quotation"}
               </Button>
             ) : hasQuotation ? (
               <Button size="sm" onClick={() => sendQuotation()} disabled={sending} className="h-7 px-2.5 text-xs bg-brand hover:bg-brand-hover text-white">
                 <Send className="h-3 w-3 mr-1" />
-                {sending ? "…" : isSent ? "Resend" : "Send"}
+                {sending ? "…" : isSent ? "Resend" : "Send WhatsApp"}
               </Button>
             ) : null}
             {hasUnsavedChanges && !isFinalized && (
