@@ -164,7 +164,12 @@ function drawTableRow(
   return rowHeight;
 }
 
-function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number {
+function drawBankAndQr(
+  doc: PdfDoc,
+  y: number,
+  input: QuotationPdfInput,
+  contentBottom: number = PAGE_HEIGHT - MARGIN_TOP
+): number {
   const bank = input.bank;
   const showBank = hasBankDetails(bank);
   const showQr = Boolean(input.qrImage);
@@ -173,7 +178,7 @@ function drawBankAndQr(doc: PdfDoc, y: number, input: QuotationPdfInput): number
     return y;
   }
 
-  if (y > PAGE_HEIGHT - 280) {
+  if (y > contentBottom - 200) {
     doc.addPage();
     y = MARGIN_TOP;
   }
@@ -290,32 +295,82 @@ function drawHeader(
   });
 }
 
-function drawBrandLogos(doc: PdfDoc, y: number, logos: Buffer[]): number {
-  if (!logos.length) return y;
+const BRAND_LOGO_HEIGHT = 36;
+const BRAND_LOGO_MAX_WIDTH = 90;
+const BRAND_LOGO_GAP_X = 12;
+const BRAND_LOGO_GAP_Y = 8;
+const BRAND_LOGO_FOOTER_PAD_TOP = 10;
+const BRAND_LOGO_FOOTER_PAD_BOTTOM = 16;
 
-  const logoHeight = 52;
-  const logoWidth = 110;
-  const gap = 16;
-  const totalWidth = logos.length * logoWidth + (logos.length - 1) * gap;
-  let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - totalWidth) / 2);
+function brandLogosPerRow(): number {
+  const slot = BRAND_LOGO_MAX_WIDTH + BRAND_LOGO_GAP_X;
+  return Math.max(1, Math.floor((CONTENT_WIDTH + BRAND_LOGO_GAP_X) / slot));
+}
 
-  for (const logo of logos) {
-    try {
-      doc.image(logo, x, y, { fit: [logoWidth, logoHeight], align: "center", valign: "center" });
-    } catch {
-      // Skip logos that cannot be embedded
+function measureBrandLogoFooterHeight(logoCount: number): number {
+  if (logoCount <= 0) return 0;
+  const perRow = brandLogosPerRow();
+  const rows = Math.ceil(logoCount / perRow);
+  return (
+    BRAND_LOGO_FOOTER_PAD_TOP +
+    rows * BRAND_LOGO_HEIGHT +
+    (rows - 1) * BRAND_LOGO_GAP_Y +
+    BRAND_LOGO_FOOTER_PAD_BOTTOM
+  );
+}
+
+/** Draw brand logos as a bottom footer, wrapping to new lines within page width. */
+function drawBrandLogoFooter(doc: PdfDoc, logos: Buffer[]): void {
+  if (!logos.length) return;
+
+  const perRow = brandLogosPerRow();
+  const logoWidth = Math.min(BRAND_LOGO_MAX_WIDTH, CONTENT_WIDTH);
+  const footerHeight = measureBrandLogoFooterHeight(logos.length);
+  let y = PAGE_HEIGHT - footerHeight + BRAND_LOGO_FOOTER_PAD_TOP;
+
+  doc
+    .moveTo(MARGIN_LEFT, y - 6)
+    .lineTo(CONTENT_RIGHT, y - 6)
+    .lineWidth(0.5)
+    .strokeColor(LIGHT_MUTED)
+    .stroke();
+
+  for (let i = 0; i < logos.length; i += perRow) {
+    const rowLogos = logos.slice(i, i + perRow);
+    const rowWidth = rowLogos.length * logoWidth + (rowLogos.length - 1) * BRAND_LOGO_GAP_X;
+    let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - rowWidth) / 2);
+
+    for (const logo of rowLogos) {
+      try {
+        doc.image(logo, x, y, {
+          fit: [logoWidth, BRAND_LOGO_HEIGHT],
+          align: "center",
+          valign: "center",
+        });
+      } catch {
+        // Skip logos that cannot be embedded
+      }
+      x += logoWidth + BRAND_LOGO_GAP_X;
     }
-    x += logoWidth + gap;
+    y += BRAND_LOGO_HEIGHT + BRAND_LOGO_GAP_Y;
   }
-
-  return y + logoHeight + 16;
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
   return new Promise((resolve, reject) => {
+    const brandLogos = input.brandLogos || [];
+    const footerHeight = measureBrandLogoFooterHeight(brandLogos.length);
+    const contentBottom = PAGE_HEIGHT - Math.max(MARGIN_TOP, footerHeight) - 12;
+
     const doc = new PDFDocument({
       size: "A4",
-      margins: { top: MARGIN_TOP, bottom: MARGIN_TOP, left: MARGIN_LEFT, right: MARGIN_RIGHT },
+      bufferPages: true,
+      margins: {
+        top: MARGIN_TOP,
+        bottom: Math.max(MARGIN_TOP, footerHeight),
+        left: MARGIN_LEFT,
+        right: MARGIN_RIGHT,
+      },
     });
     const chunks: Buffer[] = [];
     const gstMode = input.gstMode || "exclusive";
@@ -337,9 +392,6 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     drawHeader(doc, input.gstPercent, input.companyProfile);
 
     let y = MARGIN_TOP + 100;
-    if (input.brandLogos?.length) {
-      y = drawBrandLogos(doc, y, input.brandLogos);
-    }
 
     doc
       .fillColor(BRAND)
@@ -388,7 +440,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     y += 24;
 
     for (const item of input.items) {
-      if (y > PAGE_HEIGHT - 260) {
+      if (y > contentBottom - 80) {
         doc.addPage();
         y = MARGIN_TOP;
       }
@@ -428,6 +480,11 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
         : []),
     ];
 
+    if (y > contentBottom - 40 - totalsRows.length * 18) {
+      doc.addPage();
+      y = MARGIN_TOP;
+    }
+
     doc.font("Helvetica").fontSize(10).fillColor(MUTED);
     for (const row of totalsRows) {
       doc.text(row.label, totalsX, y, { width: totalsLabelWidth, align: "left" });
@@ -449,9 +506,9 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     });
 
     y += 44;
-    y = drawBankAndQr(doc, y, input);
+    y = drawBankAndQr(doc, y, input, contentBottom);
 
-    if (y > PAGE_HEIGHT - 150) {
+    if (y > contentBottom - 120) {
       doc.addPage();
       y = MARGIN_TOP;
     }
@@ -516,6 +573,14 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .lineWidth(1)
       .stroke();
     doc.text("Date signed", rightSigX, sigY + 6, { width: sigWidth, align: "center" });
+
+    if (brandLogos.length) {
+      const range = doc.bufferedPageRange();
+      for (let i = range.start; i < range.start + range.count; i++) {
+        doc.switchToPage(i);
+        drawBrandLogoFooter(doc, brandLogos);
+      }
+    }
 
     doc.end();
   });
