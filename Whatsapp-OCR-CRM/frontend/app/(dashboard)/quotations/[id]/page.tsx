@@ -19,8 +19,10 @@ interface QuotationData {
   number: string;
   grandTotal: number;
   subtotal: number;
+  deliveryCharge?: number;
   gstPercent: number;
   gstAmount: number;
+  roundOff?: number;
   presignedUrl: string;
   pdfReady?: boolean;
   sentAt: string | null;
@@ -366,8 +368,12 @@ export default function QuotationPreviewPage() {
             <h3 className="font-display font-semibold text-base mb-3 text-ink">Summary</h3>
             <div className="text-sm space-y-1.5 text-ink">
               <Row label="Subtotal" value={formatINR(q.subtotal)} />
+              <Row label="Delivery charges" value={formatINR(q.deliveryCharge ?? 0)} />
               {q.gstPercent > 0 && (
                 <Row label={`GST (${q.gstPercent}%)`} value={formatINR(q.gstAmount)} />
+              )}
+              {q.roundOff != null && Math.abs(q.roundOff) > 0.0001 && (
+                <Row label="Round Off" value={formatINR(q.roundOff)} />
               )}
               <div className="border-t border-line my-2" />
               <Row label="Grand total" value={formatINR(q.grandTotal)} bold />

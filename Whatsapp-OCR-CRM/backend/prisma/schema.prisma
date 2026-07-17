@@ -106,6 +106,7 @@ model Enquiry {
   sourceData     String?       @db.Text // Raw OCR text or source message
   gstPercent     Float         @default(18)
   gstMode        String        @default("exclusive")
+  deliveryCharge Float         @default(0)
   billCustomerName    String?
   billCustomerPhone   String?
   billCustomerCompany String?

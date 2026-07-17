@@ -12,6 +12,7 @@ type EnquiryWithRelations = {
   id: string;
   gstPercent?: number;
   gstMode?: string;
+  deliveryCharge?: number;
   billCustomerName?: string | null;
   billCustomerPhone?: string | null;
   billCustomerCompany?: string | null;
@@ -103,11 +104,17 @@ async function saveQuotationPdfForEnquiry(
 ) {
   const percent = gstPercent ?? enquiry.gstPercent ?? 18;
   const mode = (gstMode ?? enquiry.gstMode ?? "exclusive") as GstMode;
+  const delivery = enquiry.deliveryCharge ?? 0;
   const lineItems = enquiry.items.map((item) => ({
     qty: item.qty,
     rate: item.rate || 0,
   }));
-  const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, percent, mode);
+  const { subtotal, deliveryCharge, gstAmount, roundOff, grandTotal } = calculateGstTotals(
+    lineItems,
+    percent,
+    mode,
+    delivery
+  );
   const { bank, qrImage, companyProfile, brandLogos } = await loadCompanyBillSettings();
 
   const buffer = await buildQuotationPdfBuffer({
@@ -115,9 +122,11 @@ async function saveQuotationPdfForEnquiry(
     customer: resolveBillCustomer(enquiry),
     items: enquiry.items,
     subtotal,
+    deliveryCharge,
     gstPercent: percent,
     gstMode: mode,
     gstAmount,
+    roundOff,
     grandTotal,
     bank,
     qrImage,

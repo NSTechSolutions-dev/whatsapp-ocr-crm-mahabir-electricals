@@ -30,9 +30,11 @@ export interface QuotationPdfInput {
   };
   items: QuotationPdfItem[];
   subtotal: number;
+  deliveryCharge?: number;
   gstPercent: number;
   gstMode?: GstMode;
   gstAmount: number;
+  roundOff?: number;
   grandTotal: number;
   bank?: QuotationPdfBankDetails | null;
   qrImage?: Buffer | null;
@@ -63,12 +65,11 @@ const CONTENT_RIGHT = PAGE_WIDTH - MARGIN_RIGHT;
 const CELL_PAD_LEFT = 8;
 const CELL_PAD_RIGHT = 10;
 
-function formatUsdDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
+function formatDateDdMmYyyy(date: Date): string {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatInr(amount: number): string {
@@ -324,7 +325,8 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     doc.on("error", reject);
 
     const now = new Date();
-    const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const validUntil = new Date(now);
+    validUntil.setDate(validUntil.getDate() + 1);
     const colWidths = [
       CONTENT_WIDTH * 0.46,
       CONTENT_WIDTH * 0.14,
@@ -354,9 +356,8 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     doc.fillColor(INK).font("Helvetica").fontSize(10);
     const infoLines: Array<[string, string]> = [
       ["Quotation No:", `#${input.quotationNumber}`],
-      ["Date:", formatUsdDate(now)],
-      ["Valid Until:", formatUsdDate(validUntil)],
-      ["Customer ID:", input.customer.id.slice(0, 8).toUpperCase()],
+      ["Date:", formatDateDdMmYyyy(now)],
+      ["Valid Until:", formatDateDdMmYyyy(validUntil)],
     ];
 
     for (const [label, value] of infoLines) {
@@ -414,12 +415,17 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     const totalsX = CONTENT_RIGHT - totalsWidth;
     const totalsLabelWidth = totalsWidth * 0.55;
     const totalsValueWidth = totalsWidth - 14;
+    const deliveryCharge = input.deliveryCharge ?? 0;
+    const roundOff = input.roundOff ?? 0;
     const totalsRows: Array<{ label: string; value: string }> = [
       { label: "Subtotal", value: formatInr(input.subtotal) },
+      { label: "Delivery charges", value: formatInr(deliveryCharge) },
       ...(input.gstPercent > 0
         ? [{ label: `GST (${input.gstPercent}%)`, value: formatInr(input.gstAmount) }]
         : []),
-      { label: "Others", value: formatInr(0) },
+      ...(Math.abs(roundOff) > 0.0001
+        ? [{ label: "Round Off", value: formatInr(roundOff) }]
+        : []),
     ];
 
     doc.font("Helvetica").fontSize(10).fillColor(MUTED);

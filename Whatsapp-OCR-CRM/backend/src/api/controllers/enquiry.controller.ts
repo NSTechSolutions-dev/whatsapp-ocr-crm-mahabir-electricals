@@ -293,6 +293,7 @@ export async function updateEnquiry(req: Request, res: Response) {
     items,
     gstPercent,
     gstMode,
+    deliveryCharge,
     billCustomerName,
     billCustomerPhone,
     billCustomerCompany,
@@ -332,6 +333,10 @@ export async function updateEnquiry(req: Request, res: Response) {
     if (gstMode !== undefined) {
       updateData.gstMode = gstMode === "inclusive" ? "inclusive" : "exclusive";
     }
+    if (deliveryCharge !== undefined) {
+      const parsed = parseFloat(String(deliveryCharge));
+      updateData.deliveryCharge = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
     if (billCustomerName !== undefined) {
       updateData.billCustomerName = billCustomerName?.trim() || null;
     }
@@ -368,6 +373,8 @@ export async function finalizeEnquiry(req: Request, res: Response) {
   const parsedGst = parseFloat(String(req.body?.gstPercent ?? req.query.gstPercent ?? 18));
   const gstPercent = Number.isFinite(parsedGst) ? parsedGst : 18;
   const gstMode = req.body?.gstMode === "inclusive" ? "inclusive" : "exclusive";
+  const parsedDelivery = parseFloat(String(req.body?.deliveryCharge ?? 0));
+  const deliveryCharge = Number.isFinite(parsedDelivery) && parsedDelivery > 0 ? parsedDelivery : 0;
   const {
     items,
     billCustomerName,
@@ -452,6 +459,7 @@ export async function finalizeEnquiry(req: Request, res: Response) {
           finalizedAt: new Date(),
           gstPercent,
           gstMode,
+          deliveryCharge,
           billCustomerName: billCustomerName?.trim() || undefined,
           billCustomerPhone: normalizePhoneOrNull(billCustomerPhone) || undefined,
           billCustomerCompany: billCustomerCompany?.trim() || undefined,

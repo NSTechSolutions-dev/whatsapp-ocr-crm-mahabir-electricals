@@ -74,6 +74,7 @@ export default function UnifiedEnquiryPage() {
   const [rows, setRows] = useState<RowData[]>([]);
   const [gst, setGst] = useState<number | string>(18);
   const [gstMode, setGstMode] = useState<GstMode>("exclusive");
+  const [deliveryCharge, setDeliveryCharge] = useState<number | string>(0);
   const [billCustomerName, setBillCustomerName] = useState("");
   const [billCustomerPhone, setBillCustomerPhone] = useState("");
   const [billCustomerCompany, setBillCustomerCompany] = useState("");
@@ -162,16 +163,18 @@ export default function UnifiedEnquiryPage() {
       })),
     [rows]
   );
-  const { subtotal, gstAmount, grandTotal } = useMemo(
-    () => calculateGstTotals(lineItems, Number(gst) || 0, gstMode),
-    [lineItems, gst, gstMode]
+  const { subtotal, deliveryCharge: deliveryAmount, gstAmount, roundOff, grandTotal } = useMemo(
+    () => calculateGstTotals(lineItems, Number(gst) || 0, gstMode, Number(deliveryCharge) || 0),
+    [lineItems, gst, gstMode, deliveryCharge]
   );
 
   const billPayload = () => {
     const gstNum = Number(gst);
+    const deliveryNum = Number(deliveryCharge);
     return {
       gstPercent: Number.isFinite(gstNum) ? gstNum : 18,
       gstMode,
+      deliveryCharge: Number.isFinite(deliveryNum) && deliveryNum > 0 ? deliveryNum : 0,
       billCustomerName: billCustomerName.trim() || null,
       billCustomerPhone: billCustomerPhone.trim() || null,
       billCustomerCompany: billCustomerCompany.trim() || null,
@@ -195,6 +198,7 @@ export default function UnifiedEnquiryPage() {
       setData(r.data);
       setGst(r.data.gstPercent ?? 18);
       setGstMode(r.data.gstMode === "inclusive" ? "inclusive" : "exclusive");
+      setDeliveryCharge(r.data.deliveryCharge ?? 0);
       setBillCustomerName(r.data.billCustomerName ?? r.data.customer?.name ?? "");
       setBillCustomerPhone(r.data.billCustomerPhone ?? r.data.customer?.phone ?? "");
       setBillCustomerCompany(r.data.billCustomerCompany ?? r.data.customer?.company ?? "");
@@ -340,6 +344,10 @@ export default function UnifiedEnquiryPage() {
   };
   const updateGstMode = (mode: GstMode) => {
     setGstMode(mode);
+    setHasUnsavedChanges(true);
+  };
+  const updateDeliveryCharge = (value: string) => {
+    setDeliveryCharge(value);
     setHasUnsavedChanges(true);
   };
   const updateBillCustomer = (patch: Partial<{ name: string; phone: string; company: string }>) => {
@@ -918,7 +926,33 @@ export default function UnifiedEnquiryPage() {
                   </td>
                   <td className="px-2 py-1 text-right tabular text-[11px] font-medium w-[4.5rem] overflow-hidden">
                     <span className="block truncate">
-                      {subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      {subtotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    </span>
+                  </td>
+                  {!isLocked && <td className="w-7" />}
+                </tr>
+                <tr>
+                  <td colSpan={4} className="px-2 py-1 text-[10px] text-ink-muted text-right">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      Delivery
+                      {!isLocked ? (
+                        <Input
+                          type="number"
+                          value={deliveryCharge}
+                          min={0}
+                          step="any"
+                          onChange={(e) => updateDeliveryCharge(e.target.value)}
+                          className="h-5 w-16 text-[10px] tabular text-center border-line px-0.5"
+                          data-testid="delivery-charge-input"
+                        />
+                      ) : (
+                        <span className="tabular">{deliveryAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-2 py-1 text-right tabular text-[11px] w-[4.5rem] overflow-hidden">
+                    <span className="block truncate">
+                      {deliveryAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                     </span>
                   </td>
                   {!isLocked && <td className="w-7" />}
@@ -959,11 +993,24 @@ export default function UnifiedEnquiryPage() {
                   </td>
                   <td className="px-2 py-1 text-right tabular text-[11px] w-[4.5rem] overflow-hidden">
                     <span className="block truncate">
-                      {gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      {gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                     </span>
                   </td>
                   {!isLocked && <td className="w-7" />}
                 </tr>
+                {Math.abs(roundOff) > 0.0001 && (
+                  <tr>
+                    <td colSpan={4} className="px-2 py-1 text-[10px] text-ink-muted text-right">
+                      Round Off
+                    </td>
+                    <td className="px-2 py-1 text-right tabular text-[11px] w-[4.5rem] overflow-hidden">
+                      <span className="block truncate">
+                        {roundOff.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    {!isLocked && <td className="w-7" />}
+                  </tr>
+                )}
                 <tr className="border-t border-line/60">
                   <td colSpan={4} className="px-2 py-1.5 text-[11px] font-semibold text-right">
                     Total
@@ -1039,9 +1086,11 @@ export default function UnifiedEnquiryPage() {
             customer={displayCustomer}
             rows={rows}
             subtotal={subtotal}
+            deliveryCharge={deliveryAmount}
             gst={gst}
             gstMode={gstMode}
             gstAmount={gstAmount}
+            roundOff={roundOff}
             grandTotal={grandTotal}
           />
           </div>
@@ -1238,18 +1287,22 @@ function QuotationPreview({
   customer,
   rows,
   subtotal,
+  deliveryCharge,
   gst,
   gstMode,
   gstAmount,
+  roundOff,
   grandTotal,
 }: {
   quotationNumber: string;
   customer: { name?: string | null; phone?: string; company?: string | null };
   rows: RowData[];
   subtotal: number;
+  deliveryCharge: number;
   gst: number | string;
   gstMode: GstMode;
   gstAmount: number;
+  roundOff: number;
   grandTotal: number;
 }) {
   const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -1316,12 +1369,22 @@ function QuotationPreview({
       <div className="border-t border-gray-200 pt-2 space-y-0.5 text-[11px]">
         <div className="flex justify-between text-gray-600">
           <span>Subtotal</span>
-          <span className="tabular">₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+          <span className="tabular">₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+        </div>
+        <div className="flex justify-between text-gray-600">
+          <span>Delivery charges</span>
+          <span className="tabular">₹{deliveryCharge.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
         </div>
         {Number(gst) > 0 && (
           <div className="flex justify-between text-gray-600">
             <span>GST ({gst}%)</span>
-            <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+            <span className="tabular">₹{gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+          </div>
+        )}
+        {Math.abs(roundOff) > 0.0001 && (
+          <div className="flex justify-between text-gray-600">
+            <span>Round Off</span>
+            <span className="tabular">₹{roundOff.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
           </div>
         )}
         <div className="flex justify-between pt-1 border-t border-gray-200 font-bold text-sm">

@@ -111,11 +111,17 @@ export async function getQuotation(req: Request, res: Response) {
 
     const gstPercent = q.enquiry.gstPercent ?? 18;
     const gstMode = (q.enquiry.gstMode ?? "exclusive") as GstMode;
+    const deliveryCharge = q.enquiry.deliveryCharge ?? 0;
     const lineItems = q.enquiry.items.map((item) => ({
       qty: item.qty,
       rate: item.rate || 0,
     }));
-    const { subtotal, gstAmount, grandTotal } = calculateGstTotals(lineItems, gstPercent, gstMode);
+    const { subtotal, gstAmount, roundOff, grandTotal } = calculateGstTotals(
+      lineItems,
+      gstPercent,
+      gstMode,
+      deliveryCharge
+    );
     const billCustomer = resolveBillCustomer(q.enquiry);
 
     return res.json({
@@ -134,8 +140,10 @@ export async function getQuotation(req: Request, res: Response) {
       gstMode,
       items: q.enquiry.items,
       subtotal,
+      deliveryCharge,
       gstPercent,
       gstAmount,
+      roundOff,
       grandTotal,
       deliveryStatus,
       sendHistory,
@@ -166,6 +174,7 @@ export async function regenerateQuotation(req: Request, res: Response) {
     billCustomerName,
     billCustomerPhone,
     billCustomerCompany,
+    deliveryCharge: bodyDeliveryCharge,
   } = req.body ?? {};
 
   try {
@@ -183,6 +192,10 @@ export async function regenerateQuotation(req: Request, res: Response) {
     }
     if (gstMode !== undefined) {
       enquiryUpdate.gstMode = gstMode;
+    }
+    if (bodyDeliveryCharge !== undefined) {
+      const parsed = parseFloat(String(bodyDeliveryCharge));
+      enquiryUpdate.deliveryCharge = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
     }
     if (billCustomerName !== undefined) {
       enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
@@ -232,6 +245,7 @@ export async function sendQuotation(req: Request, res: Response) {
     newCustomer,
     gstPercent: bodyGst,
     gstMode: bodyGstMode,
+    deliveryCharge: bodyDeliveryCharge,
     billCustomerName,
     billCustomerPhone,
     billCustomerCompany,
@@ -240,6 +254,7 @@ export async function sendQuotation(req: Request, res: Response) {
     newCustomer?: { name: string; phone: string };
     gstPercent?: number;
     gstMode?: string;
+    deliveryCharge?: number;
     billCustomerName?: string;
     billCustomerPhone?: string;
     billCustomerCompany?: string;
@@ -270,6 +285,10 @@ export async function sendQuotation(req: Request, res: Response) {
     }
     if (bodyGstMode !== undefined) {
       enquiryUpdate.gstMode = bodyGstMode === "inclusive" ? "inclusive" : "exclusive";
+    }
+    if (bodyDeliveryCharge !== undefined) {
+      const parsed = Number(bodyDeliveryCharge);
+      enquiryUpdate.deliveryCharge = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
     }
     if (billCustomerName !== undefined) {
       enquiryUpdate.billCustomerName = billCustomerName?.trim() || null;
@@ -375,7 +394,8 @@ export async function sendQuotation(req: Request, res: Response) {
       qty: item.qty,
       rate: item.rate || 0,
     }));
-    const { grandTotal } = calculateGstTotals(lineItems, gstPercent, gstMode);
+    const deliveryCharge = q.enquiry.deliveryCharge ?? 0;
+    const { grandTotal } = calculateGstTotals(lineItems, gstPercent, gstMode, deliveryCharge);
 
     const caption = `Quotation ${q.number} — Grand Total Rs ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
