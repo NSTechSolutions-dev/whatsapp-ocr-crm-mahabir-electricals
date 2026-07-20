@@ -320,25 +320,43 @@ function drawHeader(
   return Math.max(companyBlockBottom, doc.y) + 8;
 }
 
-function drawPageNumber(doc: PdfDoc, page: number, totalPages: number): void {
-  if (totalPages <= 1) return;
-  doc
-    .fillColor(LIGHT_MUTED)
-    .font("Helvetica")
-    .fontSize(8)
-    .text(`Page ${page} of ${totalPages}`, MARGIN_LEFT, PAGE_HEIGHT - 16, {
-      width: CONTENT_WIDTH,
-      align: "center",
-      lineBreak: false,
-    });
-}
-
 const BRAND_LOGO_HEIGHT = 32;
 const BRAND_LOGO_MAX_WIDTH = 80;
 const BRAND_LOGO_GAP_X = 10;
 const BRAND_LOGO_GAP_Y = 6;
 const BRAND_LOGO_FOOTER_PAD_TOP = 8;
-const BRAND_LOGO_FOOTER_PAD_BOTTOM = 22;
+/** Space under logos reserved for "Page X of Y" (must fit on the same page). */
+const BRAND_LOGO_FOOTER_PAD_BOTTOM = 18;
+const PAGE_NUMBER_GAP = 4;
+const PAGE_NUMBER_FONT_SIZE = 8;
+
+/**
+ * PdfKit auto-paginates anything drawn past page.margins.bottom.
+ * Footer + page numbers sit in that reserved band, so margins must be
+ * cleared for the whole footer paint — otherwise each page number becomes
+ * its own blank page (e.g. 3 content pages → 6).
+ */
+function withFooterDrawSafe(doc: PdfDoc, draw: () => void): void {
+  const margins = doc.page.margins;
+  const prev = {
+    top: margins.top,
+    bottom: margins.bottom,
+    left: margins.left,
+    right: margins.right,
+  };
+  margins.top = 0;
+  margins.bottom = 0;
+  margins.left = 0;
+  margins.right = 0;
+  try {
+    draw();
+  } finally {
+    margins.top = prev.top;
+    margins.bottom = prev.bottom;
+    margins.left = prev.left;
+    margins.right = prev.right;
+  }
+}
 
 function brandLogosPerRow(): number {
   const slot = BRAND_LOGO_MAX_WIDTH + BRAND_LOGO_GAP_X;
@@ -346,7 +364,7 @@ function brandLogosPerRow(): number {
 }
 
 function measureBrandLogoFooterHeight(logoCount: number): number {
-  if (logoCount <= 0) return 0;
+  if (logoCount <= 0) return BRAND_LOGO_FOOTER_PAD_BOTTOM;
   const perRow = brandLogosPerRow();
   const rows = Math.ceil(logoCount / perRow);
   return (
@@ -357,58 +375,88 @@ function measureBrandLogoFooterHeight(logoCount: number): number {
   );
 }
 
-/** Draw brand logos as a bottom footer, wrapping to new lines within page width. */
-function drawBrandLogoFooter(doc: PdfDoc, logos: Buffer[]): void {
-  if (!logos.length) return;
-
-  const perRow = brandLogosPerRow();
-  const logoWidth = Math.min(BRAND_LOGO_MAX_WIDTH, CONTENT_WIDTH);
+/** Draw brand logos + optional page number under them, without creating new pages. */
+function drawFooterAndPageNumber(
+  doc: PdfDoc,
+  logos: Buffer[],
+  page: number,
+  totalPages: number
+): void {
   const footerHeight = measureBrandLogoFooterHeight(logos.length);
-  let y = PAGE_HEIGHT - footerHeight + BRAND_LOGO_FOOTER_PAD_TOP;
+  const maxPageNumberY = PAGE_HEIGHT - PAGE_NUMBER_FONT_SIZE - 4;
 
-  doc
-    .moveTo(MARGIN_LEFT, y - 6)
-    .lineTo(CONTENT_RIGHT, y - 6)
-    .lineWidth(0.5)
-    .strokeColor(LIGHT_MUTED)
-    .stroke();
+  withFooterDrawSafe(doc, () => {
+    let pageNumberY = PAGE_HEIGHT - 14;
 
-  for (let i = 0; i < logos.length; i += perRow) {
-    const rowLogos = logos.slice(i, i + perRow);
-    const rowWidth = rowLogos.length * logoWidth + (rowLogos.length - 1) * BRAND_LOGO_GAP_X;
-    let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - rowWidth) / 2);
+    if (logos.length) {
+      const perRow = brandLogosPerRow();
+      const logoWidth = Math.min(BRAND_LOGO_MAX_WIDTH, CONTENT_WIDTH);
+      let y = PAGE_HEIGHT - footerHeight + BRAND_LOGO_FOOTER_PAD_TOP;
+      let logosBottom = y;
 
-    for (const logo of rowLogos) {
-      try {
-        doc.image(logo, x, y, {
-          fit: [logoWidth, BRAND_LOGO_HEIGHT],
-          align: "center",
-          valign: "center",
-        });
-      } catch {
-        // Skip logos that cannot be embedded
+      doc
+        .moveTo(MARGIN_LEFT, y - 6)
+        .lineTo(CONTENT_RIGHT, y - 6)
+        .lineWidth(0.5)
+        .strokeColor(LIGHT_MUTED)
+        .stroke();
+
+      for (let i = 0; i < logos.length; i += perRow) {
+        const rowLogos = logos.slice(i, i + perRow);
+        const rowWidth = rowLogos.length * logoWidth + (rowLogos.length - 1) * BRAND_LOGO_GAP_X;
+        let x = MARGIN_LEFT + Math.max(0, (CONTENT_WIDTH - rowWidth) / 2);
+
+        for (const logo of rowLogos) {
+          try {
+            doc.image(logo, x, y, {
+              fit: [logoWidth, BRAND_LOGO_HEIGHT],
+              align: "center",
+              valign: "center",
+            });
+          } catch {
+            // Skip logos that cannot be embedded
+          }
+          x += logoWidth + BRAND_LOGO_GAP_X;
+        }
+        logosBottom = y + BRAND_LOGO_HEIGHT;
+        y += BRAND_LOGO_HEIGHT + BRAND_LOGO_GAP_Y;
       }
-      x += logoWidth + BRAND_LOGO_GAP_X;
+
+      pageNumberY = Math.min(logosBottom + PAGE_NUMBER_GAP, maxPageNumberY);
     }
-    y += BRAND_LOGO_HEIGHT + BRAND_LOGO_GAP_Y;
-  }
+
+    if (totalPages <= 1) return;
+
+    // Keep cursor inside this page before writing — avoids PdfKit appending a page.
+    doc.x = MARGIN_LEFT;
+    doc.y = pageNumberY;
+
+    doc
+      .fillColor(LIGHT_MUTED)
+      .font("Helvetica")
+      .fontSize(PAGE_NUMBER_FONT_SIZE)
+      .text(`Page ${page} of ${totalPages}`, MARGIN_LEFT, pageNumberY, {
+        width: CONTENT_WIDTH,
+        align: "center",
+        lineBreak: false,
+        height: PAGE_NUMBER_FONT_SIZE + 2,
+      });
+  });
 }
 
 export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const brandLogos = input.brandLogos || [];
+    // Footer height already includes pad below logos for "Page X of Y"
     const footerHeight = measureBrandLogoFooterHeight(brandLogos.length);
-    // Reserve space for page numbers on multi-page docs
-    const pageNumberReserve = 18;
-    const contentBottom =
-      PAGE_HEIGHT - Math.max(MARGIN_TOP, footerHeight + pageNumberReserve) - 8;
+    const contentBottom = PAGE_HEIGHT - Math.max(MARGIN_TOP, footerHeight) - 8;
 
     const doc = new PDFDocument({
       size: "A4",
       bufferPages: true,
       margins: {
         top: MARGIN_TOP,
-        bottom: Math.max(MARGIN_TOP, footerHeight + pageNumberReserve),
+        bottom: Math.max(MARGIN_TOP, footerHeight),
         left: MARGIN_LEFT,
         right: MARGIN_RIGHT,
       },
@@ -608,14 +656,12 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .stroke();
     doc.text("Date signed", rightSigX, sigY + 6, { width: sigWidth, align: "center" });
 
+    // Capture page count before drawing footers — footer text must not add pages.
     const range = doc.bufferedPageRange();
     const totalPages = range.count;
     for (let i = 0; i < totalPages; i++) {
       doc.switchToPage(range.start + i);
-      if (brandLogos.length) {
-        drawBrandLogoFooter(doc, brandLogos);
-      }
-      drawPageNumber(doc, i + 1, totalPages);
+      drawFooterAndPageNumber(doc, brandLogos, i + 1, totalPages);
     }
 
     doc.end();
