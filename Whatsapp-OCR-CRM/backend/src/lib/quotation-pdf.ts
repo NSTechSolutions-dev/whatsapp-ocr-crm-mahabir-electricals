@@ -54,9 +54,9 @@ const LIGHT_MUTED = "#718096";
 const ROW_BG = "#F7FAFC";
 const WHITE = "#FFFFFF";
 
-const MARGIN_LEFT = 60;
-const MARGIN_RIGHT = 60;
-const MARGIN_TOP = 50;
+const MARGIN_LEFT = 48;
+const MARGIN_RIGHT = 48;
+const MARGIN_TOP = 32;
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
@@ -122,14 +122,14 @@ function drawTableHeader(doc: PdfDoc, y: number, colWidths: number[]) {
   const aligns: Array<"left" | "center" | "right"> = ["left", "center", "right", "right"];
   let x = MARGIN_LEFT;
 
-  doc.rect(MARGIN_LEFT, y, CONTENT_WIDTH, 24).fill(BRAND);
+  doc.rect(MARGIN_LEFT, y, CONTENT_WIDTH, 20).fill(BRAND);
 
-  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(10);
+  doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(9);
   for (let i = 0; i < headers.length; i += 1) {
     const width = colWidths[i];
     const align = aligns[i];
     const textX = align === "left" ? x + CELL_PAD_LEFT : x;
-    doc.text(headers[i], textX, y + 7, {
+    doc.text(headers[i], textX, y + 5, {
       width: cellTextWidth(width, align),
       align,
     });
@@ -144,16 +144,16 @@ function drawTableRow(
   values: string[],
   aligns: Array<"left" | "center" | "right">
 ) {
-  const rowHeight = 28;
+  const rowHeight = 22;
   doc.rect(MARGIN_LEFT, y, CONTENT_WIDTH, rowHeight).fill(ROW_BG);
 
-  doc.fillColor(MUTED).font("Helvetica").fontSize(10);
+  doc.fillColor(MUTED).font("Helvetica").fontSize(9);
   let x = MARGIN_LEFT;
   for (let i = 0; i < values.length; i += 1) {
     const width = colWidths[i];
     const align = aligns[i];
     const textX = align === "left" ? x + CELL_PAD_LEFT : x;
-    doc.text(values[i], textX, y + 9, {
+    doc.text(values[i], textX, y + 6, {
       width: cellTextWidth(width, align),
       align,
       lineBreak: false,
@@ -245,62 +245,100 @@ function drawBankAndQr(
   return Math.max(bankBottomY, qrBottomY) + 8;
 }
 
+/**
+ * Draws title first, then company block. Returns Y below the company header.
+ */
 function drawHeader(
   doc: PdfDoc,
-  gstPercent: number,
   companyProfile?: {
     name?: string | null;
     address?: string | null;
     phone?: string | null;
     gstin?: string | null;
   } | null
-) {
-  const logoSize = 72;
-  const headerTop = MARGIN_TOP;
-  const contactWidth = 220;
-  const contactX = CONTENT_RIGHT - contactWidth;
+): number {
   const companyName = orFallback(companyProfile?.name, env.COMPANY_NAME);
   const companyAddress = orFallback(companyProfile?.address, env.COMPANY_ADDRESS);
   const companyPhone = orFallback(companyProfile?.phone, env.COMPANY_PHONE);
   const companyGstin = orFallback(companyProfile?.gstin, env.COMPANY_GSTIN);
 
-  drawLightningLogo(doc, MARGIN_LEFT, headerTop, logoSize);
+  // 1. Title at top
+  doc
+    .fillColor(BRAND)
+    .font("Helvetica-Bold")
+    .fontSize(20)
+    .text("QUOTATION", MARGIN_LEFT, MARGIN_TOP, {
+      width: CONTENT_WIDTH,
+      align: "center",
+      characterSpacing: 1.5,
+    });
+
+  let y = doc.y + 8;
+
+  // 2. Company details below title
+  const logoSize = 36;
+  const contactWidth = 280;
+  const contactX = CONTENT_RIGHT - contactWidth;
+  const identityX = MARGIN_LEFT + logoSize + 10;
+
+  drawLightningLogo(doc, MARGIN_LEFT, y, logoSize);
 
   doc
     .fillColor(BRAND)
     .font("Helvetica-Bold")
     .fontSize(10)
-    .text(companyName.toUpperCase(), contactX, headerTop, {
-      width: contactWidth,
-      align: "right",
-      lineGap: 1,
+    .text(companyName.toUpperCase(), identityX, y, {
+      width: contactX - identityX - 8,
+      lineGap: 0,
     });
 
   doc
     .font("Helvetica")
-    .fontSize(9)
-    .text(companyAddress.toUpperCase(), contactX, doc.y + 2, {
-      width: contactWidth,
-      align: "right",
-      lineGap: 2,
+    .fontSize(8)
+    .fillColor(MUTED)
+    .text(companyAddress, identityX, doc.y + 1, {
+      width: contactX - identityX - 8,
+      lineGap: 1,
     });
 
-  doc.text(`PHONE: ${companyPhone}`, contactX, doc.y + 4, {
+  const companyBlockBottom = Math.max(y + logoSize, doc.y);
+
+  doc
+    .fillColor(BRAND)
+    .font("Helvetica")
+    .fontSize(8)
+    .text(`Phone: ${companyPhone}`, contactX, y, {
+      width: contactWidth,
+      align: "right",
+      lineGap: 1,
+    });
+  doc.text(`GSTIN: ${companyGstin}`, contactX, doc.y + 1, {
     width: contactWidth,
     align: "right",
   });
-  doc.text(`GSTIN: ${companyGstin}`, contactX, doc.y + 2, {
-    width: contactWidth,
-    align: "right",
-  });
+
+  return Math.max(companyBlockBottom, doc.y) + 8;
 }
 
-const BRAND_LOGO_HEIGHT = 36;
-const BRAND_LOGO_MAX_WIDTH = 90;
-const BRAND_LOGO_GAP_X = 12;
-const BRAND_LOGO_GAP_Y = 8;
-const BRAND_LOGO_FOOTER_PAD_TOP = 10;
-const BRAND_LOGO_FOOTER_PAD_BOTTOM = 16;
+function drawPageNumber(doc: PdfDoc, page: number, totalPages: number): void {
+  if (totalPages <= 1) return;
+  doc
+    .fillColor(LIGHT_MUTED)
+    .font("Helvetica")
+    .fontSize(8)
+    .text(`Page ${page} of ${totalPages}`, MARGIN_LEFT, PAGE_HEIGHT - 16, {
+      width: CONTENT_WIDTH,
+      align: "center",
+      lineBreak: false,
+    });
+}
+
+const BRAND_LOGO_HEIGHT = 32;
+const BRAND_LOGO_MAX_WIDTH = 80;
+const BRAND_LOGO_GAP_X = 10;
+const BRAND_LOGO_GAP_Y = 6;
+const BRAND_LOGO_FOOTER_PAD_TOP = 8;
+const BRAND_LOGO_FOOTER_PAD_BOTTOM = 22;
 
 function brandLogosPerRow(): number {
   const slot = BRAND_LOGO_MAX_WIDTH + BRAND_LOGO_GAP_X;
@@ -360,14 +398,17 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
   return new Promise((resolve, reject) => {
     const brandLogos = input.brandLogos || [];
     const footerHeight = measureBrandLogoFooterHeight(brandLogos.length);
-    const contentBottom = PAGE_HEIGHT - Math.max(MARGIN_TOP, footerHeight) - 12;
+    // Reserve space for page numbers on multi-page docs
+    const pageNumberReserve = 18;
+    const contentBottom =
+      PAGE_HEIGHT - Math.max(MARGIN_TOP, footerHeight + pageNumberReserve) - 8;
 
     const doc = new PDFDocument({
       size: "A4",
       bufferPages: true,
       margins: {
         top: MARGIN_TOP,
-        bottom: Math.max(MARGIN_TOP, footerHeight),
+        bottom: Math.max(MARGIN_TOP, footerHeight + pageNumberReserve),
         left: MARGIN_LEFT,
         right: MARGIN_RIGHT,
       },
@@ -389,23 +430,16 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       CONTENT_WIDTH * 0.22,
     ];
 
-    drawHeader(doc, input.gstPercent, input.companyProfile);
+    // Title → company details
+    let y = drawHeader(doc, input.companyProfile);
 
-    let y = MARGIN_TOP + 100;
-
-    doc
-      .fillColor(BRAND)
-      .font("Helvetica-Bold")
-      .fontSize(28)
-      .text("QUOTATION", MARGIN_LEFT, y, { width: CONTENT_WIDTH, align: "center", characterSpacing: 2 });
-
-    y = doc.y + 24;
-    const leftColWidth = CONTENT_WIDTH * 0.58;
-    const rightColX = MARGIN_LEFT + leftColWidth + 24;
-    const labelWidth = 88;
+    // Meta + customer
+    const leftColWidth = CONTENT_WIDTH * 0.55;
+    const rightColX = MARGIN_LEFT + leftColWidth + 16;
+    const labelWidth = 78;
     const infoStartY = y;
 
-    doc.fillColor(INK).font("Helvetica").fontSize(10);
+    doc.fillColor(INK).font("Helvetica").fontSize(9);
     const infoLines: Array<[string, string]> = [
       ["Quotation No:", `#${input.quotationNumber}`],
       ["Date:", formatDateDdMmYyyy(now)],
@@ -415,29 +449,29 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     for (const [label, value] of infoLines) {
       doc.font("Helvetica-Bold").text(label, MARGIN_LEFT, y, { width: labelWidth, continued: false });
       doc.font("Helvetica").text(value, MARGIN_LEFT + labelWidth, y);
-      y += 16;
+      y += 13;
     }
 
     doc
       .fillColor(INK)
       .font("Helvetica-Bold")
-      .fontSize(11)
+      .fontSize(10)
       .text((input.customer.name || "Customer").toUpperCase(), rightColX, infoStartY, {
-        width: CONTENT_WIDTH - leftColWidth - 24,
+        width: CONTENT_WIDTH - leftColWidth - 16,
       });
     doc
       .font("Helvetica")
-      .fontSize(10)
+      .fontSize(9)
       .fillColor(MUTED)
-      .text(input.customer.company || "—", rightColX, doc.y + 2)
-      .text(input.customer.phone || "—", rightColX, doc.y + 2);
+      .text(input.customer.company || "—", rightColX, doc.y + 1)
+      .text(input.customer.phone || "—", rightColX, doc.y + 1);
 
-    y = Math.max(y, doc.y) + 10;
+    y = Math.max(y, doc.y) + 6;
     drawDivider(doc, y);
-    y += 18;
+    y += 10;
 
     drawTableHeader(doc, y, colWidths);
-    y += 24;
+    y += 20;
 
     for (const item of input.items) {
       if (y > contentBottom - 80) {
@@ -574,12 +608,14 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
       .stroke();
     doc.text("Date signed", rightSigX, sigY + 6, { width: sigWidth, align: "center" });
 
-    if (brandLogos.length) {
-      const range = doc.bufferedPageRange();
-      for (let i = range.start; i < range.start + range.count; i++) {
-        doc.switchToPage(i);
+    const range = doc.bufferedPageRange();
+    const totalPages = range.count;
+    for (let i = 0; i < totalPages; i++) {
+      doc.switchToPage(range.start + i);
+      if (brandLogos.length) {
         drawBrandLogoFooter(doc, brandLogos);
       }
+      drawPageNumber(doc, i + 1, totalPages);
     }
 
     doc.end();
