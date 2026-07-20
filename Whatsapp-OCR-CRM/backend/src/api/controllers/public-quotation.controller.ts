@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { getBuffer } from "../../lib/s3";
+import { ensureQuotationTallyXml } from "../../services/quotation.service";
 import { logger } from "../../utils/logger";
 
 export async function downloadQuotationPdf(req: Request, res: Response) {
@@ -31,5 +32,29 @@ export async function downloadQuotationPdf(req: Request, res: Response) {
   } catch (error) {
     logger.error(`Failed to serve quotation PDF ${id}: ${error}`);
     return res.status(500).send("Failed to load quotation");
+  }
+}
+
+export async function downloadQuotationTally(req: Request, res: Response) {
+  const { id } = req.params;
+
+  try {
+    const quotation = await prisma.quotation.findUnique({ where: { id } });
+    if (!quotation) {
+      return res.status(404).send("Quotation not found");
+    }
+
+    const tallyKey = await ensureQuotationTallyXml(id);
+    const buffer = await getBuffer(tallyKey);
+    const filename = `${quotation.number}.xml`;
+
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error) {
+    logger.error(`Failed to serve quotation Tally XML ${id}: ${error}`);
+    return res.status(500).send("Failed to load Tally XML");
   }
 }

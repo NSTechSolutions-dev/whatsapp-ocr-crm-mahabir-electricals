@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Send, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, timeAgo } from "../../../../lib/format";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Customer {
   id: string;
@@ -53,6 +54,7 @@ export default function QuotationPreviewPage() {
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [searching, setSearching] = useState(false);
+  const [downloadFormatOpen, setDownloadFormatOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -341,10 +343,10 @@ export default function QuotationPreviewPage() {
               <Button
                 variant="outline"
                 className="w-full border-line hover:bg-surface-hover text-ink mt-2"
-                onClick={() => window.open(`/api/public/quotations/${id}/pdf?download=1`, "_blank")}
+                onClick={() => setDownloadFormatOpen(true)}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download PDF
+                Download
               </Button>
             )}
             
@@ -382,6 +384,46 @@ export default function QuotationPreviewPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={downloadFormatOpen} onOpenChange={setDownloadFormatOpen}>
+        <DialogContent className="max-w-sm bg-surface border-line text-ink">
+          <DialogHeader>
+            <DialogTitle className="font-display text-ink">Download quotation</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-ink-muted">
+            Choose PDF for WhatsApp/customer use, or Tally XML to import into TallyPrime.
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="border-line justify-start h-10"
+              onClick={() => {
+                window.open(`/api/public/quotations/${id}/pdf?download=1`, "_blank");
+                setDownloadFormatOpen(false);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download as PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="border-line justify-start h-10"
+              onClick={() => {
+                window.open(`/api/public/quotations/${id}/tally?download=1`, "_blank");
+                setDownloadFormatOpen(false);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download for Tally (XML)
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDownloadFormatOpen(false)} className="text-ink-muted">
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

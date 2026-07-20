@@ -134,6 +134,7 @@ export async function getQuotation(req: Request, res: Response) {
       createdAt: q.createdAt.toISOString(),
       presignedUrl,
       pdfReady,
+      tallyReady: Boolean(q.tallyS3Key),
       enquiry: q.enquiry,
       customer: billCustomer,
       billCustomer,

@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package, RefreshCw, Download } from "lucide-react";
+import { Plus, Trash2, Send, ArrowLeft, CheckCircle2, Search, UserPlus, X, ChevronDown, ChevronUp, Clock, Package, RefreshCw, Download, BookmarkPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { formatINR, timeAgo, formatDate } from "../../../../lib/format";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
@@ -96,6 +96,9 @@ export default function UnifiedEnquiryPage() {
   const [quotation, setQuotation] = useState<QuotationData | null>(null);
   const [sending, setSending] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   
   // Custom customer send state
   const [customMode, setCustomMode] = useState(false);
@@ -113,6 +116,7 @@ export default function UnifiedEnquiryPage() {
   const [newUnitRate, setNewUnitRate] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
   const [retryingBatch, setRetryingBatch] = useState(false);
+  const [downloadFormatOpen, setDownloadFormatOpen] = useState(false);
 
   const handleAddUnit = async () => {
     if (!newUnitName.trim() || !newUnitRate.trim() || addingUnitForRow === null) return;
@@ -568,12 +572,66 @@ export default function UnifiedEnquiryPage() {
     company: billCustomerCompany || data?.customer?.company || "",
   };
 
-  const downloadQuotation = () => {
+  const openDownloadChooser = () => {
     if (!quotationId) {
       toast.error("Quotation not available yet");
       return;
     }
-    window.open(`/api/public/quotations/${quotationId}/pdf?download=1`, "_blank");
+    setDownloadFormatOpen(true);
+  };
+
+  const downloadQuotation = (format: "pdf" | "tally") => {
+    if (!quotationId) {
+      toast.error("Quotation not available yet");
+      return;
+    }
+    const path =
+      format === "tally"
+        ? `/api/public/quotations/${quotationId}/tally?download=1`
+        : `/api/public/quotations/${quotationId}/pdf?download=1`;
+    window.open(path, "_blank");
+    setDownloadFormatOpen(false);
+  };
+
+  const openSaveAsTemplate = () => {
+    const base =
+      data?.customer?.name ||
+      billCustomerName ||
+      quotation?.number ||
+      "Quotation";
+    setTemplateName(`${base} template`);
+    setSaveTemplateOpen(true);
+  };
+
+  const saveAsTemplate = async () => {
+    const title = templateName.trim();
+    if (!title) {
+      toast.error("Template name is required");
+      return;
+    }
+    if (!hasItems) {
+      toast.error("Add line items before saving a template");
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      // Persist current line items so the template matches the editor
+      if (!isLocked) {
+        await api.put(`/enquiries/${id}`, {
+          items: serializeRows(),
+          ...billPayload(),
+        });
+        setHasUnsavedChanges(false);
+      }
+      await api.post(`/quotation-templates/from-enquiry/${id}`, { name: title });
+      toast.success("Saved as template");
+      setSaveTemplateOpen(false);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || formatUserErrorMessage(e?.message, "Failed to save template"));
+    } finally {
+      setSavingTemplate(false);
+    }
   };
 
   if (!data) return <div className="p-8 text-ink-muted">Loading…</div>;
@@ -661,9 +719,22 @@ export default function UnifiedEnquiryPage() {
               )}
             </Button>
             {hasQuotation && (
-              <Button variant="outline" size="sm" onClick={downloadQuotation} className="h-7 px-2.5 text-xs border-line">
+              <Button variant="outline" size="sm" onClick={openDownloadChooser} className="h-7 px-2.5 text-xs border-line">
                 <Download className="h-3 w-3 mr-1" />
                 Download
+              </Button>
+            )}
+            {hasItems && !isLocked && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openSaveAsTemplate}
+                disabled={savingTemplate}
+                className="h-7 px-2.5 text-xs border-line"
+                data-testid="save-as-template-button"
+              >
+                <BookmarkPlus className="h-3 w-3 mr-1" />
+                Save as template
               </Button>
             )}
             {!isFinalized ? (
@@ -1210,12 +1281,23 @@ export default function UnifiedEnquiryPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={downloadQuotation}
+                  onClick={openDownloadChooser}
                   size="sm"
                   className="h-7 text-xs border-line"
                 >
                   <Download className="h-3 w-3 mr-1" />
                   Download
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openSaveAsTemplate}
+                  disabled={savingTemplate || !hasItems}
+                  size="sm"
+                  className="h-7 text-xs border-line"
+                >
+                  <BookmarkPlus className="h-3 w-3 mr-1" />
+                  Save as template
                 </Button>
                 <Button
                   type="button"
@@ -1239,6 +1321,73 @@ export default function UnifiedEnquiryPage() {
           )}
         </div>
         )}
+      <Dialog open={downloadFormatOpen} onOpenChange={setDownloadFormatOpen}>
+        <DialogContent className="max-w-sm bg-surface border-line text-ink">
+          <DialogHeader>
+            <DialogTitle className="font-display text-ink">Download quotation</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-ink-muted">
+            Choose PDF for WhatsApp/customer use, or Tally XML to import into TallyPrime.
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="border-line justify-start h-10"
+              onClick={() => downloadQuotation("pdf")}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download as PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="border-line justify-start h-10"
+              onClick={() => downloadQuotation("tally")}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download for Tally (XML)
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDownloadFormatOpen(false)} className="text-ink-muted">
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={saveTemplateOpen} onOpenChange={setSaveTemplateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save as template</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-ink-muted">
+            Saves the current line items and GST settings so you can reuse them later from Saved
+            Quotations. This does not send anything.
+          </p>
+          <div className="py-2">
+            <Label className="text-xs uppercase tracking-wider text-ink-muted">Template name</Label>
+            <Input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              className="mt-1.5 border-line"
+              placeholder="e.g. Standard cable pack"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveTemplateOpen(false)} className="border-line">
+              Cancel
+            </Button>
+            <Button
+              onClick={saveAsTemplate}
+              disabled={savingTemplate}
+              className="bg-brand hover:bg-brand-hover text-white"
+            >
+              <BookmarkPlus className="h-3.5 w-3.5 mr-1.5" />
+              {savingTemplate ? "Saving…" : "Save template"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={addingUnitForRow !== null} onOpenChange={(o) => !o && setAddingUnitForRow(null)}>
         <DialogContent className="bg-surface border-line max-w-sm text-ink">
           <DialogHeader>

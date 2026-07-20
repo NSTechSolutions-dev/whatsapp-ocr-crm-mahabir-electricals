@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { upload, getPresignedUrl, getBuffer } from "../lib/s3";
 import { buildQuotationPdfBuffer } from "../lib/quotation-pdf";
+import { buildQuotationTallyXml } from "../lib/quotation-tally-xml";
 import { logger } from "../utils/logger";
 import { calculateGstTotals, type GstMode } from "../utils/gst-calculation";
 
@@ -141,20 +142,96 @@ async function saveQuotationPdfForEnquiry(
   await upload(key, buffer, "application/pdf");
   const presignedUrl = await getPresignedUrl(key);
 
+  const billCustomer = resolveBillCustomer(enquiry);
+  const tallyXml = buildQuotationTallyXml({
+    quotationNumber,
+    date: now,
+    customer: billCustomer,
+    items: enquiry.items,
+    gstPercent: percent,
+    gstMode: mode,
+    totals: { subtotal, deliveryCharge, gstAmount, roundOff, grandTotal },
+  });
+  const tallyKey = `quotations/${year}/${month}/${enquiry.id}.xml`;
+  await upload(tallyKey, Buffer.from(tallyXml, "utf8"), "application/xml");
+
   return prisma.quotation.upsert({
     where: { enquiryId: enquiry.id },
     update: {
       s3Key: key,
       s3Url: presignedUrl,
+      tallyS3Key: tallyKey,
       number: quotationNumber,
     },
     create: {
       enquiryId: enquiry.id,
       s3Key: key,
       s3Url: presignedUrl,
+      tallyS3Key: tallyKey,
       number: quotationNumber,
     },
   });
+}
+
+/** Ensure Tally XML exists for a quotation (rebuild from enquiry if missing). */
+export async function ensureQuotationTallyXml(quotationId: string): Promise<string> {
+  const quotation = await prisma.quotation.findUnique({
+    where: { id: quotationId },
+    include: {
+      enquiry: {
+        include: {
+          customer: true,
+          items: true,
+        },
+      },
+    },
+  });
+
+  if (!quotation) {
+    throw new Error("Quotation not found");
+  }
+
+  if (quotation.tallyS3Key) {
+    try {
+      await getBuffer(quotation.tallyS3Key);
+      return quotation.tallyS3Key;
+    } catch {
+      logger.warn(`Tally XML missing at ${quotation.tallyS3Key}, regenerating`);
+    }
+  }
+
+  const enquiry = quotation.enquiry;
+  const percent = enquiry.gstPercent ?? 18;
+  const mode = (enquiry.gstMode ?? "exclusive") as GstMode;
+  const delivery = enquiry.deliveryCharge ?? 0;
+  const lineItems = enquiry.items.map((item) => ({
+    qty: item.qty,
+    rate: item.rate || 0,
+  }));
+  const totals = calculateGstTotals(lineItems, percent, mode, delivery);
+  const billCustomer = resolveBillCustomer(enquiry);
+  const tallyXml = buildQuotationTallyXml({
+    quotationNumber: quotation.number,
+    date: quotation.createdAt,
+    customer: billCustomer,
+    items: enquiry.items,
+    gstPercent: percent,
+    gstMode: mode,
+    totals,
+  });
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const tallyKey = `quotations/${year}/${month}/${enquiry.id}.xml`;
+  await upload(tallyKey, Buffer.from(tallyXml, "utf8"), "application/xml");
+
+  await prisma.quotation.update({
+    where: { id: quotationId },
+    data: { tallyS3Key: tallyKey },
+  });
+
+  return tallyKey;
 }
 
 export async function isQuotationPdfReady(s3Key: string): Promise<boolean> {

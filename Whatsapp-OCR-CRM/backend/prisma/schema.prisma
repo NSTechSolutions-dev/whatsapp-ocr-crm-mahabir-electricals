@@ -51,8 +51,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  enquiries    Enquiry[]
-  activityLogs ActivityLog[]
+  enquiries          Enquiry[]
+  activityLogs       ActivityLog[]
+  quotationTemplates QuotationTemplate[]
 }
 
 model Customer {
@@ -222,15 +223,32 @@ model Notification {
 }
 
 model Quotation {
-  id        String    @id @default(cuid())
-  enquiryId String    @unique
-  s3Key     String
-  s3Url     String
-  number    String    @unique
-  sentAt    DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  enquiryId  String    @unique
+  s3Key      String
+  s3Url      String
+  tallyS3Key String?
+  number     String    @unique
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
 
   enquiry Enquiry @relation(fields: [enquiryId], references: [id])
+}
+
+model QuotationTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  gstPercent     Float    @default(18)
+  gstMode        String   @default("exclusive")
+  deliveryCharge Float    @default(0)
+  items          Json
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([createdAt])
 }
 
 model AutomationRule {

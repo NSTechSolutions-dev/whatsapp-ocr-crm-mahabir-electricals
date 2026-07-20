@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mahabir CRM — Automation Data Flows</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --ink: #1a202c;
+      --muted: #4a5568;
+      --line: #e2e8f0;
+      --brand: #7f1d1d;
+      --canvas: #f7fafc;
+      --surface: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+      line-height: 1.55;
+    }
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 2rem 1.5rem 1.75rem;
+    }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.65rem; font-weight: 650; }
+    header p { margin: 0; opacity: 0.9; font-size: 0.95rem; max-width: 52rem; }
+    main { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1.25rem 1.35rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.2rem;
+      color: var(--brand);
+    }
+    h3 { margin: 1.1rem 0 0.4rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    p, li { font-size: 0.95rem; color: var(--ink); }
+    ul { padding-left: 1.2rem; margin: 0.4rem 0 0.8rem; }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.6rem;
+      margin: 0.75rem 0 1rem;
+    }
+    .meta div {
+      background: var(--canvas);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      font-size: 0.85rem;
+    }
+    .meta strong { display: block; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
+    .diagram {
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.75rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+    code {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.84em;
+      background: #edf2f7;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 0.5rem; }
+    th, td { border: 1px solid var(--line); padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+    th { background: var(--canvas); color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1rem 0 2rem; }
+    .toc a { color: var(--brand); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    @media print {
+      header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mahabir CRM — Automation Data Flows</h1>
+    <p>
+      How the four WhatsApp automations are triggered, filtered, queued, and delivered.
+      Generated from the production backend automation services.
+    </p>
+  </header>
+
+  <main>
+    <section class="card toc">
+      <h2>Overview</h2>
+      <p>
+        All automations end in the same delivery path: a BullMQ job on
+        <code>automationQueue</code> → worker in <code>automation.job.ts</code> →
+        <code>sendTemplateMessage</code> (MSG91) → outbound WhatsApp message in the customer inbox.
+      </p>
+      <ol>
+        <li><a href="#inquiry-followup">Inquiry Follow-up</a> — delayed after quotation send</li>
+        <li><a href="#price-drop">Price Drop Alert</a> — event-driven on inventory rate change</li>
+        <li><a href="#repeat-engagement">Repeat Engagement</a> — daily cron for inactive pipeline leads</li>
+        <li><a href="#enquiry-reminder">Last Inquiry Reminder</a> — daily cron for unanswered sent quotes</li>
+      </ol>
+
+      <h3>Shared architecture</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+  Trigger[Trigger source] --> Filter[Eligibility filters]
+  Filter --> Queue[BullMQ automationQueue]
+  Queue --> Worker[automationWorker]
+  Worker --> WA[sendTemplateMessage MSG91]
+  WA --> Inbox[WhatsAppMessage OUTBOUND in Conversation]
+  Worker --> JobRow[ScheduledJob COMPLETED or FAILED]
+        </pre>
+      </div>
+    </section>
+
+    <!-- 1 -->
+    <section class="card" id="inquiry-followup">
+      <h2>1. Inquiry Follow-up</h2>
+      <div class="meta">
+        <div><strong>Trigger type</strong>inquiry_followup</div>
+        <div><strong>When</strong>Immediately after quotation is sent</div>
+        <div><strong>Delay</strong>N days (default 3)</div>
+        <div><strong>Template</strong>mahabir_inquiry_followup</div>
+        <div><strong>Variables</strong>{{1}} name, {{2}} quote number</div>
+      </div>
+      <p>
+        When staff send a quotation (enquiry page, quotation page, or saved-template send),
+        the system schedules a delayed follow-up for each active
+        <code>inquiry_followup</code> rule. The message only goes out if the customer has not replied since the quote was sent.
+      </p>
+
+      <h3>Data flow</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+  participant User as Staff / Send API
+  participant Send as sendQuotation
+  participant Sched as scheduleInquiryFollowup
+  participant DB as Postgres
+  participant Redis as BullMQ delay
+  participant Worker as automationWorker
+  participant WA as MSG91 WhatsApp
+
+  User->>Send: POST /quotations/:id/send
+  Send->>WA: Send PDF quotation template
+  Send->>DB: enquiry status SENT, quotation.sentAt
+  Send->>Sched: For each active inquiry_followup rule
+  Sched->>DB: Create ScheduledJob PENDING
+  Sched->>Redis: Add job inquiry_followup with delay N days
+  Note over Redis: Waits N days
+  Redis->>Worker: Job due
+  Worker->>DB: Load enquiry + quotation
+  alt quotation not SENT or no sentAt
+    Worker->>DB: Mark skipped
+  else customer sent INBOUND after sentAt
+    Worker->>DB: Mark skipped customer_replied
+  else eligible
+    Worker->>WA: mahabir_inquiry_followup
+    Worker->>DB: ScheduledJob COMPLETED + inbox message
+  end
+        </pre>
+      </div>
+
+      <h3>Skip conditions (at send time)</h3>
+      <ul>
+        <li>Rule inactive or customer missing</li>
+        <li>Quotation not in <code>SENT</code> status / missing <code>sentAt</code></li>
+        <li>Customer already replied (inbound message after <code>sentAt</code>)</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section class="card" id="price-drop">
+      <h2>2. Price Drop Alert</h2>
+      <div class="meta">
+        <div><strong>Trigger type</strong>price_drop_alert</div>
+        <div><strong>When</strong>Inventory rate is lowered</div>
+        <div><strong>Threshold</strong>Optional % drop (default 0 = any drop)</div>
+        <div><strong>Window</strong>Latest enquiry within maxInquiryAgeDays (default 30)</div>
+        <div><strong>Template</strong>mahabir_price_drop</div>
+        <div><strong>Variables</strong>name, product, old rate, new rate</div>
+      </div>
+      <p>
+        When an inventory product rate is updated downward, <code>triggerPriceDrop</code> finds
+        customers who previously had that product on an enquiry and notifies them — if they are not Closed and their latest enquiry is recent enough.
+      </p>
+
+      <h3>Data flow</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A[Admin updates inventory rate] --> B{newRate less than oldRate?}
+  B -->|No| Z[Exit no jobs]
+  B -->|Yes| C[Load active price_drop_alert rules]
+  C --> D[Find EnquiryItems with this inventoryId]
+  D --> E[Unique customerIds from those enquiries]
+  E --> F{Drop percent meets threshold?}
+  F -->|No| Z
+  F -->|Yes| G[For each customer]
+  G --> H{stage is Closed?}
+  H -->|Yes| Skip[Skip]
+  H -->|No| I{Latest enquiry within maxInquiryAgeDays?}
+  I -->|No| Skip
+  I -->|Yes| J[enqueueAutomationJob price_drop_alert]
+  J --> K[Worker sends mahabir_price_drop]
+  K --> L[Inbox OUTBOUND + ScheduledJob COMPLETED]
+        </pre>
+      </div>
+
+      <h3>Key filters</h3>
+      <ul>
+        <li>Only fires when <code>newRate &lt; oldRate</code></li>
+        <li>Optional minimum drop % via <code>triggerParams.threshold</code></li>
+        <li>Customer stage must not be <code>Closed</code></li>
+        <li>Latest enquiry must be newer than <code>maxInquiryAgeDays</code></li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section class="card" id="repeat-engagement">
+      <h2>3. Repeat Engagement</h2>
+      <div class="meta">
+        <div><strong>Trigger type</strong>repeat_engagement</div>
+        <div><strong>When</strong>Daily cron (default 09:00 IST)</div>
+        <div><strong>Inactive period</strong>inactiveDays (default 30)</div>
+        <div><strong>Stages</strong>Lead, Contacted, Proposal, Negotiation</div>
+        <div><strong>Template</strong>mahabir_repeat_engagement</div>
+        <div><strong>Variables</strong>{{1}} customer name</div>
+      </div>
+      <p>
+        A node-cron job (Asia/Kolkata) runs once per day. It finds customers still in open pipeline
+        stages whose <strong>latest enquiry is older than</strong> the inactive window, and who have
+        not already been messaged by this rule in that window.
+      </p>
+
+      <h3>Data flow</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+  participant Cron as node-cron IST
+  participant Svc as triggerRepeatEngagement
+  participant DB as Postgres
+  participant Q as automationQueue
+  participant Worker as automationWorker
+  participant WA as MSG91
+
+  Cron->>Svc: Daily tick at scheduleTime
+  Svc->>DB: Active repeat_engagement rules
+  loop Each customer in configured stages
+    Svc->>DB: Latest enquiry
+    alt No enquiry OR enquiry newer than inactiveDays
+      Svc-->>Svc: Skip
+    else Already has ScheduledJob in window
+      Svc-->>Svc: Skip dedupe
+    else Eligible
+      Svc->>Q: enqueue repeat_engagement
+    end
+  end
+  Svc->>DB: recordCronTick summary
+  Q->>Worker: Process job
+  Worker->>WA: mahabir_repeat_engagement
+  Worker->>DB: COMPLETED + inbox message
+        </pre>
+      </div>
+
+      <h3>Eligibility</h3>
+      <ul>
+        <li>Customer <code>stage</code> in configured open stages</li>
+        <li>Latest enquiry <code>createdAt</code> ≤ now − inactiveDays</li>
+        <li>No recent PENDING/PROCESSING/COMPLETED job for this rule+customer since cutoff</li>
+      </ul>
+    </section>
+
+    <!-- 4 -->
+    <section class="card" id="enquiry-reminder">
+      <h2>4. Last Inquiry Reminder</h2>
+      <div class="meta">
+        <div><strong>Trigger type</strong>enquiry_reminder</div>
+        <div><strong>When</strong>Daily cron (default 09:00 IST)</div>
+        <div><strong>Age</strong>daysSinceSent (default 7)</div>
+        <div><strong>Stages</strong>Any except Closed</div>
+        <div><strong>Template</strong>mahabir_enquiry_reminder</div>
+        <div><strong>Variables</strong>{{1}} name, {{2}} quote ref</div>
+      </div>
+      <p>
+        Daily cron finds non-Closed customers whose most recent <strong>sent</strong> quotation
+        is older than N days and who have not replied since that send. Reminds them about that quote.
+      </p>
+
+      <h3>Data flow</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  Cron[Daily cron enquiry_reminder] --> Rules[Load active rules]
+  Rules --> Cust[Customers where stage not Closed]
+  Cust --> Last[Find latest SENT enquiry with quotation.sentAt]
+  Last --> Age{sentAt older than daysSinceSent?}
+  Age -->|No| Skip[Skip]
+  Age -->|Yes| Reply{Inbound message after sentAt?}
+  Reply -->|Yes| Skip
+  Reply -->|No| Dedupe{Recent job for rule+customer?}
+  Dedupe -->|Yes| Skip
+  Dedupe -->|No| Enq[enqueue enquiry_reminder]
+  Enq --> Worker[Worker checks rule active and stage]
+  Worker --> Send[send mahabir_enquiry_reminder]
+  Send --> Done[Inbox + ScheduledJob COMPLETED]
+        </pre>
+      </div>
+
+      <h3>Eligibility</h3>
+      <ul>
+        <li>Customer stage ≠ <code>Closed</code></li>
+        <li>Has a SENT enquiry with <code>quotation.sentAt</code></li>
+        <li><code>sentAt</code> is older than <code>daysSinceSent</code></li>
+        <li>No inbound reply after that <code>sentAt</code></li>
+        <li>No recent execution of this rule for the customer in the same window</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Comparison</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Automation</th>
+            <th>Trigger style</th>
+            <th>Primary input</th>
+            <th>WhatsApp template</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Inquiry Follow-up</td>
+            <td>Event + delayed queue</td>
+            <td>Quotation send</td>
+            <td><code>mahabir_inquiry_followup</code></td>
+          </tr>
+          <tr>
+            <td>Price Drop Alert</td>
+            <td>Event (immediate)</td>
+            <td>Inventory rate decrease</td>
+            <td><code>mahabir_price_drop</code></td>
+          </tr>
+          <tr>
+            <td>Repeat Engagement</td>
+            <td>Daily cron</td>
+            <td>Inactive open-pipeline customers</td>
+            <td><code>mahabir_repeat_engagement</code></td>
+          </tr>
+          <tr>
+            <td>Last Inquiry Reminder</td>
+            <td>Daily cron</td>
+            <td>Old unanswered sent quotations</td>
+            <td><code>mahabir_enquiry_reminder</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Key source files</h3>
+      <ul>
+        <li><code>backend/src/config/automation-rules.ts</code> — rule definitions &amp; defaults</li>
+        <li><code>backend/src/services/automation.service.ts</code> — trigger / schedule logic</li>
+        <li><code>backend/src/services/automation-execution.service.ts</code> — enqueue &amp; job records</li>
+        <li><code>backend/src/jobs/automation-cron.ts</code> — daily IST schedules</li>
+        <li><code>backend/src/jobs/automation.job.ts</code> — BullMQ worker → WhatsApp send</li>
+        <li><code>backend/src/api/controllers/quotation.controller.ts</code> — schedules inquiry follow-up on send</li>
+        <li><code>backend/src/api/controllers/inventory.controller.ts</code> — calls price-drop trigger</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    Mahabir Electricals CRM · Automation data flows · Open this file in any browser · Print / Save as PDF via Ctrl+P
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "neutral",
+      securityLevel: "loose",
+      flowchart: { curve: "basis" },
+      sequence: { mirrorActors: false },
+    });
+  </script>
+</body>
+</html>
