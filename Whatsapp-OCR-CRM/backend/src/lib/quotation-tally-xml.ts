@@ -51,10 +51,8 @@ function unitLabel(unit?: string | null): string {
   return u || "nos";
 }
 
-/**
- * Build a TallyPrime-importable Quotation voucher XML from quotation data.
- */
-export function buildQuotationTallyXml(input: TallyXmlInput): string {
+/** Build a single TALLYMESSAGE block for one quotation voucher. */
+export function buildQuotationTallyMessage(input: TallyXmlInput): string {
   const date = input.date ?? new Date();
   const dateStr = formatTallyDate(date);
   const party = partyName(input.customer);
@@ -97,7 +95,6 @@ export function buildQuotationTallyXml(input: TallyXmlInput): string {
 
   const ledgerParts: string[] = [];
 
-  // Party ledger (receivable) — negative amount in Tally invoice convention
   ledgerParts.push(`      <LEDGERENTRIES.LIST>
         <LEDGERNAME>${escapeXml(party)}</LEDGERNAME>
         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
@@ -136,21 +133,7 @@ export function buildQuotationTallyXml(input: TallyXmlInput): string {
     `GST mode: ${gstMode}`,
   ].filter(Boolean);
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<ENVELOPE>
-  <HEADER>
-    <VERSION>1</VERSION>
-    <TALLYREQUEST>Import</TALLYREQUEST>
-    <TYPE>Data</TYPE>
-    <ID>Vouchers</ID>
-  </HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>Vouchers</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+  return `        <TALLYMESSAGE xmlns:UDF="TallyUDF">
           <VOUCHER VCHTYPE="Quotation" ACTION="Create" OBJVIEW="Invoice Voucher View">
             <DATE>${dateStr}</DATE>
             <VCHDATE>${dateStr}</VCHDATE>
@@ -166,10 +149,36 @@ export function buildQuotationTallyXml(input: TallyXmlInput): string {
 ${inventoryBlocks}
 ${ledgerParts.join("\n")}
           </VOUCHER>
-        </TALLYMESSAGE>
+        </TALLYMESSAGE>`;
+}
+
+/** Wrap one or more TALLYMESSAGE blocks in a Tally Import ENVELOPE. */
+export function buildTallyImportEnvelope(messages: string[]): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Import</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>Vouchers</ID>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Vouchers</REPORTNAME>
+      </REQUESTDESC>
+      <REQUESTDATA>
+${messages.join("\n")}
       </REQUESTDATA>
     </IMPORTDATA>
   </BODY>
 </ENVELOPE>
 `;
+}
+
+/**
+ * Build a TallyPrime-importable Quotation voucher XML from quotation data.
+ */
+export function buildQuotationTallyXml(input: TallyXmlInput): string {
+  return buildTallyImportEnvelope([buildQuotationTallyMessage(input)]);
 }

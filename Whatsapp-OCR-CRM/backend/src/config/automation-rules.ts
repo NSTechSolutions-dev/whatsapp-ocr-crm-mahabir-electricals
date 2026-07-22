@@ -26,6 +26,16 @@ export const MSG91_TEMPLATE_DOCS = {
     variables: ["customer_name", "quote_ref"],
     sample: "Hi {{1}}, following up on quote {{2}}. — Mahabir Electricals",
   },
+  mahabir_gallery_catalog: {
+    variables: ["customer_name", "gallery_name"],
+    sample:
+      "Hi {{1}}, Please find our {{2}} catalog attached from Mahabir Electricals. If you have any questions or would like a quotation, reply to this message. Call Us",
+  },
+  image_gallery: {
+    variables: ["customer_name", "gallery_name"],
+    sample:
+      "Hi {{1}}, Please find our {{2}} catalog attached from Mahabir Electricals. Header: document PDF. Namespace: null.",
+  },
 } as const;
 
 export interface RuleDefinition {

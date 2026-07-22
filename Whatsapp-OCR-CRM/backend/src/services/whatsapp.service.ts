@@ -12,6 +12,7 @@ function buildTemplateContent(templateName: string, variables: string[], hasDocu
 export interface TemplateMessageOptions {
   variables?: string[];
   documentHeader?: Msg91DocumentHeader;
+  templateNamespace?: string | null;
 }
 
 export async function sendImageMessage(
@@ -89,11 +90,13 @@ export async function sendTemplateMessage(
 
     let variables: string[];
     let documentHeader: Msg91DocumentHeader | undefined;
+    let templateNamespace: string | null | undefined;
     if (Array.isArray(variablesOrOptions)) {
       variables = variablesOrOptions;
     } else {
       variables = variablesOrOptions.variables || [];
       documentHeader = variablesOrOptions.documentHeader;
+      templateNamespace = variablesOrOptions.templateNamespace;
     }
 
     let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
@@ -134,6 +137,7 @@ export async function sendTemplateMessage(
       templateName,
       variables,
       documentHeader,
+      templateNamespace,
     });
 
     await prisma.conversation.update({

@@ -144,7 +144,7 @@ export default function AutomationRuleDetailPage() {
   }
 
   return (
-    <div className="p-6 lg:p-10 text-ink max-w-5xl">
+    <div className="p-8 lg:p-12 text-ink max-w-5xl">
       <Link
         href="/automation"
         className="inline-flex items-center gap-1.5 text-sm text-brand hover:text-brand-hover mb-6"
@@ -155,11 +155,11 @@ export default function AutomationRuleDetailPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+          <div className="text-xs uppercase tracking-wider text-ink-muted">
             {meta?.label || rule.triggerType}
           </div>
-          <h1 className="font-display text-2xl font-semibold mt-1">{meta?.label || name}</h1>
-          <p className="text-sm text-ink-muted mt-1">{rule.description || meta?.description}</p>
+          <h1 className="font-display text-3xl font-semibold mt-1">{meta?.label || name}</h1>
+          <p className="text-sm text-ink-muted mt-2">{rule.description || meta?.description}</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={load} className="border-line">

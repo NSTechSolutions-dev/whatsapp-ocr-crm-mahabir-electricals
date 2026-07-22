@@ -15,6 +15,22 @@ If you have any questions or need changes, please reply to this message. We are 
 
 Call Us`,
 
+  mahabir_gallery_catalog: `Hi {{1}},
+
+Please find our {{2}} catalog attached from Mahabir Electricals.
+
+If you have any questions or would like a quotation, reply to this message.
+
+Call Us`,
+
+  image_gallery: `Hi {{1}},
+
+Please find our {{2}} catalog attached from Mahabir Electricals.
+
+If you have any questions or would like a quotation, reply to this message.
+
+Call Us`,
+
   mahabir_price_drop: `Hi {{1}},
 
 Good news from Mahabir Electricals!
@@ -77,10 +93,7 @@ export function renderWhatsappTemplate(templateName: string, variables: string[]
 export function buildStoredTemplateContent(
   templateName: string,
   variables: string[],
-  hasDocument: boolean
+  _hasDocument: boolean
 ): string {
-  if (hasDocument && variables[0]) {
-    return renderWhatsappTemplate("mahabir_quotation_pdf_delivery", [variables[0]]);
-  }
   return renderWhatsappTemplate(templateName, variables);
 }

@@ -9,11 +9,16 @@ import {
   calculateGstTotals,
   type GstMode,
 } from "../../services/quotation.service";
+import {
+  buildQuotationTallyMessage,
+  buildTallyImportEnvelope,
+} from "../../lib/quotation-tally-xml";
 import { getQuotationPdfPublicUrl } from "../../utils/public-url";
 import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
 import { normalizePhone, normalizePhoneOrNull } from "../../utils/phone";
+import { Prisma } from "@prisma/client";
 
 /** Find or create the WhatsApp inbox conversation for a customer. */
 async function ensureCustomerConversation(customerId: string): Promise<string> {
@@ -465,5 +470,96 @@ export async function sendQuotation(req: Request, res: Response) {
   } catch (error) {
     logger.error(`Error sending quotation ${id}: ` + error);
     return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+function parseDayStart(value: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0, 0, 0);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function parseDayEnd(value: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59, 999);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Bulk Tally XML export: GET /quotations/tally-export?from=&to=&customerId= */
+export async function exportQuotationsTally(req: Request, res: Response) {
+  const fromStr = String(req.query.from || "");
+  const toStr = String(req.query.to || "");
+  const customerId = typeof req.query.customerId === "string" ? req.query.customerId.trim() : "";
+
+  const from = parseDayStart(fromStr);
+  const to = parseDayEnd(toStr);
+
+  if (!from || !to) {
+    return res.status(400).json({ detail: "from and to are required as YYYY-MM-DD" });
+  }
+  if (from > to) {
+    return res.status(400).json({ detail: "from must be on or before to" });
+  }
+
+  try {
+    const where: Prisma.QuotationWhereInput = {
+      createdAt: { gte: from, lte: to },
+    };
+    if (customerId) {
+      where.enquiry = { customerId };
+    }
+
+    const quotations = await prisma.quotation.findMany({
+      where,
+      orderBy: { createdAt: "asc" },
+      include: {
+        enquiry: {
+          include: {
+            customer: true,
+            items: true,
+          },
+        },
+      },
+    });
+
+    if (quotations.length === 0) {
+      return res.status(404).json({ detail: "No quotations found for the selected filters" });
+    }
+
+    const messages = quotations.map((q) => {
+      const enquiry = q.enquiry;
+      const percent = enquiry.gstPercent ?? 18;
+      const mode = (enquiry.gstMode ?? "exclusive") as GstMode;
+      const delivery = enquiry.deliveryCharge ?? 0;
+      const lineItems = enquiry.items.map((item) => ({
+        qty: item.qty,
+        rate: item.rate || 0,
+      }));
+      const totals = calculateGstTotals(lineItems, percent, mode, delivery);
+      const billCustomer = resolveBillCustomer(enquiry);
+
+      return buildQuotationTallyMessage({
+        quotationNumber: q.number,
+        date: q.createdAt,
+        customer: billCustomer,
+        items: enquiry.items,
+        gstPercent: percent,
+        gstMode: mode,
+        totals,
+      });
+    });
+
+    const xml = buildTallyImportEnvelope(messages);
+    const filename = `quotations-tally-${fromStr}-${toStr}.xml`;
+
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(xml);
+  } catch (error) {
+    logger.error("Error exporting quotations for Tally: " + error);
+    return res.status(500).json({ detail: "Failed to export quotations" });
   }
 }

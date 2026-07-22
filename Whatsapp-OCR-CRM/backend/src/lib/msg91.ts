@@ -29,6 +29,7 @@ export interface Msg91SendPayload {
   imageUrl?: string;
   caption?: string;
   templateName?: string;
+  templateNamespace?: string | null;
   variables?: string[];
   documentHeader?: Msg91DocumentHeader;
   text?: string;
@@ -90,6 +91,8 @@ export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: 
   }
 
   const phone = normalizePhoneForMsg91(payload.to);
+  const namespace =
+    payload.templateNamespace !== undefined ? payload.templateNamespace : env.MSG91_WHATSAPP_NAMESPACE;
   const body = {
     integrated_number: env.MSG91_INTEGRATED_NUMBER,
     content_type: "template",
@@ -102,7 +105,7 @@ export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: 
           code: env.MSG91_TEMPLATE_LANGUAGE,
           policy: "deterministic",
         },
-        namespace: env.MSG91_WHATSAPP_NAMESPACE,
+        namespace,
         to_and_components: [
           {
             to: [phone],

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Inbox, Users, Package, Zap, Settings as SettingsIcon, LogOut, FileText } from "lucide-react";
+import { Inbox, Users, Package, Zap, Settings as SettingsIcon, LogOut, FileText, Download, Images } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { cn } from "../../lib/utils";
 import { BrandLogo } from "../../lib/brand-logo";
@@ -14,10 +14,12 @@ const NAV = [
   { to: "/crm", label: "Customers", icon: Users, testId: "nav-crm" },
   { to: "/inbox", label: "Inbox", icon: Inbox, testId: "nav-inbox" },
   { to: "/inventory", label: "Inventory", icon: Package, testId: "nav-inventory" },
+  { to: "/quotations", label: "Quotations", icon: Download, testId: "nav-quotations" },
   { to: "/saved-quotations", label: "Saved Quotations", icon: FileText, testId: "nav-saved-quotations" },
 ];
 
 const ADMIN_NAV = [
+  { to: "/galleries", label: "Galleries", icon: Images, testId: "nav-galleries" },
   { to: "/automation", label: "Automation", icon: Zap, testId: "nav-automation" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, testId: "nav-settings" },
 ];

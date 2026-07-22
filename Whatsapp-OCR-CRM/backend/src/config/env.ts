@@ -48,6 +48,7 @@ const envSchema = z.object({
     .string()
     .default("f4c1fc28_4118_4c8c_9bc6_e6e0a37418f5"),
   MSG91_TEMPLATE_LANGUAGE: z.string().default("en"),
+  MSG91_GALLERY_TEMPLATE: z.string().default("image_gallery"),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_TEXT_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_VISION_MODEL: z.string().default("gemini-2.5-flash-lite"),

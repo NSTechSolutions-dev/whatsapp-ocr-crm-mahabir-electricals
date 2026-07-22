@@ -326,6 +326,27 @@ model BrandLogo {
   createdAt DateTime @default(now())
 }
 
+model Gallery {
+  id        String         @id @default(cuid())
+  name      String
+  pdfS3Key  String?
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  images    GalleryImage[]
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  galleryId String
+  s3Key     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+
+  @@index([galleryId])
+}
+
 model LearnedMapping {
   id            String               @id @default(cuid())
   lookupKey     String               @map("lookup_key")

@@ -21,6 +21,7 @@ import notificationRouter from "./api/routes/notification.routes";
 import learningRouter from "./api/routes/learning.routes";
 import settingsRouter from "./api/routes/settings.routes";
 import quotationTemplateRouter from "./api/routes/quotation-template.routes";
+import galleryRouter from "./api/routes/gallery.routes";
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/learning", learningRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/quotation-templates", quotationTemplateRouter);
+app.use("/api/galleries", galleryRouter);
 app.use("/api", fileRouter);
 
 app.get("/api/health", (req, res) => {

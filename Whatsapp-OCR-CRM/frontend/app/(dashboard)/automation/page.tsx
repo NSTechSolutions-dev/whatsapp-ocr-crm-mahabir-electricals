@@ -84,12 +84,12 @@ export default function AutomationPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 text-ink">
+    <div className="p-8 lg:p-12 text-ink">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
         <div>
-          <div className="text-xs uppercase tracking-wider text-ink-muted">Mahabir Electricals</div>
+          <div className="text-xs uppercase tracking-wider text-ink-muted">Settings</div>
           <h1 className="font-display text-3xl font-semibold mt-1">Automation Rules</h1>
-          <p className="text-ink-muted text-sm mt-1 max-w-xl">
+          <p className="text-ink-muted text-sm mt-2 max-w-xl">
             Four built-in rules for follow-ups, price alerts, and re-engagement. Click a rule to edit parameters and view history.
           </p>
         </div>

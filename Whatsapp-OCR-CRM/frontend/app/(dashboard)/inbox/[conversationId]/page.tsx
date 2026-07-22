@@ -5,12 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { timeAgo } from "../../../../lib/format";
 import { socket } from "../../../../lib/socket";
-import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw } from "lucide-react";
+import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw, Images } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
 import { formatWhatsappMessageContent } from "../../../../lib/whatsapp-templates";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const STEPS = [
   { key: "queued", label: "Uploading" },
@@ -125,6 +131,7 @@ export default function ConversationPage() {
   const [busy, setBusy] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [simulateOpen, setSimulateOpen] = useState(false);
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -391,7 +398,28 @@ export default function ConversationPage() {
               if (jobId) startOcrTracking(jobId);
             }}
           />
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setGalleryPickerOpen(true)}
+            className="w-full border-line text-ink"
+            data-testid="send-gallery-button"
+          >
+            <Images className="h-4 w-4 mr-1.5" />
+            Send images
+          </Button>
         </div>
+
+        <SendGalleryDialog
+          open={galleryPickerOpen}
+          onOpenChange={setGalleryPickerOpen}
+          conversationId={conversationId}
+          onSent={() => {
+            load();
+            setGalleryPickerOpen(false);
+          }}
+        />
 
         {ocrJob && (
           <div className="px-6 py-5 border-b border-line space-y-3" data-testid="ocr-progress">
@@ -702,6 +730,117 @@ function SimulateMessagePanel({
         </div>
       )}
     </div>
+  );
+}
+
+interface GalleryPickerItem {
+  id: string;
+  name: string;
+  imageCount: number;
+  hasPdf: boolean;
+  thumbnailUrl: string | null;
+}
+
+function SendGalleryDialog({
+  open,
+  onOpenChange,
+  conversationId,
+  onSent,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conversationId: string;
+  onSent: () => void;
+}) {
+  const [galleries, setGalleries] = useState<GalleryPickerItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    api
+      .get("/galleries")
+      .then((r) => setGalleries(r.data.items || []))
+      .catch(() => toast.error("Failed to load galleries"))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  const sendGallery = async (gallery: GalleryPickerItem) => {
+    if (!gallery.hasPdf) {
+      toast.error("This gallery has no PDF yet — ask admin to save it first");
+      return;
+    }
+    if (!window.confirm(`Send "${gallery.name}" catalog to this customer?`)) return;
+
+    setSendingId(gallery.id);
+    try {
+      await api.post(`/galleries/${gallery.id}/send`, { conversationId });
+      toast.success(`Sent ${gallery.name} catalog`);
+      onSent();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "Failed to send gallery");
+    } finally {
+      setSendingId(null);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md border-line bg-surface text-ink">
+        <DialogHeader>
+          <DialogTitle className="font-display">Send gallery catalog</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-ink-muted -mt-2">
+          Select a gallery to send its PDF catalog via WhatsApp.
+        </p>
+
+        <div className="max-h-80 overflow-y-auto space-y-2 mt-2">
+          {loading && (
+            <div className="flex items-center justify-center py-8 text-ink-muted">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading galleries…
+            </div>
+          )}
+          {!loading && galleries.length === 0 && (
+            <div className="text-sm text-ink-muted py-6 text-center">No galleries available.</div>
+          )}
+          {!loading &&
+            galleries.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                disabled={!!sendingId}
+                onClick={() => sendGallery(g)}
+                className="w-full flex items-center gap-3 p-3 rounded-md border border-line hover:bg-canvas transition-colors text-left disabled:opacity-60"
+              >
+                <div className="h-12 w-12 rounded border border-line bg-canvas overflow-hidden shrink-0">
+                  {g.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={g.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-ink-muted">
+                      <Images className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{g.name}</div>
+                  <div className="text-[11px] text-ink-muted">
+                    {g.imageCount} image{g.imageCount === 1 ? "" : "s"}
+                    {!g.hasPdf ? " · PDF not ready" : ""}
+                  </div>
+                </div>
+                {sendingId === g.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-brand shrink-0" />
+                ) : (
+                  <Send className="h-4 w-4 text-ink-muted shrink-0" />
+                )}
+              </button>
+            ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
