@@ -80,6 +80,54 @@ async function sendSessionTextToMsg91(
   text: string
 ): Promise<{ status: string; messageId: string }> {
   const recipient = normalizePhoneForMsg91(phone);
+  const body = {
+    integrated_number: env.MSG91_INTEGRATED_NUMBER,
+    content_type: "text",
+    payload: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient,
+      type: "text",
+      text: {
+        body: text,
+      },
+    },
+  };
+
+  // Official MSG91 session API (JSON body). Also support the query-param style
+  // the dashboard curl often shows, as a fallback if JSON is rejected.
+  try {
+    const response = await axios.post(MSG91_SESSION_TEXT_URL, body, {
+      headers: {
+        authkey: env.MSG91_AUTH_KEY,
+        "Content-Type": "application/json",
+      },
+      maxRedirects: 5,
+      validateStatus: () => true,
+    });
+
+    const data = response.data;
+    const ok =
+      response.status >= 200 &&
+      response.status < 300 &&
+      !isMsg91ErrorPayload(data);
+
+    if (ok) {
+      logger.info(`MSG91 session text sent to ${recipient}: ${JSON.stringify(data)}`);
+      return {
+        status: (data as { status?: string })?.status || "ok",
+        messageId: extractMessageId(data),
+      };
+    }
+
+    logger.warn(
+      `MSG91 session JSON text failed (${response.status}): ${JSON.stringify(data)} — retrying query-param style`
+    );
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    logger.warn(`MSG91 session JSON text request error: ${err.message} — retrying query-param style`);
+  }
+
   const response = await axios.post(MSG91_SESSION_TEXT_URL, null, {
     params: {
       integrated_number: env.MSG91_INTEGRATED_NUMBER,
@@ -92,13 +140,35 @@ async function sendSessionTextToMsg91(
       "Content-Type": "application/json",
     },
     maxRedirects: 5,
+    validateStatus: () => true,
   });
 
-  logger.info(`MSG91 session text sent to ${recipient}`);
+  const data = response.data;
+  if (response.status < 200 || response.status >= 300 || isMsg91ErrorPayload(data)) {
+    throw new Error(
+      `MSG91 session text failed (${response.status}): ${typeof data === "string" ? data : JSON.stringify(data)}`
+    );
+  }
+
+  logger.info(`MSG91 session text (query) sent to ${recipient}: ${JSON.stringify(data)}`);
   return {
-    status: (response.data as { status?: string })?.status || "ok",
-    messageId: extractMessageId(response.data),
+    status: (data as { status?: string })?.status || "ok",
+    messageId: extractMessageId(data),
   };
+}
+
+function isMsg91ErrorPayload(data: unknown): boolean {
+  if (!data || typeof data !== "object") return false;
+  const record = data as Record<string, unknown>;
+  const type = String(record.type || record.status || "").toLowerCase();
+  if (type === "error" || type === "failed" || type === "failure") return true;
+  if (record.hasError === true || record.error === true) return true;
+  if (typeof record.message === "string" && /error|fail|invalid|unauthorized/i.test(record.message)) {
+    // MSG91 sometimes returns { message: "success", type: "success" } — allow those
+    if (/success/i.test(String(record.type || ""))) return false;
+    if (/^success$/i.test(record.message)) return false;
+  }
+  return false;
 }
 
 async function sendTemplateToMsg91(
@@ -153,7 +223,9 @@ export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: 
   const isMock = process.env.MSG91_MOCK !== "0";
 
   if (isMock) {
-    logger.info(`[MSG91 MOCK] Sending ${payload.type} to ${payload.to}`);
+    logger.warn(
+      `[MSG91 MOCK] Skipping real WhatsApp send for ${payload.type} → ${payload.to}. Set MSG91_MOCK=0 to deliver.`
+    );
     await new Promise((resolve) => setTimeout(resolve, 50));
     return {
       status: "ok",

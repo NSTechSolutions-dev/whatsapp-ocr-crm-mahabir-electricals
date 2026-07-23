@@ -189,12 +189,23 @@ export async function sendTextMessage(
       },
     });
 
-    await whatsappQueue.add("sendText", {
-      messageId: message.id,
-      phone: normalizedPhone,
-      type: "text",
-      text,
-    });
+    // Send session text immediately so inbox chat gets a real MSG91 result
+    // (queue alone made the UI show "sent" even when mock/API failed).
+    try {
+      const { sendToMsg91 } = await import("../lib/msg91");
+      const ack = await sendToMsg91({
+        to: normalizedPhone,
+        type: "text",
+        text,
+      });
+      await prisma.whatsappMessage.update({
+        where: { id: message.id },
+        data: { waMessageId: ack.messageId },
+      });
+    } catch (sendError) {
+      await prisma.whatsappMessage.delete({ where: { id: message.id } }).catch(() => undefined);
+      throw sendError;
+    }
 
     await prisma.conversation.update({
       where: { id: resolvedConversationId },
@@ -203,7 +214,7 @@ export async function sendTextMessage(
 
     return message.id;
   } catch (error) {
-    logger.error(`Failed to stage text message for ${phone}: ${error}`);
+    logger.error(`Failed to send text message for ${phone}: ${error}`);
     throw error;
   }
 }
