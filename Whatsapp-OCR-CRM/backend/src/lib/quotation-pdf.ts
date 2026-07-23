@@ -245,17 +245,21 @@ function drawBankAndQr(
   return Math.max(bankBottomY, qrBottomY) + 8;
 }
 
+export type PdfCompanyProfile = {
+  name?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  gstin?: string | null;
+};
+
 /**
  * Draws title first, then company block. Returns Y below the company header.
+ * Shared by quotation + catalog PDFs (same layout / branding).
  */
-function drawHeader(
+export function drawDocumentHeader(
   doc: PdfDoc,
-  companyProfile?: {
-    name?: string | null;
-    address?: string | null;
-    phone?: string | null;
-    gstin?: string | null;
-  } | null
+  companyProfile?: PdfCompanyProfile | null,
+  title = "QUOTATION"
 ): number {
   const companyName = orFallback(companyProfile?.name, env.COMPANY_NAME);
   const companyAddress = orFallback(companyProfile?.address, env.COMPANY_ADDRESS);
@@ -267,7 +271,7 @@ function drawHeader(
     .fillColor(BRAND)
     .font("Helvetica-Bold")
     .fontSize(20)
-    .text("QUOTATION", MARGIN_LEFT, MARGIN_TOP, {
+    .text(title, MARGIN_LEFT, MARGIN_TOP, {
       width: CONTENT_WIDTH,
       align: "center",
       characterSpacing: 1.5,
@@ -479,7 +483,7 @@ export function buildQuotationPdfBuffer(input: QuotationPdfInput): Promise<Buffe
     ];
 
     // Title → company details
-    let y = drawHeader(doc, input.companyProfile);
+    let y = drawDocumentHeader(doc, input.companyProfile);
 
     // Meta + customer
     const leftColWidth = CONTENT_WIDTH * 0.55;

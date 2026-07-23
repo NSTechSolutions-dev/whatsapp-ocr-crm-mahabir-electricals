@@ -3,11 +3,16 @@ import { upload, getBuffer } from "../lib/s3";
 import { buildGalleryPdfBuffer } from "../lib/gallery-pdf";
 import { env } from "../config/env";
 import { logger } from "../utils/logger";
+import type { PdfCompanyProfile } from "../lib/quotation-pdf";
 
-async function getCompanyName(): Promise<string> {
+async function loadCompanyProfile(): Promise<PdfCompanyProfile> {
   const settings = await prisma.companySetting.findUnique({ where: { id: "default" } });
-  const fromDb = settings?.companyName?.trim();
-  return fromDb || env.COMPANY_NAME;
+  return {
+    name: settings?.companyName?.trim() || env.COMPANY_NAME,
+    address: settings?.companyAddress?.trim() || env.COMPANY_ADDRESS,
+    phone: settings?.companyPhone?.trim() || env.COMPANY_PHONE,
+    gstin: settings?.companyGstin?.trim() || env.COMPANY_GSTIN,
+  };
 }
 
 export async function regenerateGalleryPdf(galleryId: string): Promise<string> {
@@ -28,10 +33,10 @@ export async function regenerateGalleryPdf(galleryId: string): Promise<string> {
     imageBuffers.push(await getBuffer(image.s3Key));
   }
 
-  const companyName = await getCompanyName();
+  const companyProfile = await loadCompanyProfile();
   const pdfBuffer = await buildGalleryPdfBuffer({
     title: gallery.name,
-    companyName,
+    companyProfile,
     images: imageBuffers,
   });
 
