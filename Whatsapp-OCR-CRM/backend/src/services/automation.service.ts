@@ -345,3 +345,48 @@ export async function runCronRules() {
     totalSkipped: repeat.skipped + reminder.skipped,
   };
 }
+
+/**
+ * When a customer is moved to Closed, queue a Google review WhatsApp template.
+ * Skips if the rule is inactive, customer is missing, or we already sent this recently.
+ */
+export async function triggerClosedReview(customerId: string): Promise<TriggerResult> {
+  let queued = 0;
+  let skipped = 0;
+
+  try {
+    const rules = await prisma.automationRule.findMany({
+      where: { triggerType: "closed_review", isActive: true },
+    });
+    if (rules.length === 0) return { queued, skipped };
+
+    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+    if (!customer || customer.stage !== "Closed") {
+      return { queued: 0, skipped: 1 };
+    }
+
+    for (const rule of rules) {
+      // Avoid spamming: skip if we already sent (or queued) this rule for this customer in the last year
+      if (await hasRecentExecution(rule.id, customer.id, daysAgo(365))) {
+        skipped++;
+        continue;
+      }
+
+      const actionParams = rule.actionParams as Record<string, unknown>;
+      const templateName = String(actionParams?.templateName || "google_review");
+
+      await enqueueAutomationJob("closed_review", {
+        ruleId: rule.id,
+        customerId: customer.id,
+        phone: customer.phone,
+        templateName,
+        variables: [customer.name || "Customer"],
+      });
+      queued++;
+    }
+  } catch (error) {
+    logger.error(`Failed to trigger closed review automation: ${error}`);
+  }
+
+  return { queued, skipped };
+}

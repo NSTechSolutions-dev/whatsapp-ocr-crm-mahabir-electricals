@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { logger } from "../../utils/logger";
+import { triggerClosedReview } from "../../services/automation.service";
 import { looksLikePhoneQuery, normalizePhoneForSearch } from "../../utils/phone";
 
 export async function listCustomers(req: Request, res: Response) {
@@ -141,10 +142,23 @@ export async function updateCustomerStage(req: Request, res: Response) {
       return res.status(404).json({ detail: "Customer not found" });
     }
 
+    const previousStage = customer.stage;
     const updatedCustomer = await prisma.customer.update({
       where: { id },
       data: { stage },
     });
+
+    // Fire Google review automation only when newly moved to Closed
+    if (stage === "Closed" && previousStage !== "Closed") {
+      try {
+        const result = await triggerClosedReview(updatedCustomer.id);
+        logger.info(
+          `closed_review after stage change for ${updatedCustomer.id}: queued=${result.queued} skipped=${result.skipped}`
+        );
+      } catch (err) {
+        logger.warn(`closed_review trigger failed for ${updatedCustomer.id}: ${err}`);
+      }
+    }
 
     return res.json({
       customer: {

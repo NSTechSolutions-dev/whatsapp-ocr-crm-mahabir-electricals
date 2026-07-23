@@ -51,6 +51,14 @@ export const RULE_META: Record<
       { key: "templateName", label: "MSG91 template name", type: "text", path: "action" },
     ],
   },
+  closed_review: {
+    label: "Google Review Request",
+    description:
+      "When a customer is moved to Closed, send a WhatsApp message asking them to leave a Google review.",
+    fields: [
+      { key: "templateName", label: "MSG91 template name", type: "text", path: "action" },
+    ],
+  },
 };
 
 export const RULE_ORDER = [
@@ -58,6 +66,7 @@ export const RULE_ORDER = [
   "price_drop_alert",
   "repeat_engagement",
   "enquiry_reminder",
+  "closed_review",
 ] as const;
 
 export function getRuleMeta(triggerType: string) {

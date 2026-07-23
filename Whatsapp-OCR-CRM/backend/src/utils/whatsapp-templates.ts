@@ -56,6 +56,14 @@ This is a reminder from Mahabir Electricals about your quotation {{2}}.
 If you would like to proceed or need any changes, please reply to this message. We are happy to assist you.
 
 Call Us`,
+
+  google_review: `Hi {{1}},
+
+Thank you for your order with Mahabir Electricals.
+
+We hope everything met your expectations. Please tap the button below to leave us a Google review — it helps us serve you better.
+
+— Mahabir Electricals`,
 };
 
 function normalizeTemplateName(name: string): string {

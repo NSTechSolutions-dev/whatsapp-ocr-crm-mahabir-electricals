@@ -85,6 +85,14 @@ export async function forceTestAutomationRule(
         metadata = { ...metadata, templateName: tpl, variables: vars, inventoryId: inventory.id };
         break;
       }
+      case "closed_review": {
+        const tpl = String(actionParams.templateName || "google_review");
+        const vars = [customer.name || "Test Customer"];
+        messageId = await sendTemplateMessage(customer.phone, tpl, vars);
+        messageContent = `[DEV TEST] ${tpl} | ${vars.join(" | ")}`;
+        metadata = { ...metadata, templateName: tpl, variables: vars };
+        break;
+      }
       default:
         throw new Error(`Unknown trigger type: ${triggerType}`);
     }

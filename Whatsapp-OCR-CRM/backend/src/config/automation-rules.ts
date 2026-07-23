@@ -3,6 +3,7 @@ export const AUTOMATION_RULE_TYPES = [
   "price_drop_alert",
   "repeat_engagement",
   "enquiry_reminder",
+  "closed_review",
 ] as const;
 
 export type AutomationRuleType = (typeof AUTOMATION_RULE_TYPES)[number];
@@ -35,6 +36,11 @@ export const MSG91_TEMPLATE_DOCS = {
     variables: ["customer_name", "gallery_name"],
     sample:
       "Hi {{1}}, Please find our {{2}} catalog attached from Mahabir Electricals. Header: document PDF. Namespace: null.",
+  },
+  google_review: {
+    variables: ["customer_name"],
+    sample:
+      "Hi {{1}}, thank you for your order with Mahabir Electricals. Please leave us a Google review (button in message).",
   },
 } as const;
 
@@ -90,6 +96,16 @@ export const DEFAULT_AUTOMATION_RULES: RuleDefinition[] = [
     triggerParams: { daysSinceSent: 7, scheduleTime: "09:00" },
     actionType: "send_template",
     actionParams: { templateName: "mahabir_enquiry_reminder" },
+    isActive: true,
+  },
+  {
+    triggerType: "closed_review",
+    name: "Google Review Request",
+    description:
+      "When a customer is moved to Closed, send a WhatsApp message asking them to leave a Google review.",
+    triggerParams: {},
+    actionType: "send_template",
+    actionParams: { templateName: "google_review" },
     isActive: true,
   },
 ];

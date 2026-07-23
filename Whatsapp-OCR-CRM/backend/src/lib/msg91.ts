@@ -5,6 +5,8 @@ import { logger } from "../utils/logger";
 import { formatPhoneForWhatsApp } from "../utils/phone";
 
 const MSG91_BULK_URL = "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/";
+const MSG91_SESSION_TEXT_URL =
+  "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/";
 
 export function verifyMsg91Signature(rawBody: Buffer, signature: string, secret: string): boolean {
   try {
@@ -73,21 +75,37 @@ function extractMessageId(data: unknown): string {
   return `msg91-${Date.now()}`;
 }
 
-export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: string; messageId: string }> {
-  const isMock = process.env.MSG91_MOCK !== "0";
+async function sendSessionTextToMsg91(
+  phone: string,
+  text: string
+): Promise<{ status: string; messageId: string }> {
+  const recipient = normalizePhoneForMsg91(phone);
+  const response = await axios.post(MSG91_SESSION_TEXT_URL, null, {
+    params: {
+      integrated_number: env.MSG91_INTEGRATED_NUMBER,
+      recipient_number: recipient,
+      content_type: "text",
+      text,
+    },
+    headers: {
+      authkey: env.MSG91_AUTH_KEY,
+      "Content-Type": "application/json",
+    },
+    maxRedirects: 5,
+  });
 
-  if (isMock) {
-    logger.info(`[MSG91 MOCK] Sending ${payload.type} to ${payload.to}`);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    return {
-      status: "ok",
-      messageId: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-    };
-  }
+  logger.info(`MSG91 session text sent to ${recipient}`);
+  return {
+    status: (response.data as { status?: string })?.status || "ok",
+    messageId: extractMessageId(response.data),
+  };
+}
 
-  if (payload.type !== "template" || !payload.templateName) {
-    logger.warn(`MSG91 send type "${payload.type}" is not implemented with the bulk template API`);
-    throw new Error(`Unsupported MSG91 message type: ${payload.type}`);
+async function sendTemplateToMsg91(
+  payload: Msg91SendPayload
+): Promise<{ status: string; messageId: string }> {
+  if (!payload.templateName) {
+    throw new Error("Template name is required");
   }
 
   const phone = normalizePhoneForMsg91(payload.to);
@@ -116,20 +134,46 @@ export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: 
     },
   };
 
-  try {
-    const response = await axios.post(MSG91_BULK_URL, body, {
-      headers: {
-        authkey: env.MSG91_AUTH_KEY,
-        "Content-Type": "application/json",
-      },
-      maxRedirects: 5,
-    });
+  const response = await axios.post(MSG91_BULK_URL, body, {
+    headers: {
+      authkey: env.MSG91_AUTH_KEY,
+      "Content-Type": "application/json",
+    },
+    maxRedirects: 5,
+  });
 
-    logger.info(`MSG91 template "${payload.templateName}" sent to ${phone}`);
+  logger.info(`MSG91 template "${payload.templateName}" sent to ${phone}`);
+  return {
+    status: (response.data as { status?: string })?.status || "ok",
+    messageId: extractMessageId(response.data),
+  };
+}
+
+export async function sendToMsg91(payload: Msg91SendPayload): Promise<{ status: string; messageId: string }> {
+  const isMock = process.env.MSG91_MOCK !== "0";
+
+  if (isMock) {
+    logger.info(`[MSG91 MOCK] Sending ${payload.type} to ${payload.to}`);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     return {
-      status: (response.data as { status?: string })?.status || "ok",
-      messageId: extractMessageId(response.data),
+      status: "ok",
+      messageId: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     };
+  }
+
+  try {
+    if (payload.type === "text") {
+      const text = (payload.text || "").trim();
+      if (!text) throw new Error("Text message body is required");
+      return await sendSessionTextToMsg91(payload.to, text);
+    }
+
+    if (payload.type === "template") {
+      return await sendTemplateToMsg91(payload);
+    }
+
+    logger.warn(`MSG91 send type "${payload.type}" is not implemented`);
+    throw new Error(`Unsupported MSG91 message type: ${payload.type}`);
   } catch (error: unknown) {
     const err = error as { response?: { data?: unknown }; message?: string };
     logger.error(

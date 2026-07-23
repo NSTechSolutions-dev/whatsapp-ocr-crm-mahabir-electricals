@@ -14,6 +14,7 @@ const RULE_LABELS: Record<string, string> = {
   price_drop_alert: "Price drop",
   repeat_engagement: "Repeat engagement",
   enquiry_reminder: "Enquiry reminder",
+  closed_review: "Google review",
 };
 
 interface DevTestPanelProps {

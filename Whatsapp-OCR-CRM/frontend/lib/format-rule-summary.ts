@@ -63,6 +63,8 @@ export function formatRuleParamSummary(rule: {
       if (time) parts.push(`runs ${time} IST daily`);
       return parts.length ? parts.join(" · ") : "Sent quotation reminder";
     }
+    case "closed_review":
+      return "When customer stage → Closed";
     default:
       return "";
   }

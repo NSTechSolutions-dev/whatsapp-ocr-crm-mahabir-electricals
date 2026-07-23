@@ -129,6 +129,33 @@ export const automationWorker = new Worker(
           messageContent: content,
           metadata: { templateName: tpl, variables: vars, enquiryId },
         });
+      } else if (job.name === "closed_review") {
+        const rule = await prisma.automationRule.findUnique({ where: { id: ruleId } });
+        const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+        if (!rule?.isActive || !customer) {
+          await finishExecution({
+            scheduledJobId,
+            ruleId,
+            customerId,
+            error: "Rule inactive or customer missing",
+          });
+          return;
+        }
+
+        const actionParams = rule.actionParams as Record<string, unknown>;
+        const tpl = templateName || String(actionParams?.templateName || "google_review");
+        const vars = variables || [customer.name || "Customer"];
+        const messageId = await sendTemplateMessage(customer.phone, tpl, vars);
+        const content = `${tpl} | ${vars.join(" ")}`;
+
+        await finishExecution({
+          scheduledJobId,
+          ruleId,
+          customerId,
+          messageId,
+          messageContent: content,
+          metadata: { templateName: tpl, variables: vars },
+        });
       }
     } catch (error: any) {
       logger.error(`Worker failed automation job: ${error}`);

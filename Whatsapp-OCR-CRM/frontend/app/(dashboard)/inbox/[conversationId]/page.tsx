@@ -75,6 +75,9 @@ interface ConversationData {
     status: string;
     lastMessageAt: string;
     createdAt: string;
+    lastInboundAt?: string | null;
+    sessionOpen?: boolean;
+    sessionExpiresAt?: string | null;
   };
   customer: Customer;
   messages: Message[];
@@ -132,6 +135,8 @@ export default function ConversationPage() {
   const [retrying, setRetrying] = useState(false);
   const [simulateOpen, setSimulateOpen] = useState(false);
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sendingText, setSendingText] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -221,10 +226,25 @@ export default function ConversationPage() {
         if (!prev) return prev;
         if (prev.messages.some((m) => m.id === msg.id)) return prev;
         if (msg.waMessageId && prev.messages.some((m) => m.waMessageId === msg.waMessageId)) return prev;
-        return {
+
+        const next = {
           ...prev,
           messages: [...prev.messages, msg],
         };
+
+        // Inbound customer messages reopen the 24h session window
+        if (msg.direction === "INBOUND") {
+          const inboundAt = new Date(msg.createdAt);
+          const expiresAt = new Date(inboundAt.getTime() + 24 * 60 * 60 * 1000);
+          next.conversation = {
+            ...prev.conversation,
+            lastInboundAt: msg.createdAt,
+            sessionOpen: true,
+            sessionExpiresAt: expiresAt.toISOString(),
+          };
+        }
+
+        return next;
       });
     });
 
@@ -338,6 +358,48 @@ export default function ConversationPage() {
 
   if (!data) return <div className="p-8 text-ink-muted">Loading…</div>;
 
+  const sessionOpen = Boolean(data.conversation.sessionOpen);
+  const sessionExpiresAt = data.conversation.sessionExpiresAt
+    ? new Date(data.conversation.sessionExpiresAt)
+    : null;
+
+  const sendCustomMessage = async () => {
+    const text = draft.trim();
+    if (!text || !sessionOpen || sendingText) return;
+
+    setSendingText(true);
+    try {
+      const r = await api.post(`/inbox/${conversationId}/messages`, { text });
+      const msg = r.data.message as Message | undefined;
+      if (msg) {
+        setData((prev) => {
+          if (!prev) return prev;
+          if (prev.messages.some((m) => m.id === msg.id)) return prev;
+          return {
+            ...prev,
+            conversation: {
+              ...prev.conversation,
+              sessionOpen: r.data.sessionOpen ?? prev.conversation.sessionOpen,
+              sessionExpiresAt: r.data.sessionExpiresAt ?? prev.conversation.sessionExpiresAt,
+            },
+            messages: [...prev.messages, msg],
+          };
+        });
+      } else {
+        await load();
+      }
+      setDraft("");
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "Failed to send message");
+      if (e?.response?.status === 403) {
+        await load();
+      }
+    } finally {
+      setSendingText(false);
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 text-ink">
       {/* Thread */}
@@ -347,13 +409,60 @@ export default function ConversationPage() {
             <div className="font-display text-lg font-semibold">{data.customer?.name || "Customer"}</div>
             <div className="text-xs text-ink-muted">{data.customer?.phone}</div>
           </div>
-          <div className="text-xs text-ink-muted">{data.messages?.length || 0} messages</div>
+          <div className="text-right">
+            <div className="text-xs text-ink-muted">{data.messages?.length || 0} messages</div>
+            {sessionOpen ? (
+              <div className="text-[10px] text-emerald-700 mt-0.5">
+                Chat open
+                {sessionExpiresAt
+                  ? ` · until ${sessionExpiresAt.toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}`
+                  : ""}
+              </div>
+            ) : (
+              <div className="text-[10px] text-ink-muted mt-0.5">Chat closed (24h window)</div>
+            )}
+          </div>
         </header>
         <div className="flex-1 overflow-y-auto scroll-thin px-6 py-6 space-y-3 bg-canvas" data-testid="message-thread">
           {data.messages?.map((m) => (
             <MessageBubble key={m.id} m={m} />
           ))}
           <div ref={bottomRef} />
+        </div>
+
+        <div className="border-t border-line bg-surface px-4 py-3">
+          {sessionOpen ? (
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Type a message…"
+                rows={2}
+                className="min-h-[44px] resize-none border-line text-sm"
+                data-testid="inbox-message-input"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendCustomMessage();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                onClick={() => void sendCustomMessage()}
+                disabled={sendingText || !draft.trim()}
+                className="h-10 shrink-0 bg-brand hover:bg-brand-hover text-white"
+                data-testid="inbox-send-message"
+              >
+                {sendingText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-md border border-line bg-canvas px-3 py-2.5 text-xs text-ink-muted">
+              Custom chat is available only within 24 hours of the customer&apos;s last message.
+              Use a WhatsApp template (quotation / catalog / review) to message outside this window.
+            </div>
+          )}
         </div>
       </div>
 
