@@ -80,68 +80,37 @@ async function sendSessionTextToMsg91(
   text: string
 ): Promise<{ status: string; messageId: string }> {
   const recipient = normalizePhoneForMsg91(phone);
-  const body = {
-    integrated_number: env.MSG91_INTEGRATED_NUMBER,
-    content_type: "text",
-    payload: {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: recipient,
-      type: "text",
-      text: {
-        body: text,
-      },
-    },
-  };
 
-  // Official MSG91 session API (JSON body). Also support the query-param style
-  // the dashboard curl often shows, as a fallback if JSON is rejected.
-  try {
-    const response = await axios.post(MSG91_SESSION_TEXT_URL, body, {
+  // MSG91 session text uses query params (not a JSON body). Sending
+  // Content-Type: application/json with an empty/null body causes:
+  // "Invalid json in request for Content type:-application/json"
+  const response = await axios.post(
+    MSG91_SESSION_TEXT_URL,
+    undefined,
+    {
+      params: {
+        integrated_number: env.MSG91_INTEGRATED_NUMBER,
+        recipient_number: recipient,
+        content_type: "text",
+        text,
+      },
       headers: {
         authkey: env.MSG91_AUTH_KEY,
-        "Content-Type": "application/json",
       },
+      // Prevent axios from inventing application/json for an empty body.
+      transformRequest: [
+        (data, headers) => {
+          if (headers && typeof headers === "object") {
+            delete (headers as Record<string, unknown>)["Content-Type"];
+            delete (headers as Record<string, unknown>)["content-type"];
+          }
+          return data;
+        },
+      ],
       maxRedirects: 5,
       validateStatus: () => true,
-    });
-
-    const data = response.data;
-    const ok =
-      response.status >= 200 &&
-      response.status < 300 &&
-      !isMsg91ErrorPayload(data);
-
-    if (ok) {
-      logger.info(`MSG91 session text sent to ${recipient}: ${JSON.stringify(data)}`);
-      return {
-        status: (data as { status?: string })?.status || "ok",
-        messageId: extractMessageId(data),
-      };
     }
-
-    logger.warn(
-      `MSG91 session JSON text failed (${response.status}): ${JSON.stringify(data)} — retrying query-param style`
-    );
-  } catch (error: unknown) {
-    const err = error as { message?: string };
-    logger.warn(`MSG91 session JSON text request error: ${err.message} — retrying query-param style`);
-  }
-
-  const response = await axios.post(MSG91_SESSION_TEXT_URL, null, {
-    params: {
-      integrated_number: env.MSG91_INTEGRATED_NUMBER,
-      recipient_number: recipient,
-      content_type: "text",
-      text,
-    },
-    headers: {
-      authkey: env.MSG91_AUTH_KEY,
-      "Content-Type": "application/json",
-    },
-    maxRedirects: 5,
-    validateStatus: () => true,
-  });
+  );
 
   const data = response.data;
   if (response.status < 200 || response.status >= 300 || isMsg91ErrorPayload(data)) {
@@ -150,7 +119,7 @@ async function sendSessionTextToMsg91(
     );
   }
 
-  logger.info(`MSG91 session text (query) sent to ${recipient}: ${JSON.stringify(data)}`);
+  logger.info(`MSG91 session text sent to ${recipient}: ${JSON.stringify(data)}`);
   return {
     status: (data as { status?: string })?.status || "ok",
     messageId: extractMessageId(data),
