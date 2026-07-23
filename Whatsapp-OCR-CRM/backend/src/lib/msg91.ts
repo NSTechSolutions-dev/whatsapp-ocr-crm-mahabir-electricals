@@ -81,36 +81,24 @@ async function sendSessionTextToMsg91(
 ): Promise<{ status: string; messageId: string }> {
   const recipient = normalizePhoneForMsg91(phone);
 
-  // MSG91 session text uses query params (not a JSON body). Sending
-  // Content-Type: application/json with an empty/null body causes:
-  // "Invalid json in request for Content type:-application/json"
-  const response = await axios.post(
-    MSG91_SESSION_TEXT_URL,
-    undefined,
-    {
-      params: {
-        integrated_number: env.MSG91_INTEGRATED_NUMBER,
-        recipient_number: recipient,
-        content_type: "text",
-        text,
-      },
-      headers: {
-        authkey: env.MSG91_AUTH_KEY,
-      },
-      // Prevent axios from inventing application/json for an empty body.
-      transformRequest: [
-        (data, headers) => {
-          if (headers && typeof headers === "object") {
-            delete (headers as Record<string, unknown>)["Content-Type"];
-            delete (headers as Record<string, unknown>)["content-type"];
-          }
-          return data;
-        },
-      ],
-      maxRedirects: 5,
-      validateStatus: () => true,
-    }
-  );
+  // Session text uses a flat JSON body (not Meta-style nested payload,
+  // and not query-params-only — those return 400 / invalid JSON).
+  const body = {
+    integrated_number: env.MSG91_INTEGRATED_NUMBER,
+    recipient_number: recipient,
+    content_type: "text",
+    text,
+  };
+
+  const response = await axios.post(MSG91_SESSION_TEXT_URL, body, {
+    headers: {
+      authkey: env.MSG91_AUTH_KEY,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    maxRedirects: 5,
+    validateStatus: () => true,
+  });
 
   const data = response.data;
   if (response.status < 200 || response.status >= 300 || isMsg91ErrorPayload(data)) {
@@ -130,7 +118,7 @@ function isMsg91ErrorPayload(data: unknown): boolean {
   if (!data || typeof data !== "object") return false;
   const record = data as Record<string, unknown>;
   const type = String(record.type || record.status || "").toLowerCase();
-  if (type === "error" || type === "failed" || type === "failure") return true;
+  if (type === "error" || type === "failed" || type === "failure" || type === "fail") return true;
   if (record.hasError === true || record.error === true) return true;
   if (typeof record.message === "string" && /error|fail|invalid|unauthorized/i.test(record.message)) {
     // MSG91 sometimes returns { message: "success", type: "success" } — allow those
