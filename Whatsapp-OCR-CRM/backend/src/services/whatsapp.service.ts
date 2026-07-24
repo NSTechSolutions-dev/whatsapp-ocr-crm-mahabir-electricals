@@ -4,6 +4,10 @@ import { logger } from "../utils/logger";
 import type { Msg91DocumentHeader } from "../lib/msg91";
 import { normalizePhone } from "../utils/phone";
 import { buildStoredTemplateContent } from "../utils/whatsapp-templates";
+import {
+  ensureConversationForCustomer,
+  findOrCreateCustomerByPhone,
+} from "./conversation.service";
 
 function buildTemplateContent(templateName: string, variables: string[], hasDocument: boolean): string {
   return buildStoredTemplateContent(templateName, variables, hasDocument);
@@ -15,6 +19,27 @@ export interface TemplateMessageOptions {
   templateNamespace?: string | null;
 }
 
+async function resolveInbox(phone: string, conversationId?: string) {
+  const customer = await findOrCreateCustomerByPhone(phone);
+  const primary = await ensureConversationForCustomer(customer.id);
+
+  // If a conversationId was passed, verify it belongs to this customer; always use the
+  // merged primary so quotations / reviews / forwards never open a second inbox.
+  if (conversationId && conversationId !== primary.id) {
+    const provided = await prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (provided && provided.customerId === customer.id) {
+      // ensureConversation already merged orphans into primary
+    } else if (provided && provided.customerId !== customer.id) {
+      logger.warn(
+        `Conversation ${conversationId} belongs to customer ${provided.customerId}, ` +
+          `but phone ${phone} maps to ${customer.id} — using primary inbox ${primary.id}`
+      );
+    }
+  }
+
+  return { customer, conversationId: primary.id };
+}
+
 export async function sendImageMessage(
   phone: string,
   imageUrl: string,
@@ -23,29 +48,9 @@ export async function sendImageMessage(
 ): Promise<string> {
   try {
     const normalizedPhone = normalizePhone(phone);
-    let resolvedConversationId = conversationId;
+    const inbox = await resolveInbox(normalizedPhone, conversationId);
+    const resolvedConversationId = inbox.conversationId;
 
-    // Find customer by phone
-    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
-    if (!customer) {
-      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
-    }
-
-    if (!resolvedConversationId) {
-      const waConversationId = `wa-${customer.id}`;
-      let conversation = await prisma.conversation.findUnique({ where: { waConversationId } });
-      if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: {
-            customerId: customer.id,
-            waConversationId,
-          },
-        });
-      }
-      resolvedConversationId = conversation.id;
-    }
-
-    // Insert WhatsappMessage with OUTBOUND direction
     const message = await prisma.whatsappMessage.create({
       data: {
         conversationId: resolvedConversationId,
@@ -56,7 +61,6 @@ export async function sendImageMessage(
       },
     });
 
-    // Enqueue MSG91 sending via BullMQ
     await whatsappQueue.add("sendImage", {
       messageId: message.id,
       phone: normalizedPhone,
@@ -65,7 +69,6 @@ export async function sendImageMessage(
       caption,
     });
 
-    // Bump conversation lastMessageAt
     await prisma.conversation.update({
       where: { id: resolvedConversationId },
       data: { lastMessageAt: new Date() },
@@ -86,8 +89,6 @@ export async function sendTemplateMessage(
 ): Promise<string> {
   try {
     const normalizedPhone = normalizePhone(phone);
-    let resolvedConversationId = conversationId;
-
     let variables: string[];
     let documentHeader: Msg91DocumentHeader | undefined;
     let templateNamespace: string | null | undefined;
@@ -99,24 +100,8 @@ export async function sendTemplateMessage(
       templateNamespace = variablesOrOptions.templateNamespace;
     }
 
-    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
-    if (!customer) {
-      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
-    }
-
-    if (!resolvedConversationId) {
-      const waConversationId = `wa-${customer.id}`;
-      let conversation = await prisma.conversation.findUnique({ where: { waConversationId } });
-      if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: {
-            customerId: customer.id,
-            waConversationId,
-          },
-        });
-      }
-      resolvedConversationId = conversation.id;
-    }
+    const inbox = await resolveInbox(normalizedPhone, conversationId);
+    const resolvedConversationId = inbox.conversationId;
 
     const content = buildTemplateContent(templateName, variables, !!documentHeader);
 
@@ -159,26 +144,8 @@ export async function sendTextMessage(
 ): Promise<string> {
   try {
     const normalizedPhone = normalizePhone(phone);
-    let resolvedConversationId = conversationId;
-
-    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
-    if (!customer) {
-      customer = await prisma.customer.create({ data: { phone: normalizedPhone } });
-    }
-
-    if (!resolvedConversationId) {
-      const waConversationId = `wa-${customer.id}`;
-      let conversation = await prisma.conversation.findUnique({ where: { waConversationId } });
-      if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: {
-            customerId: customer.id,
-            waConversationId,
-          },
-        });
-      }
-      resolvedConversationId = conversation.id;
-    }
+    const inbox = await resolveInbox(normalizedPhone, conversationId);
+    const resolvedConversationId = inbox.conversationId;
 
     const message = await prisma.whatsappMessage.create({
       data: {
@@ -189,8 +156,6 @@ export async function sendTextMessage(
       },
     });
 
-    // Send session text immediately so inbox chat gets a real MSG91 result
-    // (queue alone made the UI show "sent" even when mock/API failed).
     try {
       const { sendToMsg91 } = await import("../lib/msg91");
       const ack = await sendToMsg91({

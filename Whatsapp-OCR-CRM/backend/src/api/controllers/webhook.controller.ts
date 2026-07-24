@@ -11,6 +11,10 @@ import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { normalizePhone } from "../../utils/phone";
 import {
+  ensureConversationForCustomer,
+  findOrCreateCustomerByPhone,
+} from "../../services/conversation.service";
+import {
   claimInboundDedup,
   collectInboundDedupeKeys,
   normalizeMessageContent,
@@ -86,31 +90,15 @@ async function upsertInboundMessage(
     }
   }
 
-  let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
-  if (!customer) {
-    customer = await prisma.customer.create({
-      data: { phone: normalizedPhone, name },
-    });
-  } else if (name && !customer.name) {
+  let customer = await findOrCreateCustomerByPhone(normalizedPhone, { name });
+  if (name && !customer.name) {
     customer = await prisma.customer.update({
       where: { id: customer.id },
       data: { name },
     });
   }
 
-  const waConversationId = `wa-${customer.id}`;
-  let conversation = await prisma.conversation.findUnique({
-    where: { waConversationId },
-  });
-  if (!conversation) {
-    conversation = await prisma.conversation.create({
-      data: {
-        customerId: customer.id,
-        waConversationId,
-        status: "open",
-      },
-    });
-  }
+  const conversation = await ensureConversationForCustomer(customer.id);
 
   const recentDuplicate = await findRecentDuplicateMessage(
     conversation.id,

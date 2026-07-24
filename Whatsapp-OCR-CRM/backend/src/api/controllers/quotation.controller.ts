@@ -18,20 +18,15 @@ import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
 import { normalizePhone, normalizePhoneOrNull } from "../../utils/phone";
+import {
+  ensureConversationForCustomer,
+  findOrCreateCustomerByPhone,
+} from "../../services/conversation.service";
 import { Prisma } from "@prisma/client";
 
 /** Find or create the WhatsApp inbox conversation for a customer. */
 async function ensureCustomerConversation(customerId: string): Promise<string> {
-  const existing = await prisma.conversation.findFirst({
-    where: { customerId },
-    orderBy: { lastMessageAt: "desc" },
-  });
-  if (existing) return existing.id;
-
-  const waConversationId = `wa-${customerId}`;
-  const conversation = await prisma.conversation.create({
-    data: { customerId, waConversationId },
-  });
+  const conversation = await ensureConversationForCustomer(customerId);
   return conversation.id;
 }
 
@@ -308,26 +303,12 @@ export async function sendQuotation(req: Request, res: Response) {
 
     if (newCustomer?.phone) {
       const phone = normalizePhone(newCustomer.phone.trim());
-      let existing = await prisma.customer.findUnique({ where: { phone } });
-      if (existing) {
-        if (newCustomer.name && existing.name !== newCustomer.name) {
-          existing = await prisma.customer.update({
-            where: { id: existing.id },
-            data: { name: newCustomer.name },
-          });
-        }
-        targetCustomer = existing;
-      } else {
-        targetCustomer = await prisma.customer.create({
-          data: {
-            phone,
-            name: newCustomer.name || null,
-          },
-        });
-      }
+      targetCustomer = await findOrCreateCustomerByPhone(phone, {
+        name: newCustomer.name || null,
+      });
       enquiryUpdate.billCustomerName = newCustomer.name?.trim() || targetCustomer.name;
       enquiryUpdate.billCustomerPhone = phone;
-      logger.info(`sendQuotation: Created/used new customer ${targetCustomer.id} (${phone})`);
+      logger.info(`sendQuotation: Created/used customer ${targetCustomer.id} (${phone})`);
     } else if (customerId) {
       const existing = await prisma.customer.findUnique({ where: { id: customerId } });
       if (!existing) {

@@ -3,6 +3,11 @@ import { prisma } from "../../lib/prisma";
 import { logger } from "../../utils/logger";
 import { sendTextMessage } from "../../services/whatsapp.service";
 import { getConversationSessionState } from "../../utils/whatsapp-session";
+import { normalizePhone } from "../../utils/phone";
+import {
+  ensureConversationForCustomer,
+  findOrCreateCustomerByPhone,
+} from "../../services/conversation.service";
 
 export async function listConversations(req: Request, res: Response) {
   const page = parseInt(req.query.page as string) || 1;
@@ -11,17 +16,56 @@ export async function listConversations(req: Request, res: Response) {
   const skip = (page - 1) * limit;
 
   try {
+    // Heal duplicate customers/conversations for phones that appear more than once
+    const allCustomers = await prisma.customer.findMany({
+      select: { id: true, phone: true },
+    });
+    const phoneBuckets = new Map<string, string[]>();
+    for (const c of allCustomers) {
+      const key = normalizePhone(c.phone) || c.phone;
+      const bucket = phoneBuckets.get(key) || [];
+      bucket.push(c.id);
+      phoneBuckets.set(key, bucket);
+    }
+    for (const [phone, ids] of phoneBuckets) {
+      if (ids.length > 1) {
+        try {
+          await findOrCreateCustomerByPhone(phone);
+        } catch (err) {
+          logger.warn(`Inbox phone merge failed for ${phone}: ${err}`);
+        }
+      }
+    }
+
+    // One inbox row per customer (most recent conversation)
     const convs = await prisma.conversation.findMany({
       orderBy: { lastMessageAt: "desc" },
-      skip,
-      take: limit,
       include: {
         customer: true,
       },
     });
 
-    const enriched = [];
+    const seenCustomers = new Set<string>();
+    const seenPhones = new Set<string>();
+    const unique: typeof convs = [];
+
     for (const c of convs) {
+      const phoneKey = normalizePhone(c.customer.phone) || c.customer.phone;
+      if (seenCustomers.has(c.customerId) || seenPhones.has(phoneKey)) {
+        void ensureConversationForCustomer(c.customerId).catch((err) =>
+          logger.warn(`Background inbox merge failed for ${c.customerId}: ${err}`)
+        );
+        continue;
+      }
+      seenCustomers.add(c.customerId);
+      seenPhones.add(phoneKey);
+      unique.push(c);
+    }
+
+    const pageItems = unique.slice(skip, skip + limit);
+
+    const enriched = [];
+    for (const c of pageItems) {
       const lastMsg = await prisma.whatsappMessage.findFirst({
         where: { conversationId: c.id },
         orderBy: { createdAt: "desc" },
@@ -70,7 +114,7 @@ export async function getConversation(req: Request, res: Response) {
   const { conversationId } = req.params;
 
   try {
-    const conv = await prisma.conversation.findUnique({
+    let conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
         customer: true,
@@ -81,8 +125,21 @@ export async function getConversation(req: Request, res: Response) {
       return res.status(404).json({ detail: "Conversation not found" });
     }
 
+    // Redirect callers to the single primary inbox if this was a duplicate
+    const requestedId = conversationId;
+    const primary = await ensureConversationForCustomer(conv.customerId);
+    if (primary.id !== conv.id) {
+      conv = await prisma.conversation.findUnique({
+        where: { id: primary.id },
+        include: { customer: true },
+      });
+      if (!conv) {
+        return res.status(404).json({ detail: "Conversation not found" });
+      }
+    }
+
     const messagesRaw = await prisma.whatsappMessage.findMany({
-      where: { conversationId },
+      where: { conversationId: conv.id },
       orderBy: { createdAt: "asc" },
     });
 
@@ -98,7 +155,7 @@ export async function getConversation(req: Request, res: Response) {
       return true;
     });
 
-    const session = await getConversationSessionState(conversationId);
+    const session = await getConversationSessionState(conv.id);
 
     return res.json({
       conversation: {
@@ -111,6 +168,7 @@ export async function getConversation(req: Request, res: Response) {
         lastInboundAt: session.lastInboundAt?.toISOString() ?? null,
         sessionOpen: session.sessionOpen,
         sessionExpiresAt: session.expiresAt?.toISOString() ?? null,
+        redirectedFrom: primary.id !== requestedId ? requestedId : undefined,
       },
       customer: conv.customer,
       messages,
@@ -133,7 +191,7 @@ export async function sendConversationMessage(req: Request, res: Response) {
   }
 
   try {
-    const conv = await prisma.conversation.findUnique({
+    let conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { customer: true },
     });
@@ -142,7 +200,18 @@ export async function sendConversationMessage(req: Request, res: Response) {
       return res.status(404).json({ detail: "Conversation not found" });
     }
 
-    const session = await getConversationSessionState(conversationId);
+    const primary = await ensureConversationForCustomer(conv.customerId);
+    if (primary.id !== conv.id) {
+      conv = await prisma.conversation.findUnique({
+        where: { id: primary.id },
+        include: { customer: true },
+      });
+      if (!conv) {
+        return res.status(404).json({ detail: "Conversation not found" });
+      }
+    }
+
+    const session = await getConversationSessionState(conv.id);
     if (!session.sessionOpen) {
       return res.status(403).json({
         detail:
@@ -152,13 +221,14 @@ export async function sendConversationMessage(req: Request, res: Response) {
       });
     }
 
-    const messageId = await sendTextMessage(conv.customer.phone, text, conversationId);
+    const messageId = await sendTextMessage(conv.customer.phone, text, conv.id);
     const message = await prisma.whatsappMessage.findUnique({ where: { id: messageId } });
 
     return res.status(201).json({
       ok: true,
       messageId,
       message,
+      conversationId: conv.id,
       sessionOpen: true,
       sessionExpiresAt: session.expiresAt?.toISOString() ?? null,
     });

@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { timeAgo } from "../../../../lib/format";
 import { socket } from "../../../../lib/socket";
-import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw, Images } from "lucide-react";
+import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw, Images, Search } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
 import { formatWhatsappMessageContent } from "../../../../lib/whatsapp-templates";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -143,6 +144,11 @@ export default function ConversationPage() {
   const load = async () => {
     try {
       const r = await api.get(`/inbox/${conversationId}`);
+      const primaryId = r.data?.conversation?.id;
+      if (primaryId && primaryId !== conversationId) {
+        router.replace(`/inbox/${primaryId}`);
+        return;
+      }
       const raw = r.data.messages || [];
       const seen = new Set<string>();
       const seenWa = new Set<string>();
@@ -864,9 +870,13 @@ function SendGalleryDialog({
   const [galleries, setGalleries] = useState<GalleryPickerItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSearchQuery("");
+      return;
+    }
     setLoading(true);
     api
       .get("/galleries")
@@ -874,6 +884,10 @@ function SendGalleryDialog({
       .catch(() => toast.error("Failed to load galleries"))
       .finally(() => setLoading(false));
   }, [open]);
+
+  const filtered = galleries.filter((g) =>
+    g.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
 
   const sendGallery = async (gallery: GalleryPickerItem) => {
     if (!gallery.hasPdf) {
@@ -896,7 +910,7 @@ function SendGalleryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border-line bg-surface text-ink">
+      <DialogContent className="max-w-lg border-line bg-surface text-ink">
         <DialogHeader>
           <DialogTitle className="font-display">Send gallery catalog</DialogTitle>
         </DialogHeader>
@@ -904,7 +918,18 @@ function SendGalleryDialog({
           Select a gallery to send its PDF catalog via WhatsApp.
         </p>
 
-        <div className="max-h-80 overflow-y-auto space-y-2 mt-2">
+        <div className="relative mt-2">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-ink-muted" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search galleries…"
+            className="pl-9 border-line text-ink"
+            data-testid="gallery-search-input"
+          />
+        </div>
+
+        <div className="mt-3">
           {loading && (
             <div className="flex items-center justify-center py-8 text-ink-muted">
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -914,39 +939,47 @@ function SendGalleryDialog({
           {!loading && galleries.length === 0 && (
             <div className="text-sm text-ink-muted py-6 text-center">No galleries available.</div>
           )}
-          {!loading &&
-            galleries.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                disabled={!!sendingId}
-                onClick={() => sendGallery(g)}
-                className="w-full flex items-center gap-3 p-3 rounded-md border border-line hover:bg-canvas transition-colors text-left disabled:opacity-60"
-              >
-                <div className="h-12 w-12 rounded border border-line bg-canvas overflow-hidden shrink-0">
-                  {g.thumbnailUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={g.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-ink-muted">
-                      <Images className="h-4 w-4" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{g.name}</div>
-                  <div className="text-[11px] text-ink-muted">
-                    {g.imageCount} image{g.imageCount === 1 ? "" : "s"}
-                    {!g.hasPdf ? " · PDF not ready" : ""}
+          {!loading && galleries.length > 0 && filtered.length === 0 && (
+            <div className="text-sm text-ink-muted py-6 text-center">No galleries match your search.</div>
+          )}
+          {!loading && filtered.length > 0 && (
+            <div className="flex gap-3 overflow-x-auto pb-2 scroll-thin">
+              {filtered.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  disabled={!!sendingId}
+                  onClick={() => sendGallery(g)}
+                  className="w-40 shrink-0 flex flex-col rounded-md border border-line hover:bg-canvas transition-colors text-left disabled:opacity-60 overflow-hidden"
+                >
+                  <div className="h-28 w-full bg-canvas border-b border-line">
+                    {g.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={g.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-ink-muted">
+                        <Images className="h-6 w-6" />
+                      </div>
+                    )}
                   </div>
-                </div>
-                {sendingId === g.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-brand shrink-0" />
-                ) : (
-                  <Send className="h-4 w-4 text-ink-muted shrink-0" />
-                )}
-              </button>
-            ))}
+                  <div className="p-2.5 flex items-start justify-between gap-1.5">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{g.name}</div>
+                      <div className="text-[11px] text-ink-muted mt-0.5">
+                        {g.imageCount} image{g.imageCount === 1 ? "" : "s"}
+                        {!g.hasPdf ? " · PDF not ready" : ""}
+                      </div>
+                    </div>
+                    {sendingId === g.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-brand shrink-0 mt-0.5" />
+                    ) : (
+                      <Send className="h-4 w-4 text-ink-muted shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

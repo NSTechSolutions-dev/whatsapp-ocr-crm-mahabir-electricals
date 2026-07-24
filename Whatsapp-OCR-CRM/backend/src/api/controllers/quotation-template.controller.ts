@@ -7,6 +7,10 @@ import { scheduleInquiryFollowup } from "../../services/automation.service";
 import { logActivity } from "../../utils/activity";
 import { logger } from "../../utils/logger";
 import { normalizePhone, normalizePhoneOrNull } from "../../utils/phone";
+import {
+  ensureConversationForCustomer,
+  findOrCreateCustomerByPhone,
+} from "../../services/conversation.service";
 
 export type TemplateItemInput = {
   productName: string;
@@ -78,17 +82,8 @@ function serializeTemplate(template: {
 }
 
 async function ensureCustomerConversation(customerId: string): Promise<string> {
-  const existing = await prisma.conversation.findFirst({
-    where: { customerId },
-    orderBy: { lastMessageAt: "desc" },
-  });
-  if (existing) return existing.id;
-
-  return (
-    await prisma.conversation.create({
-      data: { customerId, waConversationId: `wa-${customerId}` },
-    })
-  ).id;
+  const conversation = await ensureConversationForCustomer(customerId);
+  return conversation.id;
 }
 
 export async function listQuotationTemplates(req: Request, res: Response) {
@@ -318,28 +313,10 @@ export async function sendQuotationTemplate(req: Request, res: Response) {
     const customerName = String(name || "").trim() || null;
     const customerCompany = company != null ? String(company).trim() || null : null;
 
-    let customer = await prisma.customer.findUnique({ where: { phone: normalizedPhone } });
-    if (customer) {
-      const updates: { name?: string | null; company?: string | null } = {};
-      if (customerName && customer.name !== customerName) updates.name = customerName;
-      if (customerCompany !== null && customer.company !== customerCompany) {
-        updates.company = customerCompany;
-      }
-      if (Object.keys(updates).length) {
-        customer = await prisma.customer.update({
-          where: { id: customer.id },
-          data: updates,
-        });
-      }
-    } else {
-      customer = await prisma.customer.create({
-        data: {
-          phone: normalizedPhone,
-          name: customerName,
-          company: customerCompany,
-        },
-      });
-    }
+    const customer = await findOrCreateCustomerByPhone(normalizedPhone, {
+      name: customerName,
+      company: customerCompany,
+    });
 
     const conversationId = await ensureCustomerConversation(customer.id);
 
