@@ -128,6 +128,59 @@ export async function getCustomer(req: Request, res: Response) {
   }
 }
 
+export async function updateCustomer(req: Request, res: Response) {
+  const { id } = req.params;
+  const { name, company } = req.body as { name?: unknown; company?: unknown };
+
+  if (name === undefined && company === undefined) {
+    return res.status(400).json({ detail: "Provide name and/or company to update" });
+  }
+
+  if (name !== undefined && typeof name !== "string") {
+    return res.status(400).json({ detail: "Name must be a string" });
+  }
+  if (company !== undefined && typeof company !== "string" && company !== null) {
+    return res.status(400).json({ detail: "Company must be a string or null" });
+  }
+
+  try {
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return res.status(404).json({ detail: "Customer not found" });
+    }
+
+    const data: { name?: string | null; company?: string | null } = {};
+    if (name !== undefined) {
+      const trimmed = name.trim();
+      data.name = trimmed.length > 0 ? trimmed : null;
+    }
+    if (company !== undefined) {
+      if (company === null) {
+        data.company = null;
+      } else {
+        const trimmed = company.trim();
+        data.company = trimmed.length > 0 ? trimmed : null;
+      }
+    }
+
+    const updatedCustomer = await prisma.customer.update({
+      where: { id },
+      data,
+    });
+
+    return res.json({
+      customer: {
+        ...updatedCustomer,
+        createdAt: updatedCustomer.createdAt.toISOString(),
+        updatedAt: updatedCustomer.updatedAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error(`Error updating customer ${id}: ` + error);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
 export async function updateCustomerStage(req: Request, res: Response) {
   const { id } = req.params;
   const { stage } = req.body;

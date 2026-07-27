@@ -3,8 +3,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Check, Pencil, X } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "../../../../lib/api";
 import { formatINR, timeAgo, formatDate } from "../../../../lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface EnquiryItem {
   id: string;
@@ -48,6 +52,9 @@ interface CustomerProfileData {
 export default function CustomerProfilePage() {
   const { customerId } = useParams() as { customerId: string };
   const [data, setData] = useState<CustomerProfileData | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     api.get(`/customers/${customerId}`).then((r) => setData(r.data));
@@ -69,6 +76,47 @@ export default function CustomerProfilePage() {
     return items;
   }, [data]);
 
+  const startEditName = () => {
+    if (!data) return;
+    setNameDraft(data.customer.name || "");
+    setEditingName(true);
+  };
+
+  const cancelEditName = () => {
+    setEditingName(false);
+    setNameDraft("");
+  };
+
+  const saveName = async () => {
+    if (!data) return;
+    const next = nameDraft.trim();
+    if (next === (data.customer.name || "").trim()) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      const r = await api.patch(`/customers/${customerId}`, { name: next });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              customer: {
+                ...prev.customer,
+                name: r.data.customer.name,
+              },
+            }
+          : prev
+      );
+      setEditingName(false);
+      toast.success("Customer name updated");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update name");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   if (!data) return <div className="p-8 text-ink-muted">Loading…</div>;
   const c = data.customer;
 
@@ -76,7 +124,59 @@ export default function CustomerProfilePage() {
     <div className="p-8 lg:p-12 max-w-6xl text-ink">
       <div className="mb-8">
         <div className="text-xs uppercase tracking-wider text-ink-muted">Customer</div>
-        <h1 className="font-display text-3xl font-semibold mt-1 text-ink">{c.name || "Unnamed"}</h1>
+        {editingName ? (
+          <div className="mt-1 flex flex-wrap items-center gap-2 max-w-xl">
+            <Input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="Customer name"
+              className="font-display text-lg h-10 border-line"
+              autoFocus
+              data-testid="customer-name-input"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void saveName();
+                }
+                if (e.key === "Escape") cancelEditName();
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void saveName()}
+              disabled={savingName}
+              data-testid="customer-name-save"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={cancelEditName}
+              disabled={savingName}
+              data-testid="customer-name-cancel"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-1 flex items-center gap-2">
+            <h1 className="font-display text-3xl font-semibold text-ink">{c.name || "Unnamed"}</h1>
+            <button
+              type="button"
+              onClick={startEditName}
+              className="rounded p-1.5 text-ink-muted hover:text-brand hover:bg-brand-50 transition-colors"
+              title="Edit customer name"
+              data-testid="customer-name-edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <p className="text-ink-muted text-sm mt-1">
           {c.phone}
           {c.company && <> · {c.company}</>} · since {formatDate(c.createdAt)}

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { timeAgo } from "../../../../lib/format";
 import { socket } from "../../../../lib/socket";
-import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw, Images, Search } from "lucide-react";
+import { Loader2, Check, ImagePlus, FileText, ArrowRight, Send, MessageSquare, RotateCcw, Images, Search, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserErrorMessage } from "../../../../lib/user-error";
 import { formatWhatsappMessageContent } from "../../../../lib/whatsapp-templates";
@@ -138,6 +138,9 @@ export default function ConversationPage() {
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [sendingText, setSendingText] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -369,6 +372,37 @@ export default function ConversationPage() {
     ? new Date(data.conversation.sessionExpiresAt)
     : null;
 
+  const saveCustomerName = async () => {
+    const customerId = data.customer?.id;
+    if (!customerId || savingName) return;
+    const next = nameDraft.trim();
+    if (next === (data.customer?.name || "").trim()) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      const r = await api.patch(`/customers/${customerId}`, { name: next });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              customer: {
+                ...prev.customer,
+                name: r.data.customer.name,
+              },
+            }
+          : prev
+      );
+      setEditingName(false);
+      toast.success("Customer name updated");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || "Failed to update name");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   const sendCustomMessage = async () => {
     const text = draft.trim();
     if (!text || !sessionOpen || sendingText) return;
@@ -411,11 +445,71 @@ export default function ConversationPage() {
       {/* Thread */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-line">
         <header className="px-6 py-4 border-b border-line bg-surface flex items-center justify-between">
-          <div>
-            <div className="font-display text-lg font-semibold">{data.customer?.name || "Customer"}</div>
+          <div className="min-w-0">
+            {editingName ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  placeholder="Customer name"
+                  className="h-9 max-w-xs border-line"
+                  autoFocus
+                  data-testid="inbox-customer-name-input"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveCustomerName();
+                    }
+                    if (e.key === "Escape") {
+                      setEditingName(false);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void saveCustomerName()}
+                  disabled={savingName}
+                  data-testid="inbox-customer-name-save"
+                >
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  Save
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditingName(false)}
+                  disabled={savingName}
+                >
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="font-display text-lg font-semibold truncate">
+                  {data.customer?.name || "Customer"}
+                </div>
+                {data.customer?.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNameDraft(data.customer?.name || "");
+                      setEditingName(true);
+                    }}
+                    className="rounded p-1 text-ink-muted hover:text-brand hover:bg-brand-50 transition-colors"
+                    title="Edit customer name"
+                    data-testid="inbox-customer-name-edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
             <div className="text-xs text-ink-muted">{data.customer?.phone}</div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-xs text-ink-muted">{data.messages?.length || 0} messages</div>
             {sessionOpen ? (
               <div className="text-[10px] text-emerald-700 mt-0.5">
