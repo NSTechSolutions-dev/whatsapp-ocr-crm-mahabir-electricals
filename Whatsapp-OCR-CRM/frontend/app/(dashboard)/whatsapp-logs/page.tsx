@@ -59,7 +59,7 @@ function statusLabel(status: string) {
     case "queued":
       return "Queued";
     case "submitted":
-      return "Submitted";
+      return "Accepted";
     case "sent":
       return "Sent";
     case "delivered":
@@ -114,8 +114,9 @@ export default function WhatsappLogsPage() {
           <div className="text-[10px] uppercase tracking-wider text-ink-muted">MSG91 · WhatsApp</div>
           <h1 className="font-display text-2xl font-semibold mt-0.5">Delivery logs</h1>
           <p className="text-sm text-ink-muted mt-1">
-            Real send status from MSG91. <span className="text-ink">Submitted</span> = accepted by
-            MSG91; <span className="text-ink">Delivered/Read</span> need outbound delivery webhooks.
+            <span className="text-ink">Sent</span> = MSG91 accepted the message.{" "}
+            <span className="text-ink">Delivered/Read</span> update only after MSG91 outbound
+            delivery webhooks are configured.
           </p>
         </div>
         <Button

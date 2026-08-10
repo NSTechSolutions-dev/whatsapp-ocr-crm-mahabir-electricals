@@ -145,9 +145,10 @@ export async function sendTemplateMessage(
         variables,
         documentHeader,
         templateNamespace,
+        crqid: message.id,
       });
       await markMessageDelivery(message.id, {
-        status: "submitted",
+        status: "sent",
         waMessageId: ack.messageUuid || ack.messageId,
         msg91RequestId: ack.requestId || ack.messageId,
         failureReason: null,
@@ -201,9 +202,10 @@ export async function sendTextMessage(
         to: normalizedPhone,
         type: "text",
         text,
+        crqid: message.id,
       });
       await markMessageDelivery(message.id, {
-        status: "submitted",
+        status: "sent",
         waMessageId: ack.messageUuid || ack.messageId,
         msg91RequestId: ack.requestId || ack.messageId,
         failureReason: null,

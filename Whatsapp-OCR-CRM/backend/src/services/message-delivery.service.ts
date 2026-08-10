@@ -118,9 +118,18 @@ export async function markMessageDelivery(
 async function findOutboundForDlr(input: {
   messageUuid: string | null;
   requestId: string | null;
+  crqid: string | null;
   phone: string | null;
   templateName: string | null;
 }) {
+  // Strongest match: CRQID we sent (= WhatsappMessage.id)
+  if (input.crqid) {
+    const byCrq = await prisma.whatsappMessage.findFirst({
+      where: { id: input.crqid, direction: "OUTBOUND" },
+    });
+    if (byCrq) return byCrq;
+  }
+
   const orFilters: Array<Record<string, string>> = [];
   if (input.messageUuid) {
     orFilters.push({ waMessageId: input.messageUuid });
@@ -197,6 +206,8 @@ export async function applyOutboundDeliveryReport(payload: Record<string, unknow
     payload.oneApiRequestId
   );
 
+  const crqid = firstString(payload.crqid, payload.CRQID, payload.CrqId);
+
   const phone = firstString(
     payload.customerNumber,
     payload.customer_number,
@@ -216,13 +227,14 @@ export async function applyOutboundDeliveryReport(payload: Record<string, unknow
   const message = await findOutboundForDlr({
     messageUuid,
     requestId,
+    crqid,
     phone,
     templateName,
   });
 
   if (!message) {
     logger.warn(
-      `Outbound DLR unmatched status=${status} uuid=${messageUuid || "-"} request=${requestId || "-"} phone=${phone || "-"}`
+      `Outbound DLR unmatched status=${status} crqid=${crqid || "-"} uuid=${messageUuid || "-"} request=${requestId || "-"} phone=${phone || "-"}`
     );
     return { updated: false, reason: "not_found" as const };
   }
@@ -237,7 +249,7 @@ export async function applyOutboundDeliveryReport(payload: Record<string, unknow
   });
 
   logger.info(
-    `Outbound DLR applied message=${message.id} status=${status} request=${requestId || "-"} uuid=${messageUuid || "-"}`
+    `Outbound DLR applied message=${message.id} status=${status} crqid=${crqid || "-"} request=${requestId || "-"} uuid=${messageUuid || "-"}`
   );
   return { updated: true, messageId: message.id, status };
 }

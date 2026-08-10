@@ -32,10 +32,11 @@ export const whatsappWorker = new Worker(
         documentHeader,
         templateNamespace,
         text,
+        crqid: messageId,
       });
 
       await markMessageDelivery(messageId, {
-        status: "submitted",
+        status: "sent",
         waMessageId: ack.messageUuid || ack.messageId,
         msg91RequestId: ack.requestId || ack.messageId,
         failureReason: null,

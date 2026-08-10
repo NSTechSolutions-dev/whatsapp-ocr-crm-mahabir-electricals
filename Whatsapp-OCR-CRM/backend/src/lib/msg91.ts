@@ -35,6 +35,8 @@ export interface Msg91SendPayload {
   variables?: string[];
   documentHeader?: Msg91DocumentHeader;
   text?: string;
+  /** Returned in MSG91 outbound DLR as crqid — use our WhatsappMessage.id */
+  crqid?: string;
 }
 
 function normalizePhoneForMsg91(phone: string): string {
@@ -125,18 +127,20 @@ export type Msg91Ack = {
 
 async function sendSessionTextToMsg91(
   phone: string,
-  text: string
+  text: string,
+  crqid?: string
 ): Promise<Msg91Ack> {
   const recipient = normalizePhoneForMsg91(phone);
 
   // Session text uses a flat JSON body (not Meta-style nested payload,
   // and not query-params-only — those return 400 / invalid JSON).
-  const body = {
+  const body: Record<string, string> = {
     integrated_number: env.MSG91_INTEGRATED_NUMBER,
     recipient_number: recipient,
     content_type: "text",
     text,
   };
+  if (crqid) body.CRQID = crqid;
 
   const response = await axios.post(MSG91_SESSION_TEXT_URL, body, {
     headers: {
@@ -189,7 +193,7 @@ async function sendTemplateToMsg91(
   const phone = normalizePhoneForMsg91(payload.to);
   const namespace =
     payload.templateNamespace !== undefined ? payload.templateNamespace : env.MSG91_WHATSAPP_NAMESPACE;
-  const body = {
+  const body: Record<string, unknown> = {
     integrated_number: env.MSG91_INTEGRATED_NUMBER,
     content_type: "template",
     payload: {
@@ -211,6 +215,9 @@ async function sendTemplateToMsg91(
       },
     },
   };
+  if (payload.crqid) {
+    body.CRQID = payload.crqid;
+  }
 
   const response = await axios.post(MSG91_BULK_URL, body, {
     headers: {
@@ -259,7 +266,7 @@ export async function sendToMsg91(payload: Msg91SendPayload): Promise<Msg91Ack> 
     if (payload.type === "text") {
       const text = (payload.text || "").trim();
       if (!text) throw new Error("Text message body is required");
-      return await sendSessionTextToMsg91(payload.to, text);
+      return await sendSessionTextToMsg91(payload.to, text, payload.crqid);
     }
 
     if (payload.type === "template") {

@@ -285,29 +285,38 @@ export async function msg91Webhook(req: Request, res: Response) {
   logger.info(`Received Webhook request: Headers=${JSON.stringify(req.headers)}, Body=${JSON.stringify(req.body)}`);
   const signature = req.headers["x-msg91-signature"] as string;
   const isMock = process.env.MSG91_MOCK !== "0";
+  const payload = req.body as Record<string, unknown>;
+
+  const {
+    isOutboundDeliveryPayload,
+    applyOutboundDeliveryReport,
+    asWebhookPayloadList,
+  } = await import("../../services/message-delivery.service");
+
+  const events = asWebhookPayloadList(payload);
+  const outboundEvents = events.filter((event) => isOutboundDeliveryPayload(event));
+  const isOutboundDlr = outboundEvents.length > 0;
 
   if (!isMock) {
     const shouldSkip = env.MSG91_WEBHOOK_SECRET === "skip" || env.MSG91_WEBHOOK_SECRET.includes("dummy");
     if (!shouldSkip) {
-      if (!signature || !verifyMsg91Signature((req as any).rawBody, signature, env.MSG91_WEBHOOK_SECRET)) {
+      const validSig =
+        !!signature && verifyMsg91Signature((req as any).rawBody, signature, env.MSG91_WEBHOOK_SECRET);
+      // MSG91 Webhook (New) outbound DLRs often omit the legacy HMAC header.
+      // Accept clearly-identified outbound delivery reports without signature;
+      // still require signature for inbound chat traffic.
+      if (!validSig && !isOutboundDlr) {
         return res.status(401).json({ detail: "Invalid signature" });
+      }
+      if (!validSig && isOutboundDlr) {
+        logger.warn("Outbound DLR accepted without MSG91 signature (Webhook New)");
       }
     }
   }
 
-  const payload = req.body as Record<string, unknown>;
-
   // Outbound delivery reports (Sent/Delivered/Read/Failed) — do not treat as inbound chat
-  try {
-    const {
-      isOutboundDeliveryPayload,
-      applyOutboundDeliveryReport,
-      asWebhookPayloadList,
-    } = await import("../../services/message-delivery.service");
-
-    const events = asWebhookPayloadList(payload);
-    const outboundEvents = events.filter((event) => isOutboundDeliveryPayload(event));
-    if (outboundEvents.length > 0) {
+  if (isOutboundDlr) {
+    try {
       const results = [];
       for (const event of outboundEvents) {
         results.push(await applyOutboundDeliveryReport(event));
@@ -318,11 +327,11 @@ export async function msg91Webhook(req: Request, res: Response) {
         count: results.length,
         results,
       });
+    } catch (dlrError) {
+      logger.error(`Outbound DLR handling failed: ${dlrError}`);
+      // Still ack 200 so MSG91 does not pause the webhook; log for ops.
+      return res.json({ ok: false, kind: "outbound_dlr", detail: "processing_error" });
     }
-  } catch (dlrError) {
-    logger.error(`Outbound DLR handling failed: ${dlrError}`);
-    // Still ack 200 so MSG91 does not pause the webhook; log for ops.
-    return res.json({ ok: false, kind: "outbound_dlr", detail: "processing_error" });
   }
 
   const { phone, msgType, name, content, sourceMediaUrl, waMessageId } = parseMsg91Inbound(payload);
