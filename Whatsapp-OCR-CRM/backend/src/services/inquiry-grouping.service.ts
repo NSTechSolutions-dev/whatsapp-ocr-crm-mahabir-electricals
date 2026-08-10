@@ -3,6 +3,7 @@ import { redisConnection } from "../lib/redis";
 import { inquiryBatchQueue } from "../jobs/queues";
 import { INQUIRY_GROUPING_WINDOW_MS } from "../config/inquiry-grouping";
 import { logger } from "../utils/logger";
+import { reactivateLostCustomer } from "./automation-guard.service";
 
 const LOCK_TTL_SEC = 5;
 const LOCK_PREFIX = "inquiry:group:lock:";
@@ -75,6 +76,8 @@ export async function attachWhatsappImage(
   input: AttachWhatsappImageInput
 ): Promise<AttachWhatsappImageResult> {
   const { customerId, conversationId, messageId, imageUrl, createdById } = input;
+
+  await reactivateLostCustomer(customerId);
 
   const existingImage = await prisma.enquiryImage.findUnique({
     where: { messageId },

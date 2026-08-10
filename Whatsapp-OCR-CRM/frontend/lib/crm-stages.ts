@@ -5,6 +5,7 @@ export const CRM_STAGES = [
   "Proposal",
   "Negotiation",
   "Closed",
+  "Lost",
 ] as const;
 
 export type CrmStage = (typeof CRM_STAGES)[number];
@@ -38,6 +39,11 @@ export const STAGE_CARD_COLORS: Record<
     avatar: "bg-red-900 text-white",
     badge: "bg-red-900 text-white",
   },
+  Lost: {
+    accent: "border-l-stone-400",
+    avatar: "bg-stone-100 text-stone-700",
+    badge: "bg-stone-100 text-stone-700",
+  },
 };
 
 export const STAGE_LIST_COLORS: Record<string, { text: string }> = {
@@ -46,6 +52,7 @@ export const STAGE_LIST_COLORS: Record<string, { text: string }> = {
   Proposal: { text: "text-red-900" },
   Negotiation: { text: "text-amber-900" },
   Closed: { text: "text-red-950" },
+  Lost: { text: "text-stone-600" },
 };
 
 export const STAGE_COLUMN_COLORS: Record<string, { dot: string; header: string }> = {
@@ -54,4 +61,5 @@ export const STAGE_COLUMN_COLORS: Record<string, { dot: string; header: string }
   Proposal: { dot: "bg-red-600", header: "bg-red-100/50" },
   Negotiation: { dot: "bg-amber-600", header: "bg-amber-50/60" },
   Closed: { dot: "bg-red-900", header: "bg-red-950/10" },
+  Lost: { dot: "bg-stone-400", header: "bg-stone-50/80" },
 };

@@ -6,6 +6,7 @@ import { ProductExtractionError } from "../services/product-extraction.service";
 import { GeminiApiError } from "../lib/gemini-retry";
 import { isOcrJobCancelled } from "../lib/ocr-job-state";
 import { markEnquiryFailed } from "../services/inquiry-grouping.service";
+import { reactivateLostCustomer } from "../services/automation-guard.service";
 import { createSystemNotification } from "../utils/notification";
 import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
@@ -136,6 +137,8 @@ export const inventoryScoreWorker = new Worker(
       if (!resolvedCustomerId) {
         throw new Error(`No customerId available for job ${id}`);
       }
+
+      await reactivateLostCustomer(resolvedCustomerId);
 
       const adminUser = await prisma.user.findFirst({
         where: { role: "ADMIN", isActive: true },

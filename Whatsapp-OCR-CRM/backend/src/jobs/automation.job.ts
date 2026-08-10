@@ -3,7 +3,36 @@ import { redisConnection } from "../lib/redis";
 import { prisma } from "../lib/prisma";
 import { sendTemplateMessage } from "../services/whatsapp.service";
 import { finishExecution } from "../services/automation-execution.service";
+import { isAutomationBlocked } from "../services/automation-guard.service";
 import { logger } from "../utils/logger";
+
+async function skipIfBlocked(
+  scheduledJobId: string | undefined,
+  ruleId: string,
+  customerId: string
+): Promise<boolean> {
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) {
+    await finishExecution({
+      scheduledJobId,
+      ruleId,
+      customerId,
+      error: "Customer missing",
+    });
+    return true;
+  }
+  if (isAutomationBlocked(customer)) {
+    await finishExecution({
+      scheduledJobId,
+      ruleId,
+      customerId,
+      messageContent: "(skipped — Lost or DND)",
+      metadata: { skipped: true, reason: "lost_or_dnd" },
+    });
+    return true;
+  }
+  return false;
+}
 
 export const automationWorker = new Worker(
   "automationQueue",
@@ -22,6 +51,10 @@ export const automationWorker = new Worker(
     logger.info(`Worker running automation: ${job.name} for customer ${customerId}`);
 
     try {
+      if (await skipIfBlocked(scheduledJobId, ruleId, customerId)) {
+        return;
+      }
+
       if (job.name === "inquiry_followup" || job.name === "inactivity_followup") {
         const rule = await prisma.automationRule.findUnique({ where: { id: ruleId } });
         const customer = await prisma.customer.findUnique({ where: { id: customerId } });
@@ -105,12 +138,12 @@ export const automationWorker = new Worker(
       } else if (job.name === "enquiry_reminder") {
         const rule = await prisma.automationRule.findUnique({ where: { id: ruleId } });
         const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-        if (!rule?.isActive || !customer || customer.stage === "Closed") {
+        if (!rule?.isActive || !customer || customer.stage === "Closed" || isAutomationBlocked(customer)) {
           await finishExecution({
             scheduledJobId,
             ruleId,
             customerId,
-            error: "Rule inactive, customer missing, or stage Closed",
+            error: "Rule inactive, customer missing, Closed, Lost, or DND",
           });
           return;
         }
@@ -132,12 +165,12 @@ export const automationWorker = new Worker(
       } else if (job.name === "closed_review") {
         const rule = await prisma.automationRule.findUnique({ where: { id: ruleId } });
         const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-        if (!rule?.isActive || !customer) {
+        if (!rule?.isActive || !customer || isAutomationBlocked(customer)) {
           await finishExecution({
             scheduledJobId,
             ruleId,
             customerId,
-            error: "Rule inactive or customer missing",
+            error: "Rule inactive, customer missing, Lost, or DND",
           });
           return;
         }

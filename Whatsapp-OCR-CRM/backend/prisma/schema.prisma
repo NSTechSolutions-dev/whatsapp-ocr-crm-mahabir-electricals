@@ -39,6 +39,7 @@ enum JobStatus {
   PROCESSING
   COMPLETED
   FAILED
+  CANCELLED
 }
 
 model User {
@@ -62,6 +63,7 @@ model Customer {
   name               String?
   company            String?
   stage              String   @default("Lead")
+  doNotDisturb       Boolean  @default(false)
   hiddenFromPipeline Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

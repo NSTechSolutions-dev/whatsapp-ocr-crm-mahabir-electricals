@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
 import { logger } from "../../utils/logger";
 import { triggerClosedReview } from "../../services/automation.service";
+import {
+  cancelPendingAutomations,
+  isAutomationBlocked,
+} from "../../services/automation-guard.service";
 import { looksLikePhoneQuery, normalizePhoneForSearch } from "../../utils/phone";
 
 export async function listCustomers(req: Request, res: Response) {
@@ -201,8 +205,20 @@ export async function updateCustomerStage(req: Request, res: Response) {
       data: { stage },
     });
 
-    // Fire Google review automation only when newly moved to Closed
-    if (stage === "Closed" && previousStage !== "Closed") {
+    if (stage === "Lost" && previousStage !== "Lost") {
+      try {
+        await cancelPendingAutomations(updatedCustomer.id, "stage_lost");
+      } catch (err) {
+        logger.warn(`cancelPendingAutomations failed for ${updatedCustomer.id}: ${err}`);
+      }
+    }
+
+    // Fire Google review automation only when newly moved to Closed (and not DND)
+    if (
+      stage === "Closed" &&
+      previousStage !== "Closed" &&
+      !isAutomationBlocked(updatedCustomer)
+    ) {
       try {
         const result = await triggerClosedReview(updatedCustomer.id);
         logger.info(
@@ -222,6 +238,47 @@ export async function updateCustomerStage(req: Request, res: Response) {
     });
   } catch (error) {
     logger.error(`Error updating customer stage ${id}: ` + error);
+    return res.status(500).json({ detail: "Internal server error" });
+  }
+}
+
+export async function updateCustomerDnd(req: Request, res: Response) {
+  const { id } = req.params;
+  const { doNotDisturb } = req.body as { doNotDisturb?: unknown };
+
+  if (typeof doNotDisturb !== "boolean") {
+    return res.status(400).json({ detail: "doNotDisturb must be a boolean" });
+  }
+
+  try {
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return res.status(404).json({ detail: "Customer not found" });
+    }
+
+    const wasDnd = customer.doNotDisturb;
+    const updatedCustomer = await prisma.customer.update({
+      where: { id },
+      data: { doNotDisturb },
+    });
+
+    if (!wasDnd && doNotDisturb) {
+      try {
+        await cancelPendingAutomations(updatedCustomer.id, "dnd_enabled");
+      } catch (err) {
+        logger.warn(`cancelPendingAutomations failed for ${updatedCustomer.id}: ${err}`);
+      }
+    }
+
+    return res.json({
+      customer: {
+        ...updatedCustomer,
+        createdAt: updatedCustomer.createdAt.toISOString(),
+        updatedAt: updatedCustomer.updatedAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error(`Error updating customer DND ${id}: ` + error);
     return res.status(500).json({ detail: "Internal server error" });
   }
 }

@@ -3,12 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil, X, Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../../../lib/api";
 import { formatINR, timeAgo, formatDate } from "../../../../lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface EnquiryItem {
   id: string;
@@ -37,6 +38,8 @@ interface CustomerProfileData {
     name: string | null;
     phone: string;
     company: string | null;
+    stage?: string;
+    doNotDisturb?: boolean;
     createdAt: string;
   };
   stats: {
@@ -55,6 +58,7 @@ export default function CustomerProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [savingDnd, setSavingDnd] = useState(false);
 
   useEffect(() => {
     api.get(`/customers/${customerId}`).then((r) => setData(r.data));
@@ -75,6 +79,31 @@ export default function CustomerProfilePage() {
     items.sort((a, b) => (a.ts < b.ts ? 1 : -1));
     return items;
   }, [data]);
+
+  const toggleDnd = async () => {
+    if (!data) return;
+    const next = !data.customer.doNotDisturb;
+    setSavingDnd(true);
+    try {
+      const r = await api.patch(`/customers/${customerId}/dnd`, { doNotDisturb: next });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              customer: {
+                ...prev.customer,
+                doNotDisturb: r.data.customer.doNotDisturb,
+              },
+            }
+          : prev
+      );
+      toast.success(next ? "DND on — automations silenced" : "DND off — automations allowed");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update DND");
+    } finally {
+      setSavingDnd(false);
+    }
+  };
 
   const startEditName = () => {
     if (!data) return;
@@ -180,7 +209,30 @@ export default function CustomerProfilePage() {
         <p className="text-ink-muted text-sm mt-1">
           {c.phone}
           {c.company && <> · {c.company}</>} · since {formatDate(c.createdAt)}
+          {c.stage ? <> · {c.stage}</> : null}
         </p>
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => void toggleDnd()}
+            disabled={savingDnd}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+              c.doNotDisturb
+                ? "border-stone-300 bg-stone-200 text-stone-800 hover:bg-stone-300"
+                : "border-line bg-surface text-ink-muted hover:text-ink hover:bg-canvas"
+            )}
+            data-testid="customer-dnd-toggle"
+            title={
+              c.doNotDisturb
+                ? "DND on — click to allow automations"
+                : "DND off — click to silence automations"
+            }
+          >
+            {c.doNotDisturb ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+            {c.doNotDisturb ? "DND On" : "DND Off"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" data-testid="customer-stats">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Building2, ChevronRight, FileText, Phone, Trash2 } from "lucide-react";
+import { Bell, BellOff, Building2, ChevronRight, FileText, Phone, Trash2 } from "lucide-react";
 import { timeAgo } from "../../../../lib/format";
 import {
   Select,
@@ -19,6 +19,7 @@ export interface CustomerItem {
   phone: string;
   company: string | null;
   stage: string;
+  doNotDisturb?: boolean;
   enquiryCount: number;
   lastActivity: string;
 }
@@ -35,13 +36,20 @@ function getInitials(name: string | null, phone: string): string {
 interface CustomerCardProps {
   customer: CustomerItem;
   onStageChange: (customerId: string, stage: string) => void;
+  onDndToggle?: (customerId: string, doNotDisturb: boolean) => void;
   onRemoveFromPipeline?: (customerId: string) => void;
 }
 
-export function CustomerCard({ customer, onStageChange, onRemoveFromPipeline }: CustomerCardProps) {
+export function CustomerCard({
+  customer,
+  onStageChange,
+  onDndToggle,
+  onRemoveFromPipeline,
+}: CustomerCardProps) {
   const router = useRouter();
   const colors = STAGE_CARD_COLORS[customer.stage || "Lead"] || STAGE_CARD_COLORS.Lead;
   const displayName = customer.name?.trim() || "Unknown";
+  const dndOn = !!customer.doNotDisturb;
 
   return (
     <article
@@ -73,6 +81,14 @@ export function CustomerCard({ customer, onStageChange, onRemoveFromPipeline }: 
               <h3 className="font-medium text-[13px] leading-tight text-ink truncate group-hover:text-brand transition-colors">
                 {displayName}
               </h3>
+              {dndOn ? (
+                <span
+                  className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-stone-200 text-stone-700"
+                  title="Do Not Disturb"
+                >
+                  DND
+                </span>
+              ) : null}
               <ChevronRight className="h-3 w-3 shrink-0 text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             {customer.company ? (
@@ -109,6 +125,22 @@ export function CustomerCard({ customer, onStageChange, onRemoveFromPipeline }: 
       >
         <span className="text-[9px] uppercase tracking-wider text-ink-muted">Stage</span>
         <div className="flex items-center gap-1">
+          {onDndToggle && (
+            <button
+              type="button"
+              onClick={() => onDndToggle(customer.id, !dndOn)}
+              className={cn(
+                "rounded p-1 transition-colors",
+                dndOn
+                  ? "text-stone-800 bg-stone-200 hover:bg-stone-300"
+                  : "text-ink-muted hover:text-ink hover:bg-canvas"
+              )}
+              title={dndOn ? "DND on — click to allow automations" : "DND off — click to silence automations"}
+              data-testid={`dnd-toggle-${customer.id}`}
+            >
+              {dndOn ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+            </button>
+          )}
           {onRemoveFromPipeline && (
             <button
               type="button"
@@ -121,17 +153,17 @@ export function CustomerCard({ customer, onStageChange, onRemoveFromPipeline }: 
             </button>
           )}
           <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
-          <SelectTrigger className="h-6 w-[7.5rem] text-[11px] bg-surface border-line/80 text-ink px-2">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-surface border-line text-ink">
-            {CRM_STAGES.map((s) => (
-              <SelectItem key={s} value={s} className="text-xs text-ink hover:bg-canvas">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger className="h-6 w-[7.5rem] text-[11px] bg-surface border-line/80 text-ink px-2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-surface border-line text-ink">
+              {CRM_STAGES.map((s) => (
+                <SelectItem key={s} value={s} className="text-xs text-ink hover:bg-canvas">
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </article>

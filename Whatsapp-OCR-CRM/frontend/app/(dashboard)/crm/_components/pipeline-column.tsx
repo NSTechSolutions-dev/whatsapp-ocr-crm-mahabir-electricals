@@ -19,6 +19,7 @@ interface PipelineColumnProps {
   colors: StageColors;
   loading?: boolean;
   onStageChange: (customerId: string, stage: string) => void;
+  onDndToggle?: (customerId: string, doNotDisturb: boolean) => void;
   onRemoveFromPipeline?: (customerId: string) => void;
 }
 
@@ -28,6 +29,7 @@ export function PipelineColumn({
   colors,
   loading = false,
   onStageChange,
+  onDndToggle,
   onRemoveFromPipeline,
 }: PipelineColumnProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -106,6 +108,7 @@ export function PipelineColumn({
                 key={customer.id}
                 customer={customer}
                 onStageChange={onStageChange}
+                onDndToggle={onDndToggle}
                 onRemoveFromPipeline={onRemoveFromPipeline}
               />
             ))}

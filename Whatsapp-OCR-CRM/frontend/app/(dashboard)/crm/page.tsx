@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../lib/api";
 import { Input } from "@/components/ui/input";
-import { Search, List, Kanban, Trash2 } from "lucide-react";
+import { Bell, BellOff, Search, List, Kanban, Trash2 } from "lucide-react";
 import { timeAgo } from "../../../lib/format";
 import {
   Select,
@@ -17,6 +17,7 @@ import { PipelineColumn } from "./_components/pipeline-column";
 import { STAGES, type CustomerItem } from "./_components/customer-card";
 import { STAGE_LIST_COLORS, STAGE_COLUMN_COLORS } from "../../../lib/crm-stages";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const LIST_STAGE_COLORS = STAGE_LIST_COLORS;
 const COLUMN_HEADER = STAGE_COLUMN_COLORS;
@@ -54,8 +55,25 @@ export default function CRMPage() {
       setItems((prev) =>
         prev.map((item) => (item.id === customerId ? { ...item, stage: newStage } : item))
       );
+      if (newStage === "Lost") {
+        toast.success("Customer marked Lost — automations cancelled");
+      }
     } catch (error) {
       console.error("Failed to update customer stage:", error);
+      toast.error("Could not update stage");
+    }
+  };
+
+  const handleDndToggle = async (customerId: string, doNotDisturb: boolean) => {
+    try {
+      await api.patch(`/customers/${customerId}/dnd`, { doNotDisturb });
+      setItems((prev) =>
+        prev.map((item) => (item.id === customerId ? { ...item, doNotDisturb } : item))
+      );
+      toast.success(doNotDisturb ? "DND on — automations silenced" : "DND off — automations allowed");
+    } catch (error) {
+      console.error("Failed to update DND:", error);
+      toast.error("Could not update DND");
     }
   };
 
@@ -144,6 +162,7 @@ export default function CRMPage() {
               colors={COLUMN_HEADER[stage] || COLUMN_HEADER.Lead}
               loading={loading}
               onStageChange={handleStageChange}
+              onDndToggle={handleDndToggle}
               onRemoveFromPipeline={handleRemoveFromPipeline}
             />
           ))}
@@ -164,19 +183,21 @@ export default function CRMPage() {
                   <th className="text-left px-4 py-3">Stage</th>
                   <th className="text-right px-4 py-3">Enquiries</th>
                   <th className="text-right px-4 py-3">Last activity</th>
+                  <th className="text-right px-4 py-3 w-20">DND</th>
                   <th className="text-right px-4 py-3 w-12"></th>
                 </tr>
               </thead>
               <tbody data-testid="customers-table">
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-ink-muted">
+                    <td colSpan={8} className="px-4 py-10 text-center text-ink-muted">
                       No customers found.
                     </td>
                   </tr>
                 )}
                 {items.map((c) => {
                   const colors = LIST_STAGE_COLORS[c.stage || "Lead"] || LIST_STAGE_COLORS.Lead;
+                  const dndOn = !!c.doNotDisturb;
                   return (
                     <tr
                       key={c.id}
@@ -231,6 +252,23 @@ export default function CRMPage() {
                         onClick={() => router.push(`/crm/${c.id}`)}
                       >
                         {timeAgo(c.lastActivity)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDndToggle(c.id, !dndOn)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors",
+                            dndOn
+                              ? "bg-stone-200 text-stone-800 hover:bg-stone-300"
+                              : "text-ink-muted hover:text-ink hover:bg-canvas border border-line"
+                          )}
+                          title={dndOn ? "DND on — click to allow automations" : "DND off — click to silence automations"}
+                          data-testid={`dnd-toggle-${c.id}`}
+                        >
+                          {dndOn ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+                          {dndOn ? "On" : "Off"}
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button

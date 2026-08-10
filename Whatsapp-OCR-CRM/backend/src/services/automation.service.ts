@@ -6,6 +6,7 @@ import {
   enqueueAutomationJob,
   recordCronTick,
 } from "./automation-execution.service";
+import { isAutomationBlocked } from "./automation-guard.service";
 
 function daysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -57,6 +58,12 @@ export async function scheduleInquiryFollowup(
   const rule = await prisma.automationRule.findUnique({ where: { id: ruleId } });
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
   if (!rule || !customer) throw new Error("Rule or customer not found");
+  if (isAutomationBlocked(customer)) {
+    logger.info(
+      `Skipping inquiry follow-up for ${customerId}: Lost or DND`
+    );
+    return "";
+  }
 
   const enquiry = await prisma.enquiry.findUnique({
     where: { id: enquiryId },
@@ -147,7 +154,7 @@ export async function triggerPriceDrop(inventoryId: string, oldRate: number, new
 
       for (const customerId of customerIds) {
         const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-        if (!customer || customer.stage === "Closed") {
+        if (!customer || customer.stage === "Closed" || isAutomationBlocked(customer)) {
           skipped++;
           continue;
         }
@@ -202,13 +209,21 @@ export async function triggerRepeatEngagement(): Promise<TriggerResult> {
       const templateName = String(actionParams?.templateName || "mahabir_repeat_engagement");
 
       const customers = await prisma.customer.findMany({
-        where: { stage: { in: stages } },
+        where: {
+          stage: { in: stages },
+          doNotDisturb: false,
+        },
       });
 
       let ruleQueued = 0;
       let ruleSkipped = 0;
 
       for (const customer of customers) {
+        if (isAutomationBlocked(customer)) {
+          ruleSkipped++;
+          continue;
+        }
+
         const latestEnquiry = await getLatestEnquiry(customer.id);
         if (!latestEnquiry || latestEnquiry.createdAt > cutoff) {
           ruleSkipped++;
@@ -268,13 +283,21 @@ export async function triggerEnquiryReminder(): Promise<TriggerResult> {
       const templateName = String(actionParams?.templateName || "mahabir_enquiry_reminder");
 
       const customers = await prisma.customer.findMany({
-        where: { stage: { not: "Closed" } },
+        where: {
+          stage: { notIn: ["Closed", "Lost"] },
+          doNotDisturb: false,
+        },
       });
 
       let ruleQueued = 0;
       let ruleSkipped = 0;
 
       for (const customer of customers) {
+        if (isAutomationBlocked(customer)) {
+          ruleSkipped++;
+          continue;
+        }
+
         const lastSent = await prisma.enquiry.findFirst({
           where: {
             customerId: customer.id,
@@ -361,7 +384,7 @@ export async function triggerClosedReview(customerId: string): Promise<TriggerRe
     if (rules.length === 0) return { queued, skipped };
 
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-    if (!customer || customer.stage !== "Closed") {
+    if (!customer || customer.stage !== "Closed" || isAutomationBlocked(customer)) {
       return { queued: 0, skipped: 1 };
     }
 
