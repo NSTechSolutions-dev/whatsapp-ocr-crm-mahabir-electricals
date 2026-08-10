@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, BellOff, Building2, ChevronRight, FileText, Phone, Trash2 } from "lucide-react";
+import { Bell, BellOff, Building2, FileText, Phone, Trash2 } from "lucide-react";
 import { timeAgo } from "../../../../lib/format";
 import {
   Select,
@@ -54,8 +54,8 @@ export function CustomerCard({
   return (
     <article
       className={cn(
-        "group relative rounded-md border border-line/80 bg-surface border-l-[3px] overflow-hidden min-w-0",
-        "hover:border-brand/40 hover:shadow-sm transition-all duration-150",
+        "group rounded-lg border border-line/80 bg-surface border-l-[3px] overflow-hidden",
+        "hover:border-brand/35 hover:shadow-sm transition-all duration-150",
         colors.accent
       )}
       data-testid={`kanban-card-${customer.id}`}
@@ -63,12 +63,12 @@ export function CustomerCard({
       <button
         type="button"
         onClick={() => router.push(`/crm/${customer.id}`)}
-        className="w-full text-left p-2.5 pr-2 space-y-2"
+        className="w-full text-left p-3 space-y-2.5"
       >
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2.5 min-w-0">
           <div
             className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
               colors.avatar
             )}
             aria-hidden
@@ -77,8 +77,8 @@ export function CustomerCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <h3 className="font-medium text-[13px] leading-tight text-ink truncate group-hover:text-brand transition-colors">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-medium text-[13px] leading-snug text-ink truncate group-hover:text-brand transition-colors">
                 {displayName}
               </h3>
               {dndOn ? (
@@ -89,82 +89,83 @@ export function CustomerCard({
                   DND
                 </span>
               ) : null}
-              <ChevronRight className="h-3 w-3 shrink-0 text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
+
             {customer.company ? (
               <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ink-muted truncate">
-                <Building2 className="h-2.5 w-2.5 shrink-0" />
-                {customer.company}
+                <Building2 className="h-3 w-3 shrink-0 opacity-70" />
+                <span className="truncate">{customer.company}</span>
               </p>
             ) : null}
+
+            <p className="mt-1 flex items-center gap-1 text-[11px] text-ink-muted truncate">
+              <Phone className="h-3 w-3 shrink-0 opacity-70" />
+              <span className="tabular-nums truncate">{customer.phone}</span>
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] text-ink-muted pl-10 -mt-1">
-          <Phone className="h-2.5 w-2.5 shrink-0" />
-          <span className="tabular-nums truncate">{customer.phone}</span>
-        </div>
-
-        <div className="flex items-center justify-between gap-2 pl-10 pt-0.5">
+        <div className="flex items-center justify-between gap-2">
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium",
               colors.badge
             )}
           >
-            <FileText className="h-2.5 w-2.5" />
-            {customer.enquiryCount}
+            <FileText className="h-3 w-3" />
+            {customer.enquiryCount} enq
           </span>
-          <span className="text-[10px] text-ink-muted tabular-nums">{timeAgo(customer.lastActivity)}</span>
+          <span className="text-[10px] text-ink-muted tabular-nums shrink-0">
+            {timeAgo(customer.lastActivity)}
+          </span>
         </div>
       </button>
 
       <div
-        className="flex items-center justify-between gap-1.5 border-t border-line/50 px-2 py-1.5 bg-canvas/40 min-w-0 overflow-hidden"
+        className="flex items-center gap-1 border-t border-line/60 bg-canvas/50 px-2 py-1.5"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-[9px] uppercase tracking-wider text-ink-muted shrink-0">Stage</span>
-        <div className="flex items-center gap-0.5 min-w-0 overflow-hidden">
-          {onDndToggle && (
-            <button
-              type="button"
-              onClick={() => onDndToggle(customer.id, !dndOn)}
-              className={cn(
-                "rounded p-1 transition-colors shrink-0",
-                dndOn
-                  ? "text-stone-800 bg-stone-200 hover:bg-stone-300"
-                  : "text-ink-muted hover:text-ink hover:bg-canvas"
-              )}
-              title={dndOn ? "DND on — click to allow automations" : "DND off — click to silence automations"}
-              data-testid={`dnd-toggle-${customer.id}`}
-            >
-              {dndOn ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
-            </button>
-          )}
-          {onRemoveFromPipeline && (
-            <button
-              type="button"
-              onClick={() => onRemoveFromPipeline(customer.id)}
-              className="rounded p-1 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-              title="Remove from pipeline"
-              data-testid={`remove-pipeline-${customer.id}`}
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
-          )}
-          <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
-            <SelectTrigger className="h-6 w-[6.5rem] max-w-full min-w-0 text-[11px] bg-surface border-line/80 text-ink px-1.5 shrink">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-surface border-line text-ink">
-              {CRM_STAGES.map((s) => (
-                <SelectItem key={s} value={s} className="text-xs text-ink hover:bg-canvas">
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {onDndToggle ? (
+          <button
+            type="button"
+            onClick={() => onDndToggle(customer.id, !dndOn)}
+            className={cn(
+              "rounded-md p-1.5 transition-colors shrink-0",
+              dndOn
+                ? "text-stone-800 bg-stone-200 hover:bg-stone-300"
+                : "text-ink-muted hover:text-ink hover:bg-surface"
+            )}
+            title={dndOn ? "DND on — click to allow automations" : "DND off — click to silence automations"}
+            data-testid={`dnd-toggle-${customer.id}`}
+          >
+            {dndOn ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+          </button>
+        ) : null}
+
+        {onRemoveFromPipeline ? (
+          <button
+            type="button"
+            onClick={() => onRemoveFromPipeline(customer.id)}
+            className="rounded-md p-1.5 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+            title="Remove from pipeline"
+            data-testid={`remove-pipeline-${customer.id}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+
+        <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
+          <SelectTrigger className="h-7 flex-1 min-w-0 text-[11px] bg-surface border-line text-ink px-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-surface border-line text-ink">
+            {CRM_STAGES.map((s) => (
+              <SelectItem key={s} value={s} className="text-xs text-ink hover:bg-canvas">
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </article>
   );

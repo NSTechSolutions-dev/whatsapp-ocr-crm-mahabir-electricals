@@ -44,12 +44,32 @@ function statusClasses(status: string) {
     case "read":
       return "bg-emerald-50 text-emerald-800 border-emerald-200";
     case "sent":
+      return "bg-sky-50 text-sky-800 border-sky-200";
     case "submitted":
       return "bg-brand-50 text-brand border-brand/30";
     case "queued":
       return "bg-amber-50 text-amber-800 border-amber-200";
     default:
       return "bg-canvas text-ink-muted border-line";
+  }
+}
+
+function statusLabel(status: string) {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "submitted":
+      return "Submitted";
+    case "sent":
+      return "Sent";
+    case "delivered":
+      return "Delivered";
+    case "read":
+      return "Read";
+    case "failed":
+      return "Failed";
+    default:
+      return status;
   }
 }
 
@@ -94,7 +114,8 @@ export default function WhatsappLogsPage() {
           <div className="text-[10px] uppercase tracking-wider text-ink-muted">MSG91 · WhatsApp</div>
           <h1 className="font-display text-2xl font-semibold mt-0.5">Delivery logs</h1>
           <p className="text-sm text-ink-muted mt-1">
-            Real send status from MSG91 — not just CRM queue status.
+            Real send status from MSG91. <span className="text-ink">Submitted</span> = accepted by
+            MSG91; <span className="text-ink">Delivered/Read</span> need outbound delivery webhooks.
           </p>
         </div>
         <Button
@@ -220,7 +241,7 @@ export default function WhatsappLogsPage() {
                           statusClasses(item.deliveryStatus)
                         )}
                       >
-                        {item.deliveryStatus}
+                        {statusLabel(item.deliveryStatus)}
                       </span>
                     </td>
                     <td className="px-3 py-3 max-w-md">

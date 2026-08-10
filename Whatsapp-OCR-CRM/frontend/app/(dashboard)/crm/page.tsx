@@ -153,8 +153,8 @@ export default function CRMPage() {
       </div>
 
       {viewMode === "kanban" && (
-        <div className="w-full overflow-x-auto overflow-y-hidden pb-2 scroll-thin">
-          <div className="flex w-max min-w-full gap-2 px-0.5">
+        <div className="overflow-x-auto overflow-y-hidden scroll-thin">
+          <div className="flex h-[calc(100vh-160px)] min-h-[480px] w-max min-w-full items-stretch gap-3 pb-1">
             {STAGES.map((stage) => (
               <PipelineColumn
                 key={stage}
@@ -176,7 +176,8 @@ export default function CRMPage() {
           {loading ? (
             <div className="px-4 py-10 text-center text-sm text-ink-muted">Loading pipeline data…</div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="bg-canvas text-xs uppercase tracking-[0.08em] text-ink-muted">
                   <th className="text-left px-4 py-3">Name</th>
@@ -288,6 +289,7 @@ export default function CRMPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

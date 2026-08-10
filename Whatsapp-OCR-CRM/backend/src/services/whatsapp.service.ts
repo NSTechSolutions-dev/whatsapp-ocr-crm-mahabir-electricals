@@ -137,7 +137,7 @@ export async function sendTemplateMessage(
     });
 
     try {
-      const { sendToMsg91, extractMsg91Ids } = await import("../lib/msg91");
+      const { sendToMsg91 } = await import("../lib/msg91");
       const ack = await sendToMsg91({
         to: normalizedPhone,
         type: "template",
@@ -146,11 +146,10 @@ export async function sendTemplateMessage(
         documentHeader,
         templateNamespace,
       });
-      const ids = extractMsg91Ids({ request_id: ack.messageId, messageId: ack.messageId });
       await markMessageDelivery(message.id, {
         status: "submitted",
-        waMessageId: ack.messageId,
-        msg91RequestId: ids.requestId || ack.messageId,
+        waMessageId: ack.messageUuid || ack.messageId,
+        msg91RequestId: ack.requestId || ack.messageId,
         failureReason: null,
         templateName,
       });
@@ -205,8 +204,8 @@ export async function sendTextMessage(
       });
       await markMessageDelivery(message.id, {
         status: "submitted",
-        waMessageId: ack.messageId,
-        msg91RequestId: ack.messageId,
+        waMessageId: ack.messageUuid || ack.messageId,
+        msg91RequestId: ack.requestId || ack.messageId,
         failureReason: null,
       });
     } catch (sendError) {

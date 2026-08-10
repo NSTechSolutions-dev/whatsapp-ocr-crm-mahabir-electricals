@@ -71,34 +71,34 @@ export function PipelineColumn({
 
   return (
     <div
-      className="flex w-[240px] min-w-[240px] max-w-[240px] shrink-0 flex-col rounded-lg border border-line bg-surface/50 overflow-hidden"
+      className="flex h-full min-h-0 w-[300px] min-w-[300px] max-w-[340px] flex-[1_1_300px] flex-col rounded-xl border border-line bg-surface/60 overflow-hidden"
       data-testid={`kanban-column-${stage.toLowerCase()}`}
     >
       <div
         className={cn(
-          "flex items-center justify-between border-b border-line px-2.5 py-2",
+          "flex items-center justify-between gap-2 border-b border-line px-3 py-2.5 shrink-0",
           colors.header
         )}
       >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", colors.dot)} />
-          <span className="truncate text-xs font-semibold text-ink">{stage}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", colors.dot)} />
+          <span className="truncate text-sm font-semibold text-ink">{stage}</span>
         </div>
-        <span className="shrink-0 rounded bg-canvas px-1.5 py-0.5 text-[10px] tabular-nums text-ink-muted border border-line/60">
+        <span className="shrink-0 rounded-md bg-canvas px-2 py-0.5 text-[11px] tabular-nums text-ink-muted border border-line/70">
           {loading ? "…" : items.length}
         </span>
       </div>
 
       <div
         ref={scrollRef}
-        className="flex flex-1 flex-col gap-1.5 overflow-y-auto p-1.5 max-h-[calc(100vh-220px)] min-h-[320px] scroll-thin"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden p-2 scroll-thin"
       >
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-[88px] animate-pulse rounded-md border border-line/60 bg-canvas/60" />
+            <div key={i} className="h-[108px] animate-pulse rounded-lg border border-line/60 bg-canvas/60" />
           ))
         ) : items.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center py-8 text-[11px] text-ink-muted">
+          <div className="flex flex-1 items-center justify-center py-10 text-xs text-ink-muted">
             No customers
           </div>
         ) : (
@@ -121,14 +121,14 @@ export function PipelineColumn({
                   <button
                     type="button"
                     onClick={loadMore}
-                    className="text-[10px] text-ink-muted hover:text-brand transition-colors"
+                    className="text-[11px] text-ink-muted hover:text-brand transition-colors"
                   >
                     Load {Math.min(LOAD_MORE_COUNT, items.length - visibleCount)} more
                   </button>
                 )}
               </div>
             ) : items.length > INITIAL_VISIBLE ? (
-              <p className="py-1 text-center text-[10px] text-ink-muted">All loaded</p>
+              <p className="py-1.5 text-center text-[10px] text-ink-muted">All loaded</p>
             ) : null}
           </>
         )}

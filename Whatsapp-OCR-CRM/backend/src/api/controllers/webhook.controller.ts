@@ -299,12 +299,25 @@ export async function msg91Webhook(req: Request, res: Response) {
 
   // Outbound delivery reports (Sent/Delivered/Read/Failed) — do not treat as inbound chat
   try {
-    const { isOutboundDeliveryPayload, applyOutboundDeliveryReport } = await import(
-      "../../services/message-delivery.service"
-    );
-    if (isOutboundDeliveryPayload(payload)) {
-      const result = await applyOutboundDeliveryReport(payload);
-      return res.json({ ok: true, kind: "outbound_dlr", ...result });
+    const {
+      isOutboundDeliveryPayload,
+      applyOutboundDeliveryReport,
+      asWebhookPayloadList,
+    } = await import("../../services/message-delivery.service");
+
+    const events = asWebhookPayloadList(payload);
+    const outboundEvents = events.filter((event) => isOutboundDeliveryPayload(event));
+    if (outboundEvents.length > 0) {
+      const results = [];
+      for (const event of outboundEvents) {
+        results.push(await applyOutboundDeliveryReport(event));
+      }
+      return res.json({
+        ok: true,
+        kind: "outbound_dlr",
+        count: results.length,
+        results,
+      });
     }
   } catch (dlrError) {
     logger.error(`Outbound DLR handling failed: ${dlrError}`);
