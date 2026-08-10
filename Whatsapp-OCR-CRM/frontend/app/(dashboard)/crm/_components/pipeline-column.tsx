@@ -71,7 +71,7 @@ export function PipelineColumn({
 
   return (
     <div
-      className="flex min-w-0 flex-1 flex-col rounded-lg border border-line bg-surface/50 overflow-hidden"
+      className="flex w-[240px] min-w-[240px] max-w-[240px] shrink-0 flex-col rounded-lg border border-line bg-surface/50 overflow-hidden"
       data-testid={`kanban-column-${stage.toLowerCase()}`}
     >
       <div

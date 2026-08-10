@@ -39,6 +39,7 @@ interface SendHistoryEntry {
   sentAt: string;
   caption: string;
   status: string;
+  failureReason?: string | null;
   customer: Customer;
 }
 
@@ -455,7 +456,7 @@ export default function UnifiedEnquiryPage() {
               ...prev,
               id: quotationId,
               sentAt: r.data.sentAt,
-              deliveryStatus: "sent",
+              deliveryStatus: "submitted",
             }
           : {
               id: quotationId,
@@ -466,7 +467,7 @@ export default function UnifiedEnquiryPage() {
               gstAmount,
               presignedUrl: "",
               sentAt: r.data.sentAt,
-              deliveryStatus: "sent",
+              deliveryStatus: "submitted",
             }
       );
       setData((prev: any) => (prev ? { ...prev, status: "SENT" } : prev));
@@ -1195,9 +1196,16 @@ export default function UnifiedEnquiryPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-[10px] text-ink-muted">{timeAgo(entry.sentAt)}</div>
-                            <div className="text-[9px] text-ink-muted/70">{formatDate(entry.sentAt)}</div>
+                            <div className="text-[9px] uppercase tracking-wide text-ink-muted/80">
+                              {entry.status || "queued"}
+                            </div>
                           </div>
                         </div>
+                        {"failureReason" in entry && entry.failureReason ? (
+                          <div className="mt-1 text-[10px] text-red-700 break-words">
+                            {entry.failureReason}
+                          </div>
+                        ) : null}
                         <div className="mt-1.5 text-[10px] text-ink-muted font-mono leading-relaxed break-words border-t border-line/60 pt-1.5">
                           {entry.caption}
                         </div>

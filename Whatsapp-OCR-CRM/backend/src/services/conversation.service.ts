@@ -207,12 +207,21 @@ async function mergeCustomersInto(primaryId: string, orphanIds: string[]) {
       const orphan = await tx.customer.findUnique({ where: { id: orphanId } });
       const primary = await tx.customer.findUnique({ where: { id: primaryId } });
       if (orphan && primary) {
-        const data: { name?: string; company?: string; stage?: string } = {};
+        const data: {
+          name?: string;
+          company?: string;
+          stage?: string;
+          doNotDisturb?: boolean;
+        } = {};
         if (!primary.name && orphan.name) data.name = orphan.name;
         if (!primary.company && orphan.company) data.company = orphan.company;
         // Keep Closed if either is Closed; else keep primary stage
         if (orphan.stage === "Closed" && primary.stage !== "Closed") {
           data.stage = "Closed";
+        }
+        // DND is sticky: if either record had DND, keep it on after merge
+        if (orphan.doNotDisturb && !primary.doNotDisturb) {
+          data.doNotDisturb = true;
         }
         if (Object.keys(data).length) {
           await tx.customer.update({ where: { id: primaryId }, data });

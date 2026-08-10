@@ -66,13 +66,27 @@ function extractMessageId(data: unknown): string {
   if (!data || typeof data !== "object") return `msg91-${Date.now()}`;
   const record = data as Record<string, unknown>;
   if (typeof record.request_id === "string") return record.request_id;
+  if (typeof record.requestId === "string") return record.requestId;
   if (typeof record.messageId === "string") return record.messageId;
   if (typeof record.message_id === "string") return record.message_id;
+  if (typeof record.message_uuid === "string") return record.message_uuid;
   if (Array.isArray(record.data) && record.data[0] && typeof record.data[0] === "object") {
     const first = record.data[0] as Record<string, unknown>;
     if (typeof first.message_uuid === "string") return first.message_uuid;
+    if (typeof first.request_id === "string") return first.request_id;
   }
   return `msg91-${Date.now()}`;
+}
+
+export function extractMsg91Ids(data: unknown): { messageId: string; requestId: string | null } {
+  const messageId = extractMessageId(data);
+  if (!data || typeof data !== "object") return { messageId, requestId: null };
+  const record = data as Record<string, unknown>;
+  const requestId =
+    (typeof record.request_id === "string" && record.request_id) ||
+    (typeof record.requestId === "string" && record.requestId) ||
+    null;
+  return { messageId, requestId };
 }
 
 async function sendSessionTextToMsg91(
@@ -167,12 +181,20 @@ async function sendTemplateToMsg91(
       "Content-Type": "application/json",
     },
     maxRedirects: 5,
+    validateStatus: () => true,
   });
 
-  logger.info(`MSG91 template "${payload.templateName}" sent to ${phone}`);
+  const data = response.data;
+  if (response.status < 200 || response.status >= 300 || isMsg91ErrorPayload(data)) {
+    throw new Error(
+      `MSG91 template failed (${response.status}): ${typeof data === "string" ? data : JSON.stringify(data)}`
+    );
+  }
+
+  logger.info(`MSG91 template "${payload.templateName}" sent to ${phone}: ${JSON.stringify(data)}`);
   return {
-    status: (response.data as { status?: string })?.status || "ok",
-    messageId: extractMessageId(response.data),
+    status: (data as { status?: string })?.status || "ok",
+    messageId: extractMessageId(data),
   };
 }
 

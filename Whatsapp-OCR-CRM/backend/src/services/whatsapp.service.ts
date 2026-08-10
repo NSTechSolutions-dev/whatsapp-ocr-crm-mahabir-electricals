@@ -8,6 +8,7 @@ import {
   ensureConversationForCustomer,
   findOrCreateCustomerByPhone,
 } from "./conversation.service";
+import { markMessageDelivery } from "./message-delivery.service";
 
 function buildTemplateContent(templateName: string, variables: string[], hasDocument: boolean): string {
   return buildStoredTemplateContent(templateName, variables, hasDocument);
@@ -40,6 +41,16 @@ async function resolveInbox(phone: string, conversationId?: string) {
   return { customer, conversationId: primary.id };
 }
 
+function failureMessage(error: unknown): string {
+  const err = error as { response?: { data?: unknown }; message?: string };
+  if (err.response?.data) {
+    return typeof err.response.data === "string"
+      ? err.response.data
+      : JSON.stringify(err.response.data);
+  }
+  return err.message || String(error);
+}
+
 export async function sendImageMessage(
   phone: string,
   imageUrl: string,
@@ -58,6 +69,8 @@ export async function sendImageMessage(
         type: "image",
         content: caption,
         mediaUrl: imageUrl,
+        deliveryStatus: "queued",
+        statusUpdatedAt: new Date(),
       },
     });
 
@@ -81,6 +94,11 @@ export async function sendImageMessage(
   }
 }
 
+/**
+ * Sends a WhatsApp template via MSG91 synchronously.
+ * Only resolves after MSG91 accepts the request (or mock ack).
+ * On failure, the outbound row is kept with deliveryStatus=failed for logs.
+ */
 export async function sendTemplateMessage(
   phone: string,
   templateName: string,
@@ -112,18 +130,38 @@ export async function sendTemplateMessage(
         type: documentHeader ? "document" : "template",
         content,
         mediaUrl: documentHeader?.url ?? null,
+        templateName,
+        deliveryStatus: "queued",
+        statusUpdatedAt: new Date(),
       },
     });
 
-    await whatsappQueue.add("sendTemplate", {
-      messageId: message.id,
-      phone: normalizedPhone,
-      type: "template",
-      templateName,
-      variables,
-      documentHeader,
-      templateNamespace,
-    });
+    try {
+      const { sendToMsg91, extractMsg91Ids } = await import("../lib/msg91");
+      const ack = await sendToMsg91({
+        to: normalizedPhone,
+        type: "template",
+        templateName,
+        variables,
+        documentHeader,
+        templateNamespace,
+      });
+      const ids = extractMsg91Ids({ request_id: ack.messageId, messageId: ack.messageId });
+      await markMessageDelivery(message.id, {
+        status: "submitted",
+        waMessageId: ack.messageId,
+        msg91RequestId: ids.requestId || ack.messageId,
+        failureReason: null,
+        templateName,
+      });
+    } catch (sendError) {
+      await markMessageDelivery(message.id, {
+        status: "failed",
+        failureReason: failureMessage(sendError),
+        templateName,
+      });
+      throw sendError;
+    }
 
     await prisma.conversation.update({
       where: { id: resolvedConversationId },
@@ -132,7 +170,7 @@ export async function sendTemplateMessage(
 
     return message.id;
   } catch (error) {
-    logger.error(`Failed to stage template message for ${phone}: ${error}`);
+    logger.error(`Failed to send template message for ${phone}: ${error}`);
     throw error;
   }
 }
@@ -153,6 +191,8 @@ export async function sendTextMessage(
         direction: "OUTBOUND",
         type: "text",
         content: text,
+        deliveryStatus: "queued",
+        statusUpdatedAt: new Date(),
       },
     });
 
@@ -163,12 +203,17 @@ export async function sendTextMessage(
         type: "text",
         text,
       });
-      await prisma.whatsappMessage.update({
-        where: { id: message.id },
-        data: { waMessageId: ack.messageId },
+      await markMessageDelivery(message.id, {
+        status: "submitted",
+        waMessageId: ack.messageId,
+        msg91RequestId: ack.messageId,
+        failureReason: null,
       });
     } catch (sendError) {
-      await prisma.whatsappMessage.delete({ where: { id: message.id } }).catch(() => undefined);
+      await markMessageDelivery(message.id, {
+        status: "failed",
+        failureReason: failureMessage(sendError),
+      });
       throw sendError;
     }
 

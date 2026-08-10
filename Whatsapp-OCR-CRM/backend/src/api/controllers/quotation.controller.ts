@@ -94,7 +94,8 @@ export async function getQuotation(req: Request, res: Response) {
         id: msg.id,
         sentAt: msg.createdAt.toISOString(),
         caption: msg.content || "",
-        status: msg.waMessageId ? "sent" : "sending",
+        status: msg.deliveryStatus || (msg.waMessageId ? "submitted" : "queued"),
+        failureReason: msg.failureReason || null,
         customer: {
           id: msg.conversation.customer.id,
           name: msg.conversation.customer.name,
@@ -106,7 +107,7 @@ export async function getQuotation(req: Request, res: Response) {
     if (sendHistory.length > 0) {
       deliveryStatus = sendHistory[0].status;
     } else if (q.sentAt) {
-      deliveryStatus = "sent";
+      deliveryStatus = "submitted";
     }
 
     const gstPercent = q.enquiry.gstPercent ?? 18;
@@ -448,9 +449,13 @@ export async function sendQuotation(req: Request, res: Response) {
       },
       caption,
     });
-  } catch (error) {
+  } catch (error: any) {
+    const detail =
+      error?.message && /MSG91|template|WhatsApp|PDF|Customer/i.test(String(error.message))
+        ? String(error.message)
+        : "Internal server error";
     logger.error(`Error sending quotation ${id}: ` + error);
-    return res.status(500).json({ detail: "Internal server error" });
+    return res.status(500).json({ detail });
   }
 }
 

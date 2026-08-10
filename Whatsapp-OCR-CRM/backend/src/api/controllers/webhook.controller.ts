@@ -296,6 +296,22 @@ export async function msg91Webhook(req: Request, res: Response) {
   }
 
   const payload = req.body as Record<string, unknown>;
+
+  // Outbound delivery reports (Sent/Delivered/Read/Failed) — do not treat as inbound chat
+  try {
+    const { isOutboundDeliveryPayload, applyOutboundDeliveryReport } = await import(
+      "../../services/message-delivery.service"
+    );
+    if (isOutboundDeliveryPayload(payload)) {
+      const result = await applyOutboundDeliveryReport(payload);
+      return res.json({ ok: true, kind: "outbound_dlr", ...result });
+    }
+  } catch (dlrError) {
+    logger.error(`Outbound DLR handling failed: ${dlrError}`);
+    // Still ack 200 so MSG91 does not pause the webhook; log for ops.
+    return res.json({ ok: false, kind: "outbound_dlr", detail: "processing_error" });
+  }
+
   const { phone, msgType, name, content, sourceMediaUrl, waMessageId } = parseMsg91Inbound(payload);
 
   if (!phone) {

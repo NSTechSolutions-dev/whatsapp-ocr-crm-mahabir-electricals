@@ -153,19 +153,21 @@ export default function CRMPage() {
       </div>
 
       {viewMode === "kanban" && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5">
-          {STAGES.map((stage) => (
-            <PipelineColumn
-              key={stage}
-              stage={stage}
-              items={grouped[stage] || []}
-              colors={COLUMN_HEADER[stage] || COLUMN_HEADER.Lead}
-              loading={loading}
-              onStageChange={handleStageChange}
-              onDndToggle={handleDndToggle}
-              onRemoveFromPipeline={handleRemoveFromPipeline}
-            />
-          ))}
+        <div className="w-full overflow-x-auto overflow-y-hidden pb-2 scroll-thin">
+          <div className="flex w-max min-w-full gap-2 px-0.5">
+            {STAGES.map((stage) => (
+              <PipelineColumn
+                key={stage}
+                stage={stage}
+                items={grouped[stage] || []}
+                colors={COLUMN_HEADER[stage] || COLUMN_HEADER.Lead}
+                loading={loading}
+                onStageChange={handleStageChange}
+                onDndToggle={handleDndToggle}
+                onRemoveFromPipeline={handleRemoveFromPipeline}
+              />
+            ))}
+          </div>
         </div>
       )}
 

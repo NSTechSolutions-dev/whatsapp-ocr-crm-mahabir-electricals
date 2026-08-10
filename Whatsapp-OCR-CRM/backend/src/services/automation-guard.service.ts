@@ -70,15 +70,31 @@ export async function cancelPendingAutomations(
   return cancelled;
 }
 
-/** Move Lost → Lead when the customer sends a new quotation/enquiry request. Does not clear DND. */
+/** Move Lost → Lead when the customer sends a new quotation/enquiry request.
+ *  Never clears DND — only an admin toggle may change doNotDisturb.
+ */
 export async function reactivateLostCustomer(customerId: string): Promise<boolean> {
-  const result = await prisma.customer.updateMany({
-    where: { id: customerId, stage: "Lost" },
-    data: { stage: "Lead" },
-  });
-  if (result.count > 0) {
-    logger.info(`Reactivated Lost customer ${customerId} → Lead`);
-    return true;
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) return false;
+
+  let reactivated = false;
+  if (customer.stage === "Lost") {
+    await prisma.customer.update({
+      where: { id: customerId },
+      // Explicitly only touch stage — doNotDisturb must remain as-is
+      data: { stage: "Lead" },
+    });
+    reactivated = true;
+    logger.info(
+      `Reactivated Lost customer ${customerId} → Lead` +
+        (customer.doNotDisturb ? " (DND preserved)" : "")
+    );
   }
-  return false;
+
+  // New enquiry activity must not resume automations while DND is on
+  if (customer.doNotDisturb) {
+    await cancelPendingAutomations(customerId, "dnd_still_active_on_new_request");
+  }
+
+  return reactivated;
 }

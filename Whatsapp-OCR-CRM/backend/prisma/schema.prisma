@@ -87,17 +87,28 @@ model Conversation {
 }
 
 model WhatsappMessage {
-  id             String           @id @default(cuid())
-  conversationId String
-  direction      MessageDirection
-  type           String
-  content        String?
-  mediaUrl       String?
-  waMessageId    String?
-  createdAt      DateTime         @default(now())
+  id               String           @id @default(cuid())
+  conversationId   String
+  direction        MessageDirection
+  type             String
+  content          String?
+  mediaUrl         String?
+  waMessageId      String?
+  /// queued | submitted | sent | delivered | read | failed
+  deliveryStatus   String           @default("queued")
+  msg91RequestId   String?
+  failureReason    String?
+  templateName     String?
+  statusUpdatedAt  DateTime?
+  createdAt        DateTime         @default(now())
 
   conversation  Conversation   @relation(fields: [conversationId], references: [id])
   enquiryImages EnquiryImage[]
+
+  @@index([direction, createdAt])
+  @@index([deliveryStatus, createdAt])
+  @@index([waMessageId])
+  @@index([msg91RequestId])
 }
 
 model Enquiry {

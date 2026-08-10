@@ -54,7 +54,7 @@ export function CustomerCard({
   return (
     <article
       className={cn(
-        "group relative rounded-md border border-line/80 bg-surface border-l-[3px]",
+        "group relative rounded-md border border-line/80 bg-surface border-l-[3px] overflow-hidden min-w-0",
         "hover:border-brand/40 hover:shadow-sm transition-all duration-150",
         colors.accent
       )}
@@ -120,17 +120,17 @@ export function CustomerCard({
       </button>
 
       <div
-        className="flex items-center justify-between gap-2 border-t border-line/50 px-2.5 py-1.5 bg-canvas/40"
+        className="flex items-center justify-between gap-1.5 border-t border-line/50 px-2 py-1.5 bg-canvas/40 min-w-0 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-[9px] uppercase tracking-wider text-ink-muted">Stage</span>
-        <div className="flex items-center gap-1">
+        <span className="text-[9px] uppercase tracking-wider text-ink-muted shrink-0">Stage</span>
+        <div className="flex items-center gap-0.5 min-w-0 overflow-hidden">
           {onDndToggle && (
             <button
               type="button"
               onClick={() => onDndToggle(customer.id, !dndOn)}
               className={cn(
-                "rounded p-1 transition-colors",
+                "rounded p-1 transition-colors shrink-0",
                 dndOn
                   ? "text-stone-800 bg-stone-200 hover:bg-stone-300"
                   : "text-ink-muted hover:text-ink hover:bg-canvas"
@@ -145,7 +145,7 @@ export function CustomerCard({
             <button
               type="button"
               onClick={() => onRemoveFromPipeline(customer.id)}
-              className="rounded p-1 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+              className="rounded p-1 text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
               title="Remove from pipeline"
               data-testid={`remove-pipeline-${customer.id}`}
             >
@@ -153,7 +153,7 @@ export function CustomerCard({
             </button>
           )}
           <Select value={customer.stage || "Lead"} onValueChange={(val) => onStageChange(customer.id, val)}>
-            <SelectTrigger className="h-6 w-[7.5rem] text-[11px] bg-surface border-line/80 text-ink px-2">
+            <SelectTrigger className="h-6 w-[6.5rem] max-w-full min-w-0 text-[11px] bg-surface border-line/80 text-ink px-1.5 shrink">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-surface border-line text-ink">
