@@ -54,7 +54,7 @@ export function CustomerCard({
   return (
     <article
       className={cn(
-        "group rounded-lg border border-line/80 bg-surface border-l-[3px] overflow-hidden",
+        "group shrink-0 rounded-lg border border-line/80 bg-surface border-l-[3px] overflow-hidden",
         "hover:border-brand/35 hover:shadow-sm transition-all duration-150",
         colors.accent
       )}

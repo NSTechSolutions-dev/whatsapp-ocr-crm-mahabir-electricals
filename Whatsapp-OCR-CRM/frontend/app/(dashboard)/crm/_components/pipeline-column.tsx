@@ -95,7 +95,7 @@ export function PipelineColumn({
       >
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-[108px] animate-pulse rounded-lg border border-line/60 bg-canvas/60" />
+            <div key={i} className="h-[108px] shrink-0 animate-pulse rounded-lg border border-line/60 bg-canvas/60" />
           ))
         ) : items.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-10 text-xs text-ink-muted">
