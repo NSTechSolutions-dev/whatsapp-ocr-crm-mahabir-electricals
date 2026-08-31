@@ -11,6 +11,12 @@ import { createSystemNotification } from "../utils/notification";
 import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
 import { getIo } from "../utils/notification";
+import { inventoryScoreQueue } from "./queues";
+import {
+  scheduleAutoRetry,
+  clearAutoRetry,
+  GEMINI_RETRY_DELAY_MS,
+} from "./gemini-auto-retry";
 
 function emitEnquiryUpdate(conversationId: string, payload: Record<string, unknown>) {
   const io = getIo();
@@ -36,6 +42,9 @@ export const inventoryScoreWorker = new Worker(
     const logPrefix = source ? `[${source}]` : "";
     const id = jobId || messageId || existingEnquiryId;
     logger.info(`${logPrefix} inventoryScoreWorker starting job ${id} (${msgType || "unknown"})`);
+
+    const scopeKey =
+      jobId || (existingEnquiryId ? `enquiry:${existingEnquiryId}` : messageId ? `msg:${messageId}` : null);
 
     if (jobId && (await isOcrJobCancelled(jobId))) {
       logger.info(`${logPrefix} Skipping cancelled OCR job ${jobId}`);
@@ -111,6 +120,38 @@ export const inventoryScoreWorker = new Worker(
           ocrConfidence,
         });
         logger.error(`${logPrefix} Pipeline failed for job ${id}: ${pipelineError?.message}`);
+
+        try {
+          await scheduleAutoRetry({
+            scopeKey: scopeKey || `unknown:${id}`,
+            retryable,
+            add: (attempt) =>
+              inventoryScoreQueue.add(
+                "scoreProducts",
+                {
+                  rawText,
+                  ocrConfidence,
+                  conversationId,
+                  customerId,
+                  jobId,
+                  source,
+                  messageId,
+                  msgType,
+                  ...(existingEnquiryId ? { enquiryId: existingEnquiryId } : {}),
+                },
+                {
+                  jobId: `inventory-${jobId || existingEnquiryId || messageId}-retry-${attempt}`,
+                  delay: GEMINI_RETRY_DELAY_MS,
+                  attempts: 1,
+                  removeOnComplete: true,
+                  removeOnFail: 100,
+                }
+              ),
+          });
+        } catch (retryError) {
+          logger.error(`${logPrefix} Failed to schedule Gemini auto-retry for job ${id}: ${retryError}`);
+        }
+
         return;
       }
 
@@ -200,6 +241,8 @@ export const inventoryScoreWorker = new Worker(
           ocrConfidence,
         });
 
+        await clearAutoRetry(scopeKey);
+
         await createSystemNotification(
           "Message Ignored",
           `Inbound message was not an inventory enquiry. Enquiry ID: ${enquiry.id}`,
@@ -259,6 +302,8 @@ export const inventoryScoreWorker = new Worker(
         ocrConfidence,
       });
 
+      await clearAutoRetry(scopeKey);
+
       await createSystemNotification(
         "New Enquiry Drafted",
         `A new enquiry has been drafted. Customer ID: ${resolvedCustomerId}, Enquiry ID: ${enquiry.id}`,
@@ -294,6 +339,37 @@ export const inventoryScoreWorker = new Worker(
         rawText,
         ocrConfidence,
       });
+
+      try {
+        await scheduleAutoRetry({
+          scopeKey: scopeKey || `unknown:${id}`,
+          retryable,
+          add: (attempt) =>
+            inventoryScoreQueue.add(
+              "scoreProducts",
+              {
+                rawText,
+                ocrConfidence,
+                conversationId,
+                customerId,
+                jobId,
+                source,
+                messageId,
+                msgType,
+                ...(existingEnquiryId ? { enquiryId: existingEnquiryId } : {}),
+              },
+              {
+                jobId: `inventory-${jobId || existingEnquiryId || messageId}-retry-${attempt}`,
+                delay: GEMINI_RETRY_DELAY_MS,
+                attempts: 1,
+                removeOnComplete: true,
+                removeOnFail: 100,
+              }
+            ),
+        });
+      } catch (retryError) {
+        logger.error(`${logPrefix} Failed to schedule Gemini auto-retry for job ${id}: ${retryError}`);
+      }
     }
   },
   {

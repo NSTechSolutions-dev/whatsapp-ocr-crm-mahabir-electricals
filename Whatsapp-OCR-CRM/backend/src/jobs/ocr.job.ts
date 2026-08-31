@@ -6,7 +6,12 @@ import { GeminiApiError } from "../lib/gemini-retry";
 import { isOcrJobCancelled } from "../lib/ocr-job-state";
 import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
-import { inventoryScoreQueue } from "./queues";
+import { inventoryScoreQueue, ocrQueue } from "./queues";
+import {
+  scheduleAutoRetry,
+  clearAutoRetry,
+  GEMINI_RETRY_DELAY_MS,
+} from "./gemini-auto-retry";
 
 export const ocrWorker = new Worker(
   "ocrQueue",
@@ -16,6 +21,8 @@ export const ocrWorker = new Worker(
     const logPrefix = source ? `[${source}]` : "";
     const id = jobId || messageId;
     logger.info(`${logPrefix} ocrWorker starting job ${id}`);
+
+    const scopeKey = jobId || (messageId ? `msg:${messageId}` : null);
 
     if (jobId && (await isOcrJobCancelled(jobId))) {
       logger.info(`${logPrefix} Skipping cancelled OCR job ${jobId}`);
@@ -61,6 +68,8 @@ export const ocrWorker = new Worker(
 
       await updateJobState("inventory_score", { rawText, ocrConfidence });
 
+      await clearAutoRetry(scopeKey);
+
       await inventoryScoreQueue.add("scoreProducts", {
         rawText,
         ocrConfidence,
@@ -76,12 +85,44 @@ export const ocrWorker = new Worker(
     } catch (error: any) {
       logger.error(`${logPrefix} ocrWorker failed job ${id}: ${error}`);
       const geminiError = error instanceof GeminiApiError ? error : null;
+      const retryable = geminiError?.retryable ?? true;
       await updateJobState("failed", {
         status: "failed",
         failedStep: "ocr",
         error: formatUserErrorMessage(error, "Gemini OCR failed. Please try again."),
-        retryable: geminiError?.retryable ?? true,
+        retryable,
       });
+
+      try {
+        await scheduleAutoRetry({
+          scopeKey: scopeKey || `unknown:${id}`,
+          retryable,
+          add: (attempt) =>
+            ocrQueue.add(
+              "processMessage",
+              {
+                messageId,
+                msgType,
+                content,
+                mediaUrl,
+                customerId,
+                conversationId,
+                jobId,
+                source,
+                s3Key,
+              },
+              {
+                jobId: `${jobId ? `ocr-${jobId}` : `ocr-msg-${messageId}`}-retry-${attempt}`,
+                delay: GEMINI_RETRY_DELAY_MS,
+                attempts: 1,
+                removeOnComplete: true,
+                removeOnFail: 100,
+              }
+            ),
+        });
+      } catch (retryError) {
+        logger.error(`${logPrefix} Failed to schedule Gemini auto-retry for job ${id}: ${retryError}`);
+      }
       return;
     }
   },

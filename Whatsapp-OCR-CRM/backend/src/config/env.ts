@@ -52,6 +52,8 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_TEXT_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_VISION_MODEL: z.string().default("gemini-2.5-flash-lite"),
+  GEMINI_AUTO_RETRY_DELAY_MS: z.coerce.number().int().min(0).default(90000),
+  GEMINI_AUTO_RETRY_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(10),
   EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
   EMBEDDING_DIMENSION: z.coerce.number().default(768),
   EMBEDDING_MATCH_THRESHOLD: z.coerce.number().default(0.82),

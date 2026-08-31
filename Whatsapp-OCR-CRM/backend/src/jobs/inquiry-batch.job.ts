@@ -8,9 +8,11 @@ import {
   claimWaitingEnquiry,
   markEnquiryFailed,
 } from "../services/inquiry-grouping.service";
+import { GeminiApiError } from "../lib/gemini-retry";
 import { formatUserErrorMessage } from "../utils/user-error-message";
 import { logger } from "../utils/logger";
 import { getIo } from "../utils/notification";
+import { scheduleAutoRetry, clearAutoRetry, GEMINI_RETRY_DELAY_MS } from "./gemini-auto-retry";
 
 async function mergeImageOcr(enquiryId: string): Promise<{ rawText: string; ocrConfidence: number }> {
   const images = await prisma.enquiryImage.findMany({
@@ -102,10 +104,42 @@ export const inquiryBatchWorker = new Worker(
       logger.info(
         `inquiryBatchWorker: enqueued inventory score for enquiry ${enquiryId} (${rawText.length} chars)`
       );
+
+      await clearAutoRetry(`enquiry:${enquiryId}`);
     } catch (error: any) {
       const message = formatUserErrorMessage(error, "Batch OCR failed. Please try again.");
       logger.error(`inquiryBatchWorker failed for enquiry ${enquiryId}: ${error}`);
       await markEnquiryFailed(enquiryId, message);
+
+      const retryable = error instanceof GeminiApiError ? error.retryable : true;
+      let scheduled = 0;
+      try {
+        scheduled = await scheduleAutoRetry({
+          scopeKey: `enquiry:${enquiryId}`,
+          retryable,
+          add: async () => {
+            await prisma.enquiry.update({
+              where: { id: enquiryId },
+              data: {
+                status: "WAITING",
+                processAt: new Date(Date.now() + GEMINI_RETRY_DELAY_MS),
+                processingError: null,
+              },
+            });
+          },
+        });
+      } catch (retryError) {
+        logger.error(
+          `inquiryBatchWorker: failed to schedule auto-retry for enquiry ${enquiryId}: ${retryError}`
+        );
+      }
+
+      if (scheduled > 0) {
+        logger.info(
+          `inquiryBatchWorker: enquiry ${enquiryId} re-queued for auto-retry (${GEMINI_RETRY_DELAY_MS / 1000}s)`
+        );
+      }
+
       throw error;
     }
   },

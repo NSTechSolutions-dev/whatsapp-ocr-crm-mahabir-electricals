@@ -4,6 +4,7 @@ import { upload } from "../../lib/s3";
 import { inboundQueue, inventoryScoreQueue } from "../../jobs/queues";
 import { redisConnection } from "../../lib/redis";
 import { cancelConversationJobs, markStaleJobsFailed } from "../../lib/ocr-job-state";
+import { cancelPendingAutoRetry } from "../../jobs/gemini-auto-retry";
 import { formatUserErrorMessage } from "../../utils/user-error-message";
 import { logger } from "../../utils/logger";
 
@@ -171,6 +172,8 @@ export async function retryOcrJob(req: Request, res: Response) {
     if (parsed.status !== "failed") {
       return res.status(400).json({ detail: "Only failed jobs can be retried" });
     }
+
+    await cancelPendingAutoRetry(jobId, parsed.failedStep);
 
     const failedStep = parsed.failedStep || "ocr";
     const nextStep = failedStep === "inventory_score" && parsed.rawText ? "inventory_score" : "queued";
