@@ -789,7 +789,7 @@ export default function UnifiedEnquiryPage() {
                 </div>
                 <div className="text-xs text-amber-800/80 mt-1">
                   {isWaiting
-                    ? "Additional WhatsApp images within 60 seconds will be grouped into this enquiry."
+                    ? "Additional WhatsApp images within 30 seconds will be grouped into this enquiry."
                     : "Merging all pages and extracting products."}
                 </div>
                 {isWaiting && countdown !== null && (
