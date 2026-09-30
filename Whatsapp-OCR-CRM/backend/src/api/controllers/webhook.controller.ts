@@ -281,6 +281,69 @@ async function routeInboundProcessing(opts: {
   };
 }
 
+/** Same inbound pipeline as before; runs after HTTP 200 so MSG91 does not AUTO_PAUSE (1.5s). */
+async function processAcceptedInbound(opts: {
+  phone: string;
+  name: string | null;
+  msgType: string;
+  content: string | null;
+  sourceMediaUrl: string | null;
+  waMessageId: string | null;
+  io: any;
+}) {
+  const { phone, name, msgType, content, sourceMediaUrl, waMessageId, io } = opts;
+  let mediaUrl = sourceMediaUrl;
+
+  try {
+    if (msgType === "image" && mediaUrl) {
+      try {
+        const response = await axios.get(mediaUrl, {
+          responseType: "arraybuffer",
+          timeout: 60000,
+        });
+        const buffer = Buffer.from(response.data);
+        const today = new Date().toISOString().slice(0, 10);
+        const uuid = crypto.randomUUID();
+        const key = `uploads/whatsapp/${today}/${uuid}.png`;
+        await upload(key, buffer, "image/png");
+        mediaUrl = key;
+      } catch (err) {
+        logger.error("Failed to download or upload webhook media: " + err);
+      }
+    }
+
+    const { conversation, message, customer, duplicate } = await upsertInboundMessage(
+      phone,
+      name,
+      msgType,
+      content,
+      mediaUrl,
+      waMessageId,
+      sourceMediaUrl
+    );
+
+    if (duplicate) {
+      logger.info(
+        `Inbound already stored after ack (conversation ${conversation.id}, message ${message.id})`
+      );
+      return;
+    }
+
+    await routeInboundProcessing({
+      io,
+      conversation,
+      customer,
+      message,
+      msgType,
+      content,
+      mediaUrl,
+      preview: content || "[image]",
+    });
+  } catch (error) {
+    logger.error("MSG91 inbound processing failed after ack: " + error);
+  }
+}
+
 export async function msg91Webhook(req: Request, res: Response) {
   logger.info(`Received Webhook request: Headers=${JSON.stringify(req.headers)}, Body=${JSON.stringify(req.body)}`);
   const signature = req.headers["x-msg91-signature"] as string;
@@ -362,59 +425,19 @@ export async function msg91Webhook(req: Request, res: Response) {
     return res.json({ ok: true, duplicate: true, dedupeKeys });
   }
 
-  let mediaUrl = sourceMediaUrl;
+  const io = req.app.get("io");
+  // Ack before S3/OCR so MSG91 does not AUTO_PAUSE (timeout 1500ms).
+  res.json({ ok: true, accepted: true });
 
-  try {
-    if (msgType === "image" && mediaUrl) {
-      try {
-        const response = await axios.get(mediaUrl, { responseType: "arraybuffer" });
-        const buffer = Buffer.from(response.data);
-        const today = new Date().toISOString().slice(0, 10);
-        const uuid = crypto.randomUUID();
-        const key = `uploads/whatsapp/${today}/${uuid}.png`;
-        await upload(key, buffer, "image/png");
-        mediaUrl = key;
-      } catch (err) {
-        logger.error("Failed to download or upload webhook media: " + err);
-      }
-    }
-
-    const { conversation, message, customer, duplicate } = await upsertInboundMessage(
-      phone,
-      name,
-      msgType,
-      content,
-      mediaUrl,
-      waMessageId,
-      sourceMediaUrl
-    );
-
-    if (duplicate) {
-      return res.json({
-        ok: true,
-        duplicate: true,
-        conversationId: conversation.id,
-        messageId: message.id,
-      });
-    }
-
-    const io = req.app.get("io");
-    const result = await routeInboundProcessing({
-      io,
-      conversation,
-      customer,
-      message,
-      msgType,
-      content,
-      mediaUrl,
-      preview: content || "[image]",
-    });
-
-    return res.json(result);
-  } catch (error) {
-    logger.error("MSG91 Webhook handler failed: " + error);
-    return res.status(500).json({ detail: "Internal server error" });
-  }
+  void processAcceptedInbound({
+    phone,
+    name,
+    msgType,
+    content,
+    sourceMediaUrl,
+    waMessageId,
+    io,
+  });
 }
 
 export async function simulateInbound(req: Request, res: Response) {
