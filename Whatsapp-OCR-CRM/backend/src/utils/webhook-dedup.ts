@@ -20,51 +20,90 @@ export function normalizeMessageContent(content: string | null): string {
   return content.replace(/\s+/g, " ").trim();
 }
 
-export function parseMsg91Inbound(payload: Record<string, unknown>): ParsedMsg91Inbound {
-  const messages = Array.isArray(payload.messages) ? payload.messages : undefined;
-  const nested = (messages?.[0] ?? payload.message) as Record<string, unknown> | undefined;
+function firstNonEmpty(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+}
 
-  const phone =
-    (payload.customerNumber as string) ||
-    (payload.from as string) ||
-    (payload.phone as string) ||
-    (payload.sender as string) ||
-    (nested?.from as string) ||
-    null;
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+/** MSG91 often sends `messages` as a JSON string, not an array. */
+function firstInboundMessage(payload: Record<string, unknown>): Record<string, unknown> | undefined {
+  const raw = payload.messages;
+  let list: unknown[] | undefined;
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "string" && raw.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) list = parsed;
+    } catch {
+      list = undefined;
+    }
+  }
+  return asRecord(list?.[0]) ?? asRecord(payload.message);
+}
+
+function extractInboundText(nested: Record<string, unknown> | undefined): string | null {
+  const text = nested?.text;
+  if (typeof text === "string" && text.trim()) return text.trim();
+  const body = asRecord(text)?.body;
+  if (typeof body === "string" && body.trim()) return body.trim();
+  const content = nested?.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
+  return null;
+}
+
+function extractInboundMediaUrl(nested: Record<string, unknown> | undefined): string | null {
+  const image = asRecord(nested?.image);
+  return firstNonEmpty(image?.url, nested?.url, nested?.mediaUrl);
+}
+
+export function parseMsg91Inbound(payload: Record<string, unknown>): ParsedMsg91Inbound {
+  const nested = firstInboundMessage(payload);
+
+  const phone = firstNonEmpty(
+    payload.customerNumber,
+    payload.from,
+    payload.phone,
+    payload.sender,
+    nested?.from
+  );
 
   const msgType = String(
     payload.contentType || payload.messageType || payload.type || nested?.type || "text"
   ).toLowerCase();
 
-  const name =
-    (payload.customerName as string) ||
-    (payload.name as string) ||
-    (nested?.name as string) ||
-    null;
+  const name = firstNonEmpty(payload.customerName, payload.name, nested?.name);
 
-  const content =
-    (payload.text as string) ||
-    (payload.content as string) ||
-    (payload.body as string) ||
-    (nested?.text as string) ||
-    (nested?.content as string) ||
-    null;
+  const content = firstNonEmpty(
+    payload.text,
+    payload.content,
+    payload.body,
+    extractInboundText(nested)
+  );
 
-  const sourceMediaUrl =
-    (payload.url as string) ||
-    (payload.mediaUrl as string) ||
-    (nested?.url as string) ||
-    (nested?.mediaUrl as string) ||
-    null;
+  const sourceMediaUrl = firstNonEmpty(
+    payload.url,
+    payload.mediaUrl,
+    extractInboundMediaUrl(nested)
+  );
 
-  const waMessageId =
-    (payload.uuid as string) ||
-    (payload.messageId as string) ||
-    (payload.message_id as string) ||
-    (nested?.uuid as string) ||
-    (nested?.messageId as string) ||
-    (nested?.id as string) ||
-    null;
+  const waMessageId = firstNonEmpty(
+    payload.uuid,
+    payload.messageId,
+    payload.message_id,
+    nested?.uuid,
+    nested?.messageId,
+    nested?.id
+  );
 
   return { phone, msgType, name, content, sourceMediaUrl, waMessageId };
 }
